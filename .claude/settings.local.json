@@ -1,7 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx:*)"
+      "Bash(npx:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001)",
+      "Bash(cd:*)",
+      "Bash(curl -s http://localhost:3001)",
+      "Bash(timeout /t 10)",
+      "Bash(taskkill:*)",
+      "Bash(cmd.exe /c \"taskkill /PID 4564 /F\")",
+      "Bash(netstat -ano)",
+      "Bash(powershell \"Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess\")",
+      "Bash(curl -s http://localhost:3000)"
     ]
   }
 }

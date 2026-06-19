@@ -1,36 +1,218 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Maitri Park Virtual Tour
+
+A Next.js virtual tour application for Maitri Park, featuring 360° panoramic views, interactive floor plans, and image gallery.
+
+## Features
+
+- **360° Virtual Tour**: Interactive panoramic viewer with drag navigation
+- **Interactive Floor Plan**: Clickable floor plan with room details
+- **Image Gallery**: Categorized image gallery with lightbox view
+- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile devices
+- **Modern UI**: Built with Tailwind CSS for a sleek, contemporary look
+
+## Tech Stack
+
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **Animations**: Framer Motion
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 22.x or higher
+- npm 11.x or higher
+
+### Installation
+
+1. Navigate to the project directory:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd hoh_gorai
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies (already done):
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Run the development server:
+```bash
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-## Learn More
+### Build for Production
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+npm start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+hoh_gorai/
+├── app/
+│   ├── page.tsx          # Main page with navigation
+│   ├── globals.css       # Global styles
+│   └── layout.tsx        # Root layout
+├── components/
+│   ├── VirtualTourViewer.tsx  # 360° panoramic viewer
+│   ├── FloorPlan.tsx          # Interactive floor plan
+│   └── Gallery.tsx            # Image gallery
+├── public/
+│   ├── panoramas/        # 360° panoramic images
+│   │   ├── entrance.jpg
+│   │   ├── living-room.jpg
+│   │   ├── kitchen.jpg
+│   │   ├── bedroom.jpg
+│   │   └── balcony.jpg
+│   └── gallery/          # Standard gallery images
+│       ├── entrance.jpg
+│       ├── living-room.jpg
+│       ├── kitchen.jpg
+│       ├── bedroom.jpg
+│       ├── balcony.jpg
+│       ├── building.jpg
+│       ├── lobby.jpg
+│       └── pool.jpg
+└── package.json
+```
 
-## Deploy on Vercel
+## Adding Your Images
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Panoramic Images (360° Tour)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Place your equirectangular panoramic images in the `public/panoramas/` directory:
+
+- `entrance.jpg` - Main entrance area
+- `living-room.jpg` - Living room space
+- `kitchen.jpg` - Kitchen area
+- `bedroom.jpg` - Master bedroom
+- `balcony.jpg` - Private balcony
+
+**Recommended specifications:**
+- Resolution: 4096 x 2048 pixels or higher
+- Format: JPEG (quality 80-90%)
+- Aspect ratio: 2:1 (equirectangular projection)
+
+### Gallery Images
+
+Place standard images in the `public/gallery/` directory:
+
+- Interior shots
+- Exterior views
+- Amenities photos
+- Building photos
+
+**Recommended specifications:**
+- Resolution: 1920 x 1080 pixels or higher
+- Format: JPEG or PNG
+- Optimized for web
+
+## Customization
+
+### Adding More Scenes
+
+Edit `components/VirtualTourViewer.tsx`:
+
+```typescript
+const scenes = [
+  {
+    id: 1,
+    name: 'Scene Name',
+    image: '/panoramas/your-image.jpg',
+    hotspots: [
+      { x: 50, y: 50, targetScene: 2, label: 'Next Scene' },
+      { x: 30, y: 40, info: 'Description text' }
+    ]
+  },
+  // Add more scenes...
+];
+```
+
+### Updating Floor Plan
+
+Edit the `rooms` array in `components/FloorPlan.tsx`:
+
+```typescript
+const rooms: Room[] = [
+  {
+    id: 1,
+    name: 'Room Name',
+    x: 10,      // X position (0-100)
+    y: 40,      // Y position (0-100)
+    width: 20,  // Width (0-100)
+    height: 20, // Height (0-100)
+    color: '#3b82f6',
+    targetScene: 1 // Links to tour scene
+  },
+  // Add more rooms...
+];
+```
+
+### Adding Gallery Images
+
+Edit the `images` array in `components/Gallery.tsx`:
+
+```typescript
+const images: Image[] = [
+  {
+    id: 1,
+    src: '/gallery/your-image.jpg',
+    title: 'Image Title',
+    description: 'Image description',
+    category: 'Interior' // 'Interior', 'Exterior', or 'Amenities'
+  },
+  // Add more images...
+];
+```
+
+## Features Breakdown
+
+### 360° Tour Viewer
+
+- **Drag Navigation**: Click and drag to look around the panoramic image
+- **Hotspots**: Interactive points that link to other scenes or show information
+- **Scene Navigation**: Use arrows or dots to switch between scenes
+- **Mobile Support**: Touch gestures for mobile devices
+
+### Floor Plan
+
+- **Interactive Rooms**: Click on rooms to view details
+- **Zoom Controls**: Zoom in/out for better visibility
+- **Rotation**: Rotate the floor plan for different orientations
+- **Color-coded**: Each room has a distinct color
+
+### Gallery
+
+- **Category Filter**: Filter by Interior, Exterior, or Amenities
+- **Lightbox View**: Click images to view full-screen
+- **Navigation**: Navigate between images with arrow keys
+- **Responsive Grid**: Adapts to different screen sizes
+
+## Performance Tips
+
+1. **Optimize Images**: Use WebP format for better compression
+2. **Lazy Loading**: Consider implementing lazy loading for gallery images
+3. **CDN**: Host images on a CDN for faster loading
+4. **Image Compression**: Use tools like ImageOptim or TinyPNG
+
+## Browser Support
+
+- Chrome (latest)
+- Firefox (latest)
+- Safari (latest)
+- Edge (latest)
+- Mobile browsers (iOS Safari, Chrome Mobile)
+
+## License
+
+This project is proprietary and confidential.
+
+## Support
+
+For questions or issues, please contact the development team.

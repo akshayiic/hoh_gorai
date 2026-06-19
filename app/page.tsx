@@ -1,65 +1,128 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Building2, ArrowRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+export default function WelcomeExperience() {
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    // Show loading screen for 2.5 seconds
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2500); // 2.5 seconds
+
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="h-screen w-screen bg-black overflow-hidden relative font-sans text-white">
+      <AnimatePresence mode="wait">
+        {loading ? (
+          // FIGMA FRAME: "Loading screen" (ID: 2136:406)
+          <motion.div
+            key="loading"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            className="absolute inset-0 bg-[#162026] flex flex-col items-center justify-center z-50"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 1, ease: "easeOut" }}
+              className="flex flex-col items-center"
+            >
+              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-white/10 border border-white/20 mb-4 shadow-lg shadow-black/35">
+                <Building2 size={36} className="text-white" />
+              </div>
+              <p className="text-xs tracking-[0.4em] text-white/50 mb-2 uppercase">House Of</p>
+              <h1 className="text-3xl font-bold tracking-wider text-white">HIRANANDANI</h1>
+              <div className="h-[2px] w-24 bg-gradient-to-r from-transparent via-amber-500 to-transparent mt-4" />
+            </motion.div>
+
+            <div className="absolute bottom-20 flex flex-col items-center gap-3">
+              <div className="h-1.5 w-48 bg-white/10 rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: "0%" }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 2.2, ease: "easeInOut" }}
+                  className="h-full bg-gradient-to-r from-amber-500 to-yellow-400"
+                />
+              </div>
+              <span className="text-[10px] uppercase tracking-widest text-white/40 animate-pulse">
+                Initializing 360° Tour...
+              </span>
+            </div>
+          </motion.div>
+        ) : (
+          // FIGMA FRAME: "Welcome page" (ID: 2136:418)
+          <motion.div
+            key="welcome"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.2, ease: "easeOut" }}
+            className="absolute inset-0 flex items-center justify-center"
+          >
+            {/* Background image with parallax overlay */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center scale-105"
+              style={{ 
+                backgroundImage: `url('/gallery/building.jpg')`,
+                filter: "brightness(0.4)"
+              }}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+
+            {/* Luxurious gradient overlays */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/60 pointer-events-none" />
+
+            {/* Central glassmorphism card */}
+            <motion.div
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3, duration: 1, ease: "easeOut" }}
+              className="relative z-10 w-[90%] max-w-xl text-center rounded-2xl border border-white/10 bg-black/40 p-8 md:p-12 backdrop-blur-md shadow-2xl shadow-black/80"
+            >
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20 mb-6">
+                <Building2 size={28} className="text-amber-500" />
+              </div>
+
+              <span className="text-xs uppercase tracking-[0.3em] text-amber-500/80 font-medium">
+                Maitri Park, Chembur
+              </span>
+              
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-white mt-2 mb-4">
+                House of Hiranandani
+              </h2>
+              
+              <p className="text-sm text-white/70 leading-relaxed max-w-md mx-auto mb-8">
+                Welcome to a virtual journey of unmatched architecture and layout design. Experience our premium 360° tours, interactive plans, and explore the neighbourhood infrastructure.
+              </p>
+
+              <button
+                onClick={() => {
+                  router.push("/home");
+                }}
+                className="group relative mx-auto flex items-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 px-8 py-4 text-sm font-semibold text-black shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition duration-300"
+              >
+                <span className="relative z-10">Start Tour Experience</span>
+                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform relative z-10" />
+                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-0 bg-white/20 transition-transform duration-300 ease-out" />
+              </button>
+            </motion.div>
+
+            {/* Footer branding */}
+            <div className="absolute bottom-6 left-0 right-0 text-center z-10">
+              <p className="text-[10px] uppercase tracking-widest text-white/30">
+                © 2026 House of Hiranandani. All rights reserved.
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

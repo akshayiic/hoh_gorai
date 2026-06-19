@@ -1,0 +1,20 @@
+{
+  "name": "@figma-bridge/plugin",
+  "version": "1.0.0",
+  "description": "Figma plugin for Desktop Bridge integration",
+  "main": "dist/code.js",
+  "scripts": {
+    "dev": "webpack --mode development --watch",
+    "build": "webpack --mode production",
+    "package": "webpack --mode production && cd ../ && node scripts/package-plugin.js"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.85.0",
+    "@figma/widget-typings": "^1.85.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.3.3",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {}
+}

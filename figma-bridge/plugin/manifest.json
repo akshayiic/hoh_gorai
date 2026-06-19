@@ -1,0 +1,19 @@
+{
+  "name": "Figma Desktop Bridge",
+  "id": "123456789",
+  "api": "1.0.0",
+  "main": "dist/code.js",
+  "editorType": ["figma"],
+  "capabilities": [],
+  "enableProposedApi": false,
+  "networkAccess": {
+    "allowedDomains": [
+      "localhost",
+      "127.0.0.1"
+    ],
+    "allowedDomainsDev": [
+      "localhost",
+      "127.0.0.1"
+    ]
+  }
+}

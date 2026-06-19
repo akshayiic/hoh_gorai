@@ -1,0 +1,93 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Map, Building2, Waves, Hotel } from "lucide-react";
+import Amenities from "@/components/Amenities";
+import Gallery from "@/components/Gallery";
+
+export default function AmenitiesPage() {
+  const [activeTab, setActiveTab] = useState<"amenities" | "gallery">("amenities");
+  const router = useRouter();
+
+  const handleNavigate = (view: string) => {
+    if (view === "amenities") return;
+    router.push(`/${view}`);
+  };
+
+  return (
+    <div className="relative h-screen w-screen bg-[#111827] overflow-hidden flex flex-col justify-between">
+      {/* Top Tab Bar Wrapper */}
+      <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-30 bg-black/60 border border-white/10 backdrop-blur rounded-full p-1 flex">
+        <button
+          onClick={() => setActiveTab("amenities")}
+          className={`px-6 py-2 rounded-full text-sm font-semibold transition ${
+            activeTab === "amenities"
+              ? "bg-amber-500 text-black shadow-lg"
+              : "text-white/70 hover:text-white"
+          }`}
+        >
+          Key Amenities
+        </button>
+        <button
+          onClick={() => setActiveTab("gallery")}
+          className={`px-6 py-2 rounded-full text-sm font-semibold transition ${
+            activeTab === "gallery"
+              ? "bg-amber-500 text-black shadow-lg"
+              : "text-white/70 hover:text-white"
+          }`}
+        >
+          Photo Gallery
+        </button>
+      </div>
+
+      {/* Main View Area */}
+      <div className="flex-1 w-full h-full">
+        {activeTab === "amenities" ? (
+          <Amenities onNavigate={handleNavigate} />
+        ) : (
+          <div className="h-full w-full relative bg-gray-900">
+            <Gallery />
+            
+            {/* Overlay Navigation for Gallery */}
+            <div className="absolute bottom-6 left-7 z-20">
+              <div className="flex overflow-hidden rounded-lg border border-white/10 bg-[#29343B]/95 backdrop-blur">
+                <button
+                  className="flex items-center gap-2 px-6 py-4 text-white/70 hover:bg-white/5"
+                  onClick={() => handleNavigate("location")}
+                >
+                  <Map size={18} />
+                  Location
+                </button>
+
+                <button
+                  className="border-l border-white/10 flex items-center gap-2 px-6 py-4 text-white/70 hover:bg-white/5"
+                  onClick={() => handleNavigate("building")}
+                >
+                  <Building2 size={18} />
+                  Building
+                </button>
+
+                <button
+                  className="border-l border-white/10 flex items-center gap-2 bg-white px-6 py-4 text-sm text-black"
+                  onClick={() => handleNavigate("amenities")}
+                >
+                  <Hotel size={18} />
+                  Amenities
+                </button>
+
+                <button
+                  className="border-l border-white/10 flex items-center gap-2 px-6 py-4 text-white/70 hover:bg-white/5"
+                  onClick={() => handleNavigate("drone")}
+                >
+                  <Waves size={18} />
+                  Drone View
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

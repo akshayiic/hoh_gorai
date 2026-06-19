@@ -1,0 +1,28 @@
+{
+  "name": "figma-desktop-bridge",
+  "version": "1.0.0",
+  "description": "Bridge system for CLI AI agents to interact with Figma Desktop without authentication tokens",
+  "private": true,
+  "workspaces": [
+    "plugin",
+    "server",
+    "shared"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:plugin\" \"npm run dev:server\"",
+    "dev:plugin": "cd plugin && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "build": "npm run build:plugin && npm run build:server",
+    "build:plugin": "cd plugin && npm run build",
+    "build:server": "cd server && npm run build",
+    "package": "cd plugin && npm run package"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
