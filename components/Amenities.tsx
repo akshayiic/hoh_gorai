@@ -13,6 +13,10 @@ import {
   Dumbbell,
   Map,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import BottomNavbar from "@/components/BottomNavbar";
+import GlobalNavbar from "@/components/GlobalNavbar";
+import CompactSidebar from "@/components/CompactSidebar";
 
 interface AmenitiesProps {
   onNavigate?: (view: string) => void;
@@ -88,6 +92,7 @@ const amenities = {
 };
 
 export default function Amenities({ onNavigate }: AmenitiesProps) {
+  const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState("outdoor");
 
   return (
@@ -100,71 +105,29 @@ export default function Amenities({ onNavigate }: AmenitiesProps) {
         }} />
       </div>
 
-      {/* LOGO */}
-      <div className="absolute left-7 top-5 z-20">
-        <div className="flex items-center gap-3 rounded-md bg-[#29343B]/90 px-4 py-3 backdrop-blur-sm">
-          <div className="flex h-10 w-10 items-center justify-center rounded bg-white/10">
-            <Building2 size={20} className="text-white" />
-          </div>
-
-          <div>
-            <p className="text-xs tracking-[0.3em] text-white/60">HOUSE OF</p>
-            <h3 className="text-lg font-semibold text-white">HIRANANDANI</h3>
-          </div>
-        </div>
-      </div>
-
-      {/* TOP ACTIONS */}
-      <div className="absolute right-6 top-5 z-20 flex items-center gap-2">
-        <button className="rounded bg-black/60 px-4 py-2 text-sm text-white backdrop-blur hover:bg-black/70">
-          ← Go Back
-        </button>
-        <button className="rounded bg-black/60 px-4 py-2 text-sm text-white backdrop-blur hover:bg-black/70">
-          RERA
-        </button>
-      </div>
+      {/* Global Navbar */}
+      <GlobalNavbar currentPage="amenities" showRERA={true} />
 
       {/* SIDEBAR */}
-      <aside className="absolute left-7 top-1/2 z-20 w-[280px] -translate-y-1/2 rounded-lg border border-white/10 bg-[#2B363D]/85 backdrop-blur-md">
-        <div className="p-5">
-          <div className="mb-6 flex items-center gap-3">
-            <div className="rounded bg-white/5 p-2">
-              <Building2 size={18} className="text-white" />
-            </div>
-
-            <div>
-              <p className="text-[10px] uppercase tracking-wide text-white/40">
-                Explore
-              </p>
-              <h3 className="text-lg text-white">Amenities</h3>
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            {Object.keys(amenities).map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`flex w-full items-center gap-3 rounded px-3 py-3 text-left transition capitalize ${
-                  selectedCategory === category
-                    ? "bg-white/8 text-white"
-                    : "text-white/60 hover:bg-white/5"
-                }`}
-              >
-                <span className="text-sm">{category}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </aside>
+      <CompactSidebar
+        icon={Building2}
+        title="Amenities"
+        subtitle="Explore"
+        items={Object.keys(amenities).map((category) => ({
+          id: category,
+          label: category,
+          onClick: () => setSelectedCategory(category),
+          isActive: selectedCategory === category
+        }))}
+      />
 
       {/* AMENITIES LIST PANEL */}
-      <div className="absolute left-[330px] top-1/2 z-20 w-[400px] -translate-y-1/2 rounded-lg border border-white/10 bg-[#2B363D]/90 backdrop-blur-md">
-        <div className="border-b border-white/10 px-5 py-4">
+      <div className="absolute left-[330px] top-[140px] bottom-[110px] z-20 w-[400px] rounded-lg border border-white/10 bg-[#2B363D]/90 backdrop-blur-md flex flex-col">
+        <div className="border-b border-white/10 px-5 py-4 shrink-0">
           <h4 className="text-white capitalize">{selectedCategory} Amenities</h4>
         </div>
 
-        <div className="p-4 space-y-3 max-h-[600px] overflow-y-auto">
+        <div className="p-4 space-y-3 flex-1 overflow-y-auto scrollbar-hide">
           {amenities[selectedCategory as keyof typeof amenities]?.map((amenity) => {
             const Icon = amenity.icon;
             return (
@@ -195,41 +158,7 @@ export default function Amenities({ onNavigate }: AmenitiesProps) {
       </div>
 
       {/* BOTTOM NAV */}
-      <div className="absolute bottom-6 left-7 z-20">
-        <div className="flex overflow-hidden rounded-lg border border-white/10 bg-[#29343B]/95 backdrop-blur">
-          <button
-            className="flex items-center gap-2 px-6 py-4 text-white/70 hover:bg-white/5"
-            onClick={() => onNavigate?.("location")}
-          >
-            <Map size={18} />
-            Location
-          </button>
-
-          <button
-            className="border-l border-white/10 flex items-center gap-2 px-6 py-4 text-white/70 hover:bg-white/5"
-            onClick={() => onNavigate?.("building")}
-          >
-            <Building2 size={18} />
-            Project
-          </button>
-
-          <button
-            className="border-l border-white/10 flex items-center gap-2 bg-white px-6 py-4 text-sm text-black"
-            onClick={() => onNavigate?.("amenities")}
-          >
-            <Hotel size={18} />
-            Amenities
-          </button>
-
-          <button
-            className="border-l border-white/10 flex items-center gap-2 px-6 py-4 text-white/70 hover:bg-white/5"
-            onClick={() => onNavigate?.("drone")}
-          >
-            <Waves size={18} />
-            Drone View
-          </button>
-        </div>
-      </div>
+      <BottomNavbar activeItem="amenities" />
     </section>
   );
 }

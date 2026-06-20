@@ -6,6 +6,8 @@ import { Map, Building2, Waves, Hotel, Home, HelpCircle } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const InteriorTour = dynamic(() => import("./InteriorTour"), { ssr: false });
+import BottomNavbar from "@/components/BottomNavbar";
+import GlobalNavbar from "@/components/GlobalNavbar";
 
 interface HotspotConfig {
   pitch: number;
@@ -118,28 +120,19 @@ export default function VirtualTourViewer({ sceneId }: VirtualTourViewerProps) {
         <InteriorTour scene={scene} onSceneChange={handleSceneChange} />
       </div>
 
-      {/* Header Panel */}
-      <header className="absolute top-5 left-7 z-20 flex items-center justify-between right-7">
-        <div className="flex items-center gap-3 rounded-md bg-[#29343B]/90 px-4 py-3 backdrop-blur-sm">
-          <div className="flex h-10 w-10 items-center justify-center rounded bg-white/10">
-            <Building2 size={20} className="text-white" />
-          </div>
-          <div>
-            <p className="text-xs tracking-[0.3em] text-amber-500 font-semibold uppercase">360° Interior Tour</p>
-            <h3 className="text-lg font-semibold text-white">{scene.name}</h3>
-          </div>
-        </div>
+      {/* Global Navbar */}
+      <GlobalNavbar currentPage="tour" />
 
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={() => router.push("/home")}
-            className="rounded bg-black/60 hover:bg-black/80 px-4 py-2.5 text-sm text-white backdrop-blur border border-white/10 flex items-center gap-2 transition"
-          >
-            <Home size={16} />
-            Dashboard
-          </button>
+      {/* Tour Information */}
+      <div className="absolute top-20 left-7 z-20 flex items-center gap-3 rounded-md bg-[#29343B]/90 px-4 py-3 backdrop-blur-sm">
+        <div className="flex h-10 w-10 items-center justify-center rounded bg-white/10">
+          <Building2 size={20} className="text-white" />
         </div>
-      </header>
+        <div>
+          <p className="text-xs tracking-[0.3em] text-amber-500 font-semibold uppercase">360° Interior Tour</p>
+          <h3 className="text-lg font-semibold text-white">{scene.name}</h3>
+        </div>
+      </div>
 
       {/* MINI FLOOR PLAN IN CORNER */}
       <div className="absolute bottom-24 right-6 z-20 bg-slate-950/80 border border-white/10 rounded-xl p-4 w-[240px] backdrop-blur-md shadow-2xl">
@@ -203,41 +196,7 @@ export default function VirtualTourViewer({ sceneId }: VirtualTourViewerProps) {
       </div>
 
       {/* BOTTOM NAV */}
-      <div className="absolute bottom-6 left-7 z-20">
-        <div className="flex overflow-hidden rounded-lg border border-white/10 bg-[#29343B]/95 backdrop-blur">
-          <button
-            className="flex items-center gap-2 px-6 py-4 text-white/70 hover:bg-white/5"
-            onClick={() => handleNavigate("location")}
-          >
-            <Map size={18} />
-            Location
-          </button>
-
-          <button
-            className="border-l border-white/10 flex items-center gap-2 px-6 py-4 text-white/70 hover:bg-white/5"
-            onClick={() => handleNavigate("building")}
-          >
-            <Building2 size={18} />
-            Building
-          </button>
-
-          <button
-            className="border-l border-white/10 flex items-center gap-2 px-6 py-4 text-white/70 hover:bg-white/5"
-            onClick={() => handleNavigate("drone")}
-          >
-            <Waves size={18} />
-            Drone View
-          </button>
-
-          <button
-            className="border-l border-white/10 flex items-center gap-2 px-6 py-4 text-white/70 hover:bg-white/5"
-            onClick={() => handleNavigate("amenities")}
-          >
-            <Hotel size={18} />
-            Amenities
-          </button>
-        </div>
-      </div>
+      <BottomNavbar activeItem="apartments" />
     </div>
   );
 }

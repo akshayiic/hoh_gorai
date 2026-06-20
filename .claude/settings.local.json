@@ -12,7 +12,11 @@
       "Bash(cmd.exe /c \"taskkill /PID 4564 /F\")",
       "Bash(netstat -ano)",
       "Bash(powershell \"Get-NetTCPConnection -LocalPort 3000 -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess\")",
-      "Bash(curl -s http://localhost:3000)"
+      "Bash(curl -s http://localhost:3000)",
+      "WebSearch",
+      "Bash(curl -s http://localhost:3000/apartments)",
+      "Bash(curl -s http://localhost:3000/home)",
+      "Bash(findstr :3000)"
     ]
   }
 }

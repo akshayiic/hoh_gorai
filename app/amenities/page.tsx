@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Map, Building2, Waves, Hotel } from "lucide-react";
 import Amenities from "@/components/Amenities";
 import Gallery from "@/components/Gallery";
+import BottomNavbar from "@/components/BottomNavbar";
 
 export default function AmenitiesPage() {
   const [activeTab, setActiveTab] = useState<"amenities" | "gallery">("amenities");
@@ -49,42 +50,8 @@ export default function AmenitiesPage() {
           <div className="h-full w-full relative bg-gray-900">
             <Gallery />
             
-            {/* Overlay Navigation for Gallery */}
-            <div className="absolute bottom-6 left-7 z-20">
-              <div className="flex overflow-hidden rounded-lg border border-white/10 bg-[#29343B]/95 backdrop-blur">
-                <button
-                  className="flex items-center gap-2 px-6 py-4 text-white/70 hover:bg-white/5"
-                  onClick={() => handleNavigate("location")}
-                >
-                  <Map size={18} />
-                  Location
-                </button>
-
-                <button
-                  className="border-l border-white/10 flex items-center gap-2 px-6 py-4 text-white/70 hover:bg-white/5"
-                  onClick={() => handleNavigate("building")}
-                >
-                  <Building2 size={18} />
-                  Building
-                </button>
-
-                <button
-                  className="border-l border-white/10 flex items-center gap-2 bg-white px-6 py-4 text-sm text-black"
-                  onClick={() => handleNavigate("amenities")}
-                >
-                  <Hotel size={18} />
-                  Amenities
-                </button>
-
-                <button
-                  className="border-l border-white/10 flex items-center gap-2 px-6 py-4 text-white/70 hover:bg-white/5"
-                  onClick={() => handleNavigate("drone")}
-                >
-                  <Waves size={18} />
-                  Drone View
-                </button>
-              </div>
-            </div>
+            {/* Center Navigation for Gallery */}
+            <BottomNavbar activeItem="amenities" />
           </div>
         )}
       </div>

@@ -1,6 +1,9 @@
 "use client";
 
 import { Building2, Ruler, Bed, Calendar, Award, MapPin, Map, Waves, Hotel } from "lucide-react";
+import { useRouter } from "next/navigation";
+import BottomNavbar from "@/components/BottomNavbar";
+import GlobalNavbar from "@/components/GlobalNavbar";
 
 interface BuildingInfoProps {
   onNavigate?: (view: string) => void;
@@ -32,6 +35,7 @@ const projectInfo = {
 };
 
 export default function BuildingInfo({ onNavigate }: BuildingInfoProps) {
+  const router = useRouter();
   return (
     <section className="relative h-screen w-full overflow-hidden bg-gradient-to-br from-gray-900 to-gray-800">
       {/* Background Pattern */}
@@ -42,29 +46,8 @@ export default function BuildingInfo({ onNavigate }: BuildingInfoProps) {
         }} />
       </div>
 
-      {/* LOGO */}
-      <div className="absolute left-7 top-5 z-20">
-        <div className="flex items-center gap-3 rounded-md bg-[#29343B]/90 px-4 py-3 backdrop-blur-sm">
-          <div className="flex h-10 w-10 items-center justify-center rounded bg-white/10">
-            <Building2 size={20} className="text-white" />
-          </div>
-
-          <div>
-            <p className="text-xs tracking-[0.3em] text-white/60">HOUSE OF</p>
-            <h3 className="text-lg font-semibold text-white">HIRANANDANI</h3>
-          </div>
-        </div>
-      </div>
-
-      {/* TOP ACTIONS */}
-      <div className="absolute right-6 top-5 z-20 flex items-center gap-2">
-        <button className="rounded bg-black/60 px-4 py-2 text-sm text-white backdrop-blur hover:bg-black/70">
-          ← Go Back
-        </button>
-        <button className="rounded bg-black/60 px-4 py-2 text-sm text-white backdrop-blur hover:bg-black/70">
-          RERA
-        </button>
-      </div>
+      {/* Global Navbar */}
+      <GlobalNavbar currentPage="apartments" showRERA={true} />
 
       {/* MAIN CONTENT */}
       <div className="absolute left-1/2 top-1/2 z-20 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 px-4">
@@ -149,41 +132,7 @@ export default function BuildingInfo({ onNavigate }: BuildingInfoProps) {
       </div>
 
       {/* BOTTOM NAV */}
-      <div className="absolute bottom-6 left-7 z-20">
-        <div className="flex overflow-hidden rounded-lg border border-white/10 bg-[#29343B]/95 backdrop-blur">
-          <button
-            className="flex items-center gap-2 px-6 py-4 text-white/70 hover:bg-white/5"
-            onClick={() => onNavigate?.("location")}
-          >
-            <Map size={18} />
-            Location
-          </button>
-
-          <button
-            className="border-l border-white/10 flex items-center gap-2 bg-white px-6 py-4 text-sm text-black"
-            onClick={() => onNavigate?.("building")}
-          >
-            <Building2 size={18} />
-            Project
-          </button>
-
-          <button
-            className="border-l border-white/10 flex items-center gap-2 px-6 py-4 text-white/70 hover:bg-white/5"
-            onClick={() => onNavigate?.("amenities")}
-          >
-            <Bed size={18} />
-            Amenities
-          </button>
-
-          <button
-            className="border-l border-white/10 flex items-center gap-2 px-6 py-4 text-white/70 hover:bg-white/5"
-            onClick={() => onNavigate?.("drone")}
-          >
-            <Waves size={18} />
-            Drone View
-          </button>
-        </div>
-      </div>
+      <BottomNavbar activeItem="apartments" />
     </section>
   );
 }

@@ -7,118 +7,187 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function WelcomeExperience() {
   const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
   const router = useRouter();
 
-  useEffect(() => {
-    // Show loading screen for 2.5 seconds
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 2500); // 2.5 seconds
+  // Circular progress math
+  const radius = 55;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
 
-    return () => clearTimeout(timer);
+  useEffect(() => {
+    const duration = 2500; // 2.5 seconds total loading
+    const intervalTime = 25; // 25ms increments
+    const totalSteps = duration / intervalTime;
+    let step = 0;
+
+    const timer = setInterval(() => {
+      step++;
+      const currentProgress = Math.min(
+        Math.round((step / totalSteps) * 100),
+        100,
+      );
+      setProgress(currentProgress);
+
+      if (step >= totalSteps) {
+        clearInterval(timer);
+        setLoading(false);
+      }
+    }, intervalTime);
+
+    return () => clearInterval(timer);
   }, []);
 
   return (
     <div className="h-screen w-screen bg-black overflow-hidden relative font-sans text-white">
       <AnimatePresence mode="wait">
         {loading ? (
-          // FIGMA FRAME: "Loading screen" (ID: 2136:406)
+          // LOADING SCREEN (Reflecting the screenshot design)
           <motion.div
             key="loading"
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
-            className="absolute inset-0 bg-[#162026] flex flex-col items-center justify-center z-50"
+            transition={{ duration: 0.6, ease: "easeInOut" }}
+            className="absolute inset-0 bg-[#111111] flex flex-col items-center justify-center z-50"
           >
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className="flex flex-col items-center"
-            >
-              <div className="flex h-16 w-16 items-center justify-center rounded-lg bg-white/10 border border-white/20 mb-4 shadow-lg shadow-black/35">
-                <Building2 size={36} className="text-white" />
-              </div>
-              <p className="text-xs tracking-[0.4em] text-white/50 mb-2 uppercase">House Of</p>
-              <h1 className="text-3xl font-bold tracking-wider text-white">HIRANANDANI</h1>
-              <div className="h-[2px] w-24 bg-gradient-to-r from-transparent via-amber-500 to-transparent mt-4" />
-            </motion.div>
-
-            <div className="absolute bottom-20 flex flex-col items-center gap-3">
-              <div className="h-1.5 w-48 bg-white/10 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: "0%" }}
-                  animate={{ width: "100%" }}
-                  transition={{ duration: 2.2, ease: "easeInOut" }}
-                  className="h-full bg-gradient-to-r from-amber-500 to-yellow-400"
+            <div className="relative flex items-center justify-center mb-8">
+              {/* Circular SVG Progress */}
+              <svg className="w-36 h-36 transform -rotate-90">
+                {/* Background Ring */}
+                <circle
+                  cx="72"
+                  cy="72"
+                  r={radius}
+                  className="text-white/5"
+                  strokeWidth="1.5"
+                  stroke="currentColor"
+                  fill="transparent"
                 />
-              </div>
-              <span className="text-[10px] uppercase tracking-widest text-white/40 animate-pulse">
-                Initializing 360° Tour...
+                {/* Active Progress Ring */}
+                <circle
+                  cx="72"
+                  cy="72"
+                  r={radius}
+                  className="text-amber-500/80 transition-all duration-75"
+                  strokeWidth="1.5"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="transparent"
+                />
+              </svg>
+              {/* Central Serif Percentage */}
+              <span className="absolute text-3xl font-serif italic font-normal tracking-wide text-white/90">
+                {progress}%
               </span>
+            </div>
+
+            {/* Labels */}
+            <div className="text-center space-y-1">
+              <h2 className="text-sm uppercase tracking-[0.2em] font-medium text-white/80">
+                Loading Experience
+              </h2>
+              <p className="text-[10px] uppercase tracking-[0.15em] text-white/40">
+                Please Wait
+              </p>
             </div>
           </motion.div>
         ) : (
-          // FIGMA FRAME: "Welcome page" (ID: 2136:418)
+          // WELCOME SCREEN (Reflecting the Home Screen screenshot design)
           <motion.div
             key="welcome"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 1.2, ease: "easeOut" }}
-            className="absolute inset-0 flex items-center justify-center"
+            transition={{ duration: 1.2 }}
+            className="absolute inset-0 overflow-hidden"
           >
-            {/* Background image with parallax overlay */}
-            <div 
-              className="absolute inset-0 bg-cover bg-center scale-105"
-              style={{ 
-                backgroundImage: `url('/gallery/building.jpg')`,
-                filter: "brightness(0.4)"
+            {/* Background */}
+            <div
+              className="absolute inset-0 bg-cover bg-center"
+              style={{
+                backgroundImage: `url('/gallery/explore_bg.png')`,
               }}
             />
 
-            {/* Luxurious gradient overlays */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-black/60 pointer-events-none" />
+            {/* Dark overlay */}
+            <div className="absolute inset-0 bg-black/45" />
 
-            {/* Central glassmorphism card */}
-            <motion.div
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.3, duration: 1, ease: "easeOut" }}
-              className="relative z-10 w-[90%] max-w-xl text-center rounded-2xl border border-white/10 bg-black/40 p-8 md:p-12 backdrop-blur-md shadow-2xl shadow-black/80"
-            >
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-lg bg-amber-500/10 border border-amber-500/20 mb-6">
-                <Building2 size={28} className="text-amber-500" />
+            {/* Vignette */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(circle at center, transparent 15%, rgba(0,0,0,.85) 100%)",
+              }}
+            />
+
+            {/* Warm center glow */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(circle at center, rgba(193,140,71,.18), transparent 50%)",
+              }}
+            />
+
+            {/* Grid */}
+            <div className="absolute inset-0 pointer-events-none">
+              {/* Vertical */}
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:60px_60px]" />
+
+              {/* Horizontal */}
+              <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:60px_60px]" />
+            </div>
+
+            {/* Center Cross Glow */}
+            <div className="absolute left-1/2 top-0 h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent -translate-x-1/2" />
+            <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-y-1/2" />
+
+            {/* Content */}
+            <div className="relative z-10 flex h-full flex-col items-center justify-center text-center px-6">
+              {/* Logo */}
+              <div className="absolute top-4 left-1/2 -translate-x-1/2">
+                <img
+                  src="/gallery/hoh-logo.png"
+                  alt=""
+                  className="h-30 object-contain"
+                />
               </div>
 
-              <span className="text-xs uppercase tracking-[0.3em] text-amber-500/80 font-medium">
-                Maitri Park, Chembur
-              </span>
-              
-              <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-white mt-2 mb-4">
-                House of Hiranandani
-              </h2>
-              
-              <p className="text-sm text-white/70 leading-relaxed max-w-md mx-auto mb-8">
-                Welcome to a virtual journey of unmatched architecture and layout design. Experience our premium 360° tours, interactive plans, and explore the neighbourhood infrastructure.
+              {/* Intro */}
+              <p className="text-white/70 text-lg md:text-2xl font-light mb-2">
+                In the Heart of
               </p>
 
+              {/* Heading */}
+              <h1 className="text-white font-light leading-none">
+                <span className="block text-5xl md:text-7xl">
+                  Discover{" "}
+                  <span className="font-serif italic font-normal">Life</span> at
+                </span>
+
+                <span className="block mt-2 text-5xl md:text-7xl">
+                  House of Hiranandani
+                </span>
+              </h1>
+
+              {/* Description */}
+              <p className="text-white/80 text-lg md:text-2xl font-light mb-4">
+                Journey to Iconic Skylines Shaped by Timeless Design
+              </p>
+
+              {/* CTA */}
               <button
-                onClick={() => {
-                  router.push("/home");
-                }}
-                className="group relative mx-auto flex items-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 px-8 py-4 text-sm font-semibold text-black shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40 transition duration-300"
+                onClick={() => router.push("/location")}
+                className="group   text-white font-semibold text-2xl absolute bottom-[15rem] cursor-pointer "
               >
-                <span className="relative z-10">Start Tour Experience</span>
-                <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform relative z-10" />
-                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-0 bg-white/20 transition-transform duration-300 ease-out" />
-              </button>
-            </motion.div>
+                <span className="relative z-10">Explore Now</span>
 
-            {/* Footer branding */}
-            <div className="absolute bottom-6 left-0 right-0 text-center z-10">
-              <p className="text-[10px] uppercase tracking-widest text-white/30">
-                © 2026 House of Hiranandani. All rights reserved.
-              </p>
+                {/* Decorative corners */}
+                <span className="absolute -right-6 -top-3 w-8 h-8 border-r-2 border-t-2 border-[#C79A59] " />
+                <span className="absolute -left-6 -bottom-3 w-8 h-8 border-l-2 border-b-2 border-[#C79A59] " />
+              </button>
             </div>
           </motion.div>
         )}

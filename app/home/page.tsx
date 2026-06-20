@@ -1,57 +1,52 @@
 "use client";
 
 import Link from "next/link";
-import { 
-  Building2, 
-  Map, 
-  Waves, 
-  Hotel, 
-  Compass, 
+import {
+  Building2,
+  Map,
+  Waves,
+  Hotel,
+  Compass,
   ArrowRight,
-  Sparkles
+  Sparkles,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
 const navItems = [
   {
     title: "Interactive Map",
-    description: "Explore connectivity, schools, shopping and infrastructure surrounding Maitri Park.",
+    description:
+      "Explore connectivity, schools, shopping and infrastructure surrounding Maitri Park.",
     icon: Map,
     href: "/location",
     color: "from-blue-500/20 to-cyan-500/20",
-    hoverColor: "group-hover:text-cyan-400"
+    hoverColor: "group-hover:text-cyan-400",
   },
   {
-    title: "Floor Plan & Building",
-    description: "Navigate rooms, view dimensions, and jump straight into 360° room panorama tours.",
+    title: "Floor Plan & Apartments",
+    description:
+      "Navigate rooms, view dimensions, and jump straight into 360° room panorama tours.",
     icon: Building2,
-    href: "/building",
+    href: "/apartments",
     color: "from-purple-500/20 to-indigo-500/20",
-    hoverColor: "group-hover:text-indigo-400"
+    hoverColor: "group-hover:text-indigo-400",
   },
   {
-    title: "360° Drone View",
-    description: "Soar above the landscape and check out beautiful 360° aerial panoramas of the area.",
+    title: "360° Balcony View",
+    description:
+      "Soar above the landscape and check out beautiful 360° aerial panoramas of the area.",
     icon: Waves,
-    href: "/drone",
+    href: "/balcony",
     color: "from-emerald-500/20 to-teal-500/20",
-    hoverColor: "group-hover:text-teal-400"
+    hoverColor: "group-hover:text-teal-400",
   },
-  {
-    title: "Amenities & Gallery",
-    description: "Browse high-definition photography of internal spaces, clubhouses and landscape features.",
-    icon: Hotel,
-    href: "/amenities",
-    color: "from-amber-500/20 to-orange-500/20",
-    hoverColor: "group-hover:text-amber-400"
-  }
 ];
 
 export default function HomeDashboard() {
   return (
     <div className="min-h-screen w-screen bg-[#0F172A] text-white font-sans overflow-x-hidden relative flex flex-col justify-between">
       {/* Background Image with Overlay */}
-      <div 
+      <div
         className="absolute inset-0 bg-cover bg-center opacity-25 scale-105 pointer-events-none"
         style={{ backgroundImage: `url('/gallery/lobby.jpg')` }}
       />
@@ -65,8 +60,12 @@ export default function HomeDashboard() {
               <Building2 size={20} className="text-amber-500" />
             </div>
             <div>
-              <p className="text-[10px] tracking-[0.3em] text-white/50 uppercase">HOUSE OF</p>
-              <h3 className="text-lg font-bold text-white tracking-wider">HIRANANDANI</h3>
+              <p className="text-[10px] tracking-[0.3em] text-white/50 uppercase">
+                HOUSE OF
+              </p>
+              <h3 className="text-lg font-bold text-white tracking-wider">
+                HIRANANDANI
+              </h3>
             </div>
           </div>
           <span className="text-xs uppercase tracking-widest text-amber-500/80 bg-amber-500/5 border border-amber-500/10 px-3 py-1 rounded-full">
@@ -87,7 +86,7 @@ export default function HomeDashboard() {
             <Sparkles size={16} />
             <span>Interactive Virtual Experience</span>
           </motion.div>
-          <motion.h1 
+          <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.8 }}
@@ -101,7 +100,9 @@ export default function HomeDashboard() {
             transition={{ delay: 0.2, duration: 0.8 }}
             className="text-white/60 text-sm md:text-base leading-relaxed"
           >
-            Navigate through our comprehensive tour module. Select one of the categories below to explore the location, building details, aerial drone view, or walk straight inside the 360° interior walkthrough.
+            Navigate through our comprehensive tour module. Select one of the
+            categories below to explore the location, apartment details, aerial
+            balcony view, or walk straight inside the 360° interior walkthrough.
           </motion.p>
         </div>
 
@@ -114,19 +115,33 @@ export default function HomeDashboard() {
                 key={item.title}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * index + 0.3, duration: 0.8, ease: "easeOut" }}
+                transition={{
+                  delay: 0.1 * index + 0.3,
+                  duration: 0.8,
+                  ease: "easeOut",
+                }}
               >
                 <Link
                   href={item.href}
                   className="group block h-full rounded-2xl border border-white/5 bg-slate-900/60 p-6 md:p-8 backdrop-blur-sm hover:bg-slate-900/80 hover:border-white/10 transition-all duration-300 hover:shadow-xl hover:shadow-black/25"
                 >
                   <div className="flex items-start justify-between">
-                    <div className={`p-3 rounded-xl bg-gradient-to-br ${item.color} border border-white/5 mb-4`}>
-                      <Icon size={24} className="text-white group-hover:scale-110 transition-transform duration-300" />
+                    <div
+                      className={`p-3 rounded-xl bg-gradient-to-br ${item.color} border border-white/5 mb-4`}
+                    >
+                      <Icon
+                        size={24}
+                        className="text-white group-hover:scale-110 transition-transform duration-300"
+                      />
                     </div>
-                    <ArrowRight size={18} className="text-white/30 group-hover:text-white group-hover:translate-x-1 transition-all duration-300" />
+                    <ArrowRight
+                      size={18}
+                      className="text-white/30 group-hover:text-white group-hover:translate-x-1 transition-all duration-300"
+                    />
                   </div>
-                  <h3 className={`text-xl font-semibold mb-2 transition-colors duration-300 ${item.hoverColor}`}>
+                  <h3
+                    className={`text-xl font-semibold mb-2 transition-colors duration-300 ${item.hoverColor}`}
+                  >
                     {item.title}
                   </h3>
                   <p className="text-white/50 text-sm leading-relaxed">
@@ -150,9 +165,13 @@ export default function HomeDashboard() {
               <Compass size={24} className="text-amber-500 animate-spin-slow" />
             </div>
             <div>
-              <h4 className="text-lg font-bold text-white mb-1">Ready for the Walkthrough?</h4>
+              <h4 className="text-lg font-bold text-white mb-1">
+                Ready for the Walkthrough?
+              </h4>
               <p className="text-white/60 text-sm max-w-xl">
-                Enter the premium 360° interior virtual tour of Maitri Park. Directly walk through the entrance, living room, master bedroom, kitchen and balcony.
+                Enter the premium 360° interior virtual tour of Maitri Park.
+                Directly walk through the entrance, living room, master bedroom,
+                kitchen and balcony.
               </p>
             </div>
           </div>
@@ -168,7 +187,10 @@ export default function HomeDashboard() {
 
       {/* Footer */}
       <footer className="relative z-10 p-6 border-t border-white/5 text-center text-xs text-white/30">
-        <p>© 2026 House of Hiranandani. All rights reserved. Created for Maitri Park Virtual Tour.</p>
+        <p>
+          © 2026 House of Hiranandani. All rights reserved. Created for Maitri
+          Park Virtual Tour.
+        </p>
       </footer>
     </div>
   );

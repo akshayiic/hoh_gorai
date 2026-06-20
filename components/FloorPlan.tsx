@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, ZoomIn, ZoomOut, RotateCw } from 'lucide-react';
+import { X, ZoomIn, ZoomOut, RotateCw, Building2 } from 'lucide-react';
 
 interface Room {
   id: number;
@@ -15,19 +15,56 @@ interface Room {
   targetScene?: number;
 }
 
-const rooms: Room[] = [
-  { id: 1, name: 'Entrance', x: 10, y: 40, width: 20, height: 20, color: '#3b82f6', targetScene: 1 },
-  { id: 2, name: 'Living Room', x: 30, y: 40, width: 30, height: 20, color: '#10b981', targetScene: 2 },
-  { id: 3, name: 'Kitchen', x: 60, y: 40, width: 20, height: 20, color: '#f59e0b', targetScene: 3 },
-  { id: 4, name: 'Master Bedroom', x: 30, y: 10, width: 30, height: 25, color: '#8b5cf6', targetScene: 4 },
-  { id: 5, name: 'Balcony', x: 60, y: 10, width: 25, height: 20, color: '#ec4899', targetScene: 5 },
-];
+interface FloorPlanProps {
+  selectedTower?: 1 | 2 | 3;
+  selectedFloor?: string | null;
+  onFloorSelect?: (floor: string) => void;
+}
 
-export default function FloorPlan() {
+const towerConfigs = {
+  1: {
+    name: "Tower 1 - Premium Residences",
+    floors: ["Ground Floor", "1st Floor", "2nd Floor", "3rd Floor", "4th Floor", "5th Floor"],
+    rooms: [
+      { id: 1, name: 'Entrance', x: 10, y: 40, width: 20, height: 20, color: '#3b82f6', targetScene: 1 },
+      { id: 2, name: 'Living Room', x: 30, y: 40, width: 30, height: 20, color: '#10b981', targetScene: 2 },
+      { id: 3, name: 'Kitchen', x: 60, y: 40, width: 20, height: 20, color: '#f59e0b', targetScene: 3 },
+      { id: 4, name: 'Master Bedroom', x: 30, y: 10, width: 30, height: 25, color: '#8b5cf6', targetScene: 4 },
+      { id: 5, name: 'Balcony', x: 60, y: 10, width: 25, height: 20, color: '#ec4899', targetScene: 5 },
+    ]
+  },
+  2: {
+    name: "Tower 2 - Family Apartments",
+    floors: ["Ground Floor", "1st Floor", "2nd Floor", "3rd Floor", "4th Floor"],
+    rooms: [
+      { id: 1, name: 'Entrance', x: 10, y: 40, width: 25, height: 20, color: '#3b82f6', targetScene: 1 },
+      { id: 2, name: 'Living Room', x: 35, y: 40, width: 35, height: 20, color: '#10b981', targetScene: 2 },
+      { id: 3, name: 'Kitchen', x: 10, y: 15, width: 25, height: 20, color: '#f59e0b', targetScene: 3 },
+      { id: 4, name: 'Master Bedroom', x: 35, y: 15, width: 35, height: 20, color: '#8b5cf6', targetScene: 4 },
+      { id: 5, name: 'Balcony', x: 70, y: 15, width: 20, height: 45, color: '#ec4899', targetScene: 5 },
+    ]
+  },
+  3: {
+    name: "Tower 3 - Luxury Penthouses",
+    floors: ["Ground Floor", "1st Floor", "2nd Floor", "3rd Floor"],
+    rooms: [
+      { id: 1, name: 'Grand Entrance', x: 5, y: 40, width: 25, height: 25, color: '#3b82f6', targetScene: 1 },
+      { id: 2, name: 'Living Room', x: 30, y: 40, width: 40, height: 25, color: '#10b981', targetScene: 2 },
+      { id: 3, name: 'Kitchen', x: 5, y: 10, width: 25, height: 25, color: '#f59e0b', targetScene: 3 },
+      { id: 4, name: 'Master Suite', x: 30, y: 10, width: 40, height: 25, color: '#8b5cf6', targetScene: 4 },
+      { id: 5, name: 'Panoramic Balcony', x: 70, y: 10, width: 25, height: 55, color: '#ec4899', targetScene: 5 },
+    ]
+  }
+};
+
+export default function FloorPlan({ selectedTower = 1, selectedFloor, onFloorSelect }: FloorPlanProps) {
   const router = useRouter();
   const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
+
+  const currentTower = towerConfigs[selectedTower];
+  const rooms = currentTower.rooms;
 
   const handleRoomClick = (room: Room) => {
     if (room.targetScene) {
@@ -63,8 +100,38 @@ export default function FloorPlan() {
         </button>
       </div>
 
+      {/* Tower Information */}
+      <div className="absolute top-24 left-1/2 transform -translate-x-1/2 bg-black/70 backdrop-blur-sm text-white px-6 py-3 rounded-lg">
+        <div className="flex items-center gap-2">
+          <Building2 size={18} className="text-amber-500" />
+          <div className="text-center">
+            <h3 className="font-semibold">{currentTower.name}</h3>
+            {selectedFloor && <p className="text-xs text-white/70">{selectedFloor}</p>}
+          </div>
+        </div>
+      </div>
+
+      {/* Floor Selection */}
+      <div className="absolute top-40 left-1/2 transform -translate-x-1/2">
+        <div className="flex flex-wrap justify-center gap-2 max-w-md">
+          {currentTower.floors.map((floor) => (
+            <button
+              key={floor}
+              onClick={() => onFloorSelect?.(floor)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
+                selectedFloor === floor
+                  ? 'bg-amber-500 text-black'
+                  : 'bg-white/10 text-white hover:bg-white/20'
+              }`}
+            >
+              {floor}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Floor Plan Container */}
-      <div className="h-full w-full flex items-center justify-center p-8">
+      <div className="h-full w-full flex items-center justify-center p-8 pt-32">
         <div
           className="relative bg-white rounded-lg shadow-2xl overflow-hidden"
           style={{
