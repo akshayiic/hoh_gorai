@@ -39,7 +39,9 @@ export default function Sidebar({
   className = "",
 }: SidebarProps) {
   return (
-    <aside className={`absolute left-8 top-[12rem] z-20 hidden lg:block ${className}`}>
+    <aside
+      className={`absolute left-8 sm:top-[6rem] top-[4rem] lg:top-[8rem] z-20 hidden lg:block ${className}`}
+    >
       <div className="rounded-2xl bg-[#0a0a0a]/80 backdrop-blur-2xl overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.7)] border border-white/8 w-80 max-h-[calc(100vh-14rem)]">
         <div className="p-5 overflow-y-auto max-h-[calc(100vh-14rem)]">
           {/* Header */}
@@ -51,7 +53,7 @@ export default function Sidebar({
                 </div>
               )}
 
-              <div className={`${header.icon ? 'flex-1 pt-2' : 'flex-1'}`}>
+              <div className={`${header.icon ? "flex-1 pt-2" : "flex-1"}`}>
                 {header.subtitle && (
                   <p className="text-[9px] uppercase tracking-[0.2em] text-white/40 leading-none mb-2">
                     {header.subtitle}
@@ -101,9 +103,7 @@ export default function Sidebar({
 
           {/* Footer */}
           {footer && (
-            <div className="mt-8 pt-5 border-t border-white/8">
-              {footer}
-            </div>
+            <div className="mt-8 pt-5 border-t border-white/8">{footer}</div>
           )}
         </div>
       </div>
@@ -119,7 +119,7 @@ export function createSidebarItems(
     icon?: LucideIcon;
     onClick?: () => void;
     isActive?: boolean;
-  }>
+  }>,
 ): SidebarItem[] {
   return items;
 }
@@ -130,7 +130,7 @@ export function createSidebarSections(
     id: string;
     title?: string;
     items: SidebarItem[];
-  }>
+  }>,
 ): SidebarSection[] {
   return sections;
 }

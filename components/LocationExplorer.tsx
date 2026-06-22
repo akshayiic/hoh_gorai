@@ -23,9 +23,14 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNavbar from "@/components/BottomNavbar";
 import GlobalNavbar from "@/components/GlobalNavbar";
-import Sidebar, { createSidebarSections, createSidebarItems } from "@/components/Sidebar";
-import maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
+import Sidebar, {
+  createSidebarSections,
+  createSidebarItems,
+} from "@/components/Sidebar";
+import mapboxgl from "mapbox-gl";
+import "mapbox-gl/dist/mapbox-gl.css";
+
+mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
 
 const MaitriParkLocation = { lat: 19.23417, lng: 72.82783 }; // Maitri Park Site
 
@@ -340,8 +345,21 @@ function formatDistanceForCard(dist: string) {
   return `${clean} away`;
 }
 
+interface LocationItem {
+  title: string;
+  name: string;
+  coordinates: { lat: number; lng: number };
+}
+
+interface CustomMarker extends mapboxgl.Marker {
+  locTitle?: string;
+  elementRef?: HTMLDivElement;
+}
+
 interface LocationExplorerProps {
-  onNavigate?: (view: "location" | "balcony" | "apartments" | "amenities") => void;
+  onNavigate?: (
+    view: "location" | "balcony" | "apartments" | "amenities",
+  ) => void;
 }
 
 export default function LocationExplorer({
@@ -356,7 +374,9 @@ export default function LocationExplorer({
   );
   const [destinationAddress, setDestinationAddress] = useState("");
 
-  const [selectedLocation, setSelectedLocation] = useState<any | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<LocationItem | null>(
+    null,
+  );
   const [activeRoute, setActiveRoute] = useState<{
     distance: string;
     duration: string;
@@ -366,41 +386,76 @@ export default function LocationExplorer({
   const [isRouteLoading, setIsRouteLoading] = useState(false);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
-  const markersRef = useRef<maplibregl.Marker[]>([]);
-  const labelMarkersRef = useRef<maplibregl.Marker[]>([]);
-  const homeMarkerRef = useRef<maplibregl.Marker | null>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const markersRef = useRef<mapboxgl.Marker[]>([]);
+  const labelMarkersRef = useRef<mapboxgl.Marker[]>([]);
+  const homeMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const hoverPopupRef = useRef<maplibregl.Popup | null>(null);
+  const hoverPopupRef = useRef<mapboxgl.Popup | null>(null);
 
   // Initialize Map
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    const map = new maplibregl.Map({
+    // const map = new maplibregl.Map({
+    //   container: mapContainerRef.current,
+    //   style: {
+    //     version: 8,
+    //     sources: {
+    //       carto: {
+    //         type: "raster",
+    //         tiles: [
+    //           "https://basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png",
+    //         ],
+    //         tileSize: 256,
+    //         attribution: "© OpenStreetMap contributors, © CARTO",
+    //       },
+    //     },
+    //     layers: [
+    //       {
+    //         id: "carto-tiles",
+    //         type: "raster",
+    //         source: "carto",
+    //         minzoom: 0,
+    //         maxzoom: 20,
+    //       },
+    //     ],
+    //   },
+    //   center: [MaitriParkLocation.lng, MaitriParkLocation.lat],
+    //   zoom: 13,
+    // });
+
+    // const map = new maplibregl.Map({
+    //   container: mapContainerRef.current,
+    //   style: {
+    //     version: 8,
+    //     sources: {
+    //       google: {
+    //         type: "raster",
+    //         tiles: [
+    //           "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&apistyle=s.t%3A0%7Cs.e%3Al%7Cp.v%3Aoff",
+    //         ],
+    //         tileSize: 256,
+    //         attribution: "© Google Maps",
+    //       },
+    //     },
+    //     layers: [
+    //       {
+    //         id: "google-tiles",
+    //         type: "raster",
+    //         source: "google",
+    //         minzoom: 0,
+    //         maxzoom: 22,
+    //       },
+    //     ],
+    //   },
+    //   center: [MaitriParkLocation.lng, MaitriParkLocation.lat],
+    //   zoom: 13,
+    // });
+
+    const map = new mapboxgl.Map({
       container: mapContainerRef.current,
-      style: {
-        version: 8,
-        sources: {
-          osm: {
-            type: "raster",
-            tiles: [
-              "https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png",
-            ],
-            tileSize: 256,
-            attribution: "© OpenStreetMap contributors, © CARTO",
-          },
-        },
-        layers: [
-          {
-            id: "osm-tiles",
-            type: "raster",
-            source: "osm",
-            minzoom: 0,
-            maxzoom: 19,
-          },
-        ],
-      },
+      style: "mapbox://styles/mapbox/streets-v12",
       center: [MaitriParkLocation.lng, MaitriParkLocation.lat],
       zoom: 13,
     });
@@ -408,7 +463,7 @@ export default function LocationExplorer({
     mapRef.current = map;
 
     // Initialize hover popup once
-    const hoverPopup = new maplibregl.Popup({
+    const hoverPopup = new mapboxgl.Popup({
       closeButton: false,
       closeOnClick: false,
       className: "luxury-hover-popup",
@@ -418,8 +473,14 @@ export default function LocationExplorer({
     hoverPopupRef.current = hoverPopup;
 
     map.on("load", () => {
-      // Ensure dimensions are correct
       map.resize();
+
+      // Hide all default symbol/label layers to keep map clean
+      map.getStyle().layers?.forEach((layer) => {
+        if (layer.type === "symbol") {
+          map.setLayoutProperty(layer.id, "visibility", "none");
+        }
+      });
 
       // Add a distinct pulse marker for Maitri Park
       const el = document.createElement("div");
@@ -438,10 +499,10 @@ export default function LocationExplorer({
         </div>
       `;
 
-      const homeMarker = new maplibregl.Marker({ element: el })
+      const homeMarker = new mapboxgl.Marker({ element: el })
         .setLngLat([MaitriParkLocation.lng, MaitriParkLocation.lat])
         .setPopup(
-          new maplibregl.Popup({
+          new mapboxgl.Popup({
             offset: 25,
             closeButton: false,
             className: "luxury-hover-popup",
@@ -471,7 +532,7 @@ export default function LocationExplorer({
 
   // Update Category Markers when category changes (created once per category)
   const updateCategoryMarkers = (
-    map: maplibregl.Map | null,
+    map: mapboxgl.Map | null,
     category: string,
   ) => {
     if (!map) return;
@@ -524,7 +585,7 @@ export default function LocationExplorer({
       markerEl.textContent = parsed.title;
 
       // Add permanent label to map
-      const labelMarker = new maplibregl.Marker({
+      const labelMarker = new mapboxgl.Marker({
         element: markerEl,
         anchor: "bottom",
         offset: [0, -8],
@@ -532,12 +593,22 @@ export default function LocationExplorer({
         .setLngLat([loc.coordinates.lng, loc.coordinates.lat])
         .addTo(map);
 
+      // Create wrapper element for MapLibre positioning (avoids transition conflicts with transforms)
+      const wrapperEl = document.createElement("div");
+      wrapperEl.className =
+        "luxury-poi-marker-wrapper flex items-center justify-center";
+      wrapperEl.style.width = "32px";
+      wrapperEl.style.height = "32px";
+      wrapperEl.style.cursor = "pointer";
+
       // Create icon marker
       const iconEl = document.createElement("div");
       iconEl.className = "luxury-poi-marker flex items-center justify-center";
       iconEl.innerHTML = iconMap[category] || "";
 
-      const marker = new maplibregl.Marker({ element: iconEl })
+      wrapperEl.appendChild(iconEl);
+
+      const marker = new mapboxgl.Marker({ element: wrapperEl })
         .setLngLat([loc.coordinates.lng, loc.coordinates.lat])
         .addTo(map);
 
@@ -545,8 +616,8 @@ export default function LocationExplorer({
       labelMarkersRef.current.push(labelMarker);
 
       // Store title and DOM ref on marker object
-      (marker as any).locTitle = loc.title;
-      (marker as any).elementRef = iconEl;
+      (marker as CustomMarker).locTitle = loc.title;
+      (marker as CustomMarker).elementRef = iconEl;
 
       // Click/Tap handler supporting both Desktop and Mobile
       iconEl.addEventListener("click", (e) => {
@@ -592,8 +663,8 @@ export default function LocationExplorer({
   // Handle active marker styling changes in-place by adding/removing CSS classes
   useEffect(() => {
     markersRef.current.forEach((marker) => {
-      const locTitle = (marker as any).locTitle;
-      const el = (marker as any).elementRef as HTMLDivElement;
+      const locTitle = (marker as CustomMarker).locTitle;
+      const el = (marker as CustomMarker).elementRef as HTMLDivElement;
       if (!el) return;
 
       const isSelected = locTitle === selectedLocation?.title;
@@ -612,7 +683,7 @@ export default function LocationExplorer({
     clearRouteLayer();
   };
 
-  const clearRouteLayer = () => {
+  function clearRouteLayer() {
     const map = mapRef.current;
     if (!map) return;
 
@@ -628,13 +699,13 @@ export default function LocationExplorer({
     if (map.getSource("animated-marker")) map.removeSource("animated-marker");
 
     setActiveRoute(null);
-  };
+  }
 
-  const handleShowRoute = (
+  function handleShowRoute(
     destCoordinates: { lat: number; lng: number },
     destName: string,
     originCoords = MaitriParkLocation,
-  ) => {
+  ) {
     const map = mapRef.current;
     if (!map) {
       console.error("Map not initialized");
@@ -670,10 +741,10 @@ export default function LocationExplorer({
 
           // Zoom to fit bounds
           const bounds = coords.reduce(
-            (bounds: any, coord: number[]) => {
-              return bounds.extend([coord[0], coord[1]]);
+            (acc: mapboxgl.LngLatBounds, coord: number[]) => {
+              return acc.extend([coord[0], coord[1]] as [number, number]);
             },
-            new maplibregl.LngLatBounds(coords[0], coords[0]),
+            new mapboxgl.LngLatBounds(coords[0], coords[0]),
           );
 
           // Prevent negative viewport size / NaN zoom by choosing safe padding on narrow displays
@@ -701,12 +772,9 @@ export default function LocationExplorer({
         console.error("OSRM Routing Error:", e);
         setIsRouteLoading(false);
       });
-  };
+  }
 
-  const animateRouteDrawing = (
-    map: maplibregl.Map,
-    coordinates: number[][],
-  ) => {
+  function animateRouteDrawing(map: mapboxgl.Map, coordinates: number[][]) {
     let currentIndex = 0;
     const animationSpeed = 3;
 
@@ -762,7 +830,7 @@ export default function LocationExplorer({
       );
       const segmentCoordinates = coordinates.slice(0, nextIndex);
 
-      const source = map.getSource("route") as maplibregl.GeoJSONSource;
+      const source = map.getSource("route") as mapboxgl.GeoJSONSource;
       if (source) {
         source.setData({
           type: "Feature",
@@ -814,7 +882,7 @@ export default function LocationExplorer({
     };
 
     animate();
-  };
+  }
 
   const handleRouteSearch = () => {
     if (originAddress && destinationAddress) {
@@ -914,14 +982,18 @@ export default function LocationExplorer({
       </div>
 
       {/* Global Navbar */}
-      <GlobalNavbar currentPage="location" showReset={true} onReset={resetMap} />
+      <GlobalNavbar
+        currentPage="location"
+        showReset={true}
+        onReset={resetMap}
+      />
 
       {/* SIDEBAR PANEL */}
       <Sidebar
         header={{
           icon: MapIcon,
           subtitle: "Click to Explore",
-          title: "Locations"
+          title: "Locations",
         }}
         sections={createSidebarSections([
           {
@@ -933,10 +1005,10 @@ export default function LocationExplorer({
                 label: item.title,
                 icon: item.icon,
                 onClick: () => handleCategoryChange(item.title),
-                isActive: selectedCategory === item.title
-              }))
-            )
-          }
+                isActive: selectedCategory === item.title,
+              })),
+            ),
+          },
         ])}
       />
 
@@ -1028,8 +1100,8 @@ export default function LocationExplorer({
       {/* CUSTOM LUXURY STYLES */}
       <style>{`
         /* Premium custom style for map tiles */
-        .premium-map-container .maplibregl-canvas-container {
-          filter: saturate(0.85) contrast(1.05) brightness(0.95);
+        .premium-map-container .mapboxgl-canvas-container {
+          filter: saturate(1.25) contrast(1.05) brightness(0.98);
         }
 
         /* Luxury markers styles */
@@ -1132,7 +1204,7 @@ export default function LocationExplorer({
         }
 
         /* Hover popup card styles */
-        .luxury-hover-popup .maplibregl-popup-content {
+        .luxury-hover-popup .mapboxgl-popup-content {
           background: rgba(12, 12, 12, 0.85) !important;
           backdrop-filter: blur(16px) !important;
           -webkit-backdrop-filter: blur(16px) !important;
@@ -1143,7 +1215,7 @@ export default function LocationExplorer({
           pointer-events: none;
         }
 
-        .luxury-hover-popup .maplibregl-popup-tip {
+        .luxury-hover-popup .mapboxgl-popup-tip {
           display: none !important;
         }
 

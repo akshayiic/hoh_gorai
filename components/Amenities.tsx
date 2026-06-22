@@ -106,7 +106,7 @@ export default function Amenities({ onNavigate }: AmenitiesProps) {
       </div>
 
       {/* Global Navbar */}
-      <GlobalNavbar currentPage="amenities" showRERA={true} />
+      <GlobalNavbar currentPage="amenities" showRERA={false} />
 
       {/* SIDEBAR */}
       <CompactSidebar

@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Navigation, X, MapPin } from "lucide-react";
-import maplibregl from "maplibre-gl";
+import mapboxgl from "mapbox-gl";
+
+mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
 
 interface DirectionsMapProps {
   origin: { lat: number; lng: number };
@@ -17,7 +19,7 @@ export default function DirectionsMap({ origin, destination, destinationName, on
   const [duration, setDuration] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -29,29 +31,10 @@ export default function DirectionsMap({ origin, destination, destinationName, on
 
     setIsLoading(true);
 
-    // Initialize MapLibre GL
-    const map = new maplibregl.Map({
+    // Initialize Mapbox GL
+    const map = new mapboxgl.Map({
       container: mapContainerRef.current,
-      style: {
-        'version': 8,
-        'sources': {
-          'osm': {
-            'type': 'raster',
-            'tiles': ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-            'tileSize': 256,
-            'attribution': '© OpenStreetMap contributors'
-          }
-        },
-        'layers': [
-          {
-            'id': 'osm-tiles',
-            'type': 'raster',
-            'source': 'osm',
-            'minzoom': 0,
-            'maxzoom': 19
-          }
-        ]
-      },
+      style: "mapbox://styles/mapbox/streets-v12",
       center: [origin.lng, origin.lat],
       zoom: 12,
     });
@@ -59,12 +42,20 @@ export default function DirectionsMap({ origin, destination, destinationName, on
     mapRef.current = map;
 
     // Add navigation controls
-    map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+    map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
     // Wait for map to load
     map.on('load', () => {
       map.resize();
       console.log('Map loaded successfully');
+
+      // Hide all default symbol/label layers to keep it clean
+      map.getStyle().layers?.forEach((layer) => {
+        if (layer.type === 'symbol') {
+          map.setLayoutProperty(layer.id, 'visibility', 'none');
+        }
+      });
+
       // Fetch route from OSRM
       fetch(`https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson`)
         .then(response => response.json())
@@ -81,21 +72,21 @@ export default function DirectionsMap({ origin, destination, destinationName, on
             setDuration(`${durationMin} min`);
 
             // Add origin marker
-            new maplibregl.Marker({ color: '#4CAF50' })
+            new mapboxgl.Marker({ color: '#4CAF50' })
               .setLngLat([origin.lng, origin.lat])
-              .setPopup(new maplibregl.Popup({ offset: 25 }).setText('Maitri Park (Start)'))
+              .setPopup(new mapboxgl.Popup({ offset: 25 }).setText('Maitri Park (Start)'))
               .addTo(map);
 
             // Add destination marker
-            new maplibregl.Marker({ color: '#f44336' })
+            new mapboxgl.Marker({ color: '#f44336' })
               .setLngLat([destination.lng, destination.lat])
-              .setPopup(new maplibregl.Popup({ offset: 25 }).setText(destinationName))
+              .setPopup(new mapboxgl.Popup({ offset: 25 }).setText(destinationName))
               .addTo(map);
 
             // Calculate bounds
-            const bounds = coordinates.reduce((bounds: any, coord: number[]) => {
-              return bounds.extend([coord[0], coord[1]]);
-            }, new maplibregl.LngLatBounds(coordinates[0], coordinates[0]));
+            const bounds = coordinates.reduce((acc: mapboxgl.LngLatBounds, coord: number[]) => {
+              return acc.extend([coord[0], coord[1]] as [number, number]);
+            }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
 
             map.fitBounds(bounds, { padding: 100 });
 
@@ -125,7 +116,7 @@ export default function DirectionsMap({ origin, destination, destinationName, on
     };
   }, [isClient, origin, destination, destinationName]);
 
-  const animateRouteDrawing = (map: maplibregl.Map, coordinates: number[][]) => {
+  const animateRouteDrawing = (map: mapboxgl.Map, coordinates: number[][]) => {
     let currentIndex = 0;
     const animationSpeed = 2; // Number of coordinates to add per frame
 
@@ -163,7 +154,7 @@ export default function DirectionsMap({ origin, destination, destinationName, on
       const segmentCoordinates = coordinates.slice(0, nextIndex);
 
       // Update the route data
-      const source = map.getSource('route') as maplibregl.GeoJSONSource;
+      const source = map.getSource('route') as mapboxgl.GeoJSONSource;
       source.setData({
         type: 'Feature',
         properties: {},

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { Maximize2 } from "lucide-react";
 import BottomNavbar from "@/components/BottomNavbar";
 import GlobalNavbar from "@/components/GlobalNavbar";
@@ -21,33 +21,70 @@ interface BalconyScene {
   };
 }
 
-// Balcony view scenes configuration
-const balconyScenes: BalconyScene[] = [
-  {
-    id: "scene1",
-    name: "Aerial View",
-    size: [
-      { tileSize: 256, size: 256, fallbackOnly: true },
-      { tileSize: 512, size: 512 },
-      { tileSize: 512, size: 1024 },
-      { tileSize: 512, size: 2048 },
-      { tileSize: 512, size: 4096 },
+// Floor data extracted from folder structure
+// Each folder name is like "0-43" where first number is sr_number, second is floor number
+// We extract floor number and sort by it
+const extractFloorsFromStructure = () => {
+  const towers = {
+    "Tower 1": [
+      { id: "0-43", floor: 43 },
+      { id: "10-2", floor: 2 },
+      { id: "1-38", floor: 38 },
+      { id: "2-28", floor: 28 },
+      { id: "3-23", floor: 23 },
+      { id: "4-48", floor: 48 },
+      { id: "5-8", floor: 8 },
+      { id: "6-18", floor: 18 },
+      { id: "7-33", floor: 33 },
+      { id: "8-13", floor: 13 },
     ],
-    initialView: {
-      yaw: 0,
-      pitch: 0,
-      fov: (130 * Math.PI) / 180,
-    },
-  },
-];
+    "Tower 2": [
+      { id: "0-33", floor: 33 },
+      { id: "10-38", floor: 38 },
+      { id: "1-8", floor: 8 },
+      { id: "2-2", floor: 2 },
+      { id: "3-28", floor: 28 },
+      { id: "4-43", floor: 43 },
+      { id: "5-48", floor: 48 },
+      { id: "6-13", floor: 13 },
+      { id: "7-23", floor: 23 },
+      { id: "8-18", floor: 18 },
+    ],
+    "Tower 3": [
+      { id: "0-33", floor: 33 },
+      { id: "10-38", floor: 38 },
+      { id: "2-8", floor: 8 },
+      { id: "3-23", floor: 23 },
+      { id: "4-18", floor: 18 },
+      { id: "5-48", floor: 48 },
+      { id: "6-43", floor: 43 },
+      { id: "7-13", floor: 13 },
+      { id: "8-2", floor: 2 },
+      { id: "9-28", floor: 28 },
+    ],
+  };
+
+  // Sort floors by floor number
+  Object.keys(towers).forEach(towerKey => {
+    towers[towerKey as keyof typeof towers].sort((a, b) => a.floor - b.floor);
+  });
+
+  return towers;
+};
+
+const towerFloors = extractFloorsFromStructure();
 
 export default function BalconyView() {
-  const [currentScene, setCurrentScene] = useState(0);
+  const [selectedTower, setSelectedTower] = useState<"Tower 1" | "Tower 2" | "Tower 3">("Tower 1");
+  const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const viewerRef = useRef<any>(null);
   const panoRef = useRef<HTMLDivElement>(null);
   const marzipanoRef = useRef<any>(null);
   const allScenesRef = useRef<any>({});
+
+  const currentTowerFloors = towerFloors[selectedTower];
+  const currentFloor = currentTowerFloors[currentFloorIndex];
 
   useEffect(() => {
     let mounted = true;
@@ -72,15 +109,30 @@ export default function BalconyView() {
         const allScenes: any = {};
         allScenesRef.current = allScenes;
 
-        // URL prefix for tiles
-        const urlPrefix = "/balcony-shoots";
+        // URL prefix for tiles based on selected tower
+        const getTowerPath = (tower: string) => {
+          if (tower === "Tower 1") return "tower1";
+          if (tower === "Tower 2") return "tower2";
+          if (tower === "Tower 3") return "tower3";
+          return "tower1";
+        };
 
         // Create scene function matching the reference implementation
-        const create360Scene = (name: string, size: any[], initialView: any) => {
+        const create360Scene = (sceneId: string, towerPath: string) => {
+          const scenePath = `morning/${towerPath}/app-files/tiles/${sceneId}`;
+
           const source = Marzipano.ImageUrlSource.fromString(
-            `${urlPrefix}/${name}/{z}/{f}/{y}/{x}.jpg`,
-            { cubeMapPreviewUrl: `${urlPrefix}/${name}/preview.jpg` }
+            `/balcony-shoots/${scenePath}/{z}/{f}/{y}/{x}.jpg`,
+            { cubeMapPreviewUrl: `/balcony-shoots/${scenePath}/preview.jpg` }
           );
+
+          const size = [
+            { tileSize: 256, size: 256, fallbackOnly: true },
+            { tileSize: 512, size: 512 },
+            { tileSize: 512, size: 1024 },
+            { tileSize: 512, size: 2048 },
+            { tileSize: 512, size: 4096 },
+          ];
 
           const geometry = new Marzipano.CubeGeometry(size);
 
@@ -88,6 +140,12 @@ export default function BalconyView() {
             3840,
             (130 * Math.PI) / 180
           );
+
+          const initialView = {
+            yaw: 0,
+            pitch: 0,
+            fov: (130 * Math.PI) / 180,
+          };
 
           const view = new Marzipano.RectilinearView(initialView, limiter);
 
@@ -98,31 +156,25 @@ export default function BalconyView() {
             pinFirstLevel: true,
           });
 
-          allScenes[name] = {
+          allScenes[sceneId] = {
             source,
             view,
             scene,
           };
         };
 
-        // Initialize all scenes
-        balconyScenes.forEach((sceneData) => {
-          create360Scene(
-            sceneData.id,
-            sceneData.size,
-            sceneData.initialView
-          );
+        // Initialize scenes for all towers and floors
+        Object.entries(towerFloors).forEach(([towerName, floors]) => {
+          const towerPath = getTowerPath(towerName);
+          floors.forEach((floorData) => {
+            create360Scene(floorData.id, towerPath);
+          });
         });
 
-        // Store scenes reference for switching
-        marzipanoRef.current = balconyScenes.map((sceneData) => ({
-          ...sceneData,
-          scene: allScenes[sceneData.id].scene,
-        }));
-
-        // Load first scene
-        if (allScenes[balconyScenes[0].id]) {
-          allScenes[balconyScenes[0].id].scene
+        // Load current floor scene
+        const currentSceneId = currentFloor?.id;
+        if (currentSceneId && allScenes[currentSceneId]) {
+          allScenes[currentSceneId].scene
             .switchTo()
             .then(() => {
               if (mounted) setIsLoading(false);
@@ -144,40 +196,25 @@ export default function BalconyView() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [selectedTower, currentFloorIndex]);
 
-  const switchScene = (index: number) => {
-    const sceneData = balconyScenes[index];
-    if (sceneData && allScenesRef.current[sceneData.id]) {
-      setCurrentScene(index);
-      allScenesRef.current[sceneData.id].scene.switchTo();
+  const switchFloor = (index: number) => {
+    const floorData = currentTowerFloors[index];
+    if (floorData && allScenesRef.current[floorData.id]) {
+      setCurrentFloorIndex(index);
+      allScenesRef.current[floorData.id].scene.switchTo();
     }
   };
 
-  const nextScene = () => {
-    const nextIndex = (currentScene + 1) % balconyScenes.length;
-    switchScene(nextIndex);
-  };
-
-  const prevScene = () => {
-    const prevIndex =
-      (currentScene - 1 + balconyScenes.length) % balconyScenes.length;
-    switchScene(prevIndex);
+  const handleTowerChange = (tower: "Tower 1" | "Tower 2" | "Tower 3") => {
+    setSelectedTower(tower);
+    setCurrentFloorIndex(0);
   };
 
   return (
     <div className="h-screen w-screen bg-black">
       {/* Global Navbar */}
-      <GlobalNavbar currentPage="balcony" showRERA={true} />
-
-      {/* Header */}
-      <header className="absolute top-0 left-0 right-0 z-50 bg-gradient-to-b from-black/70 to-transparent p-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-white text-2xl font-bold">Balcony View</h1>
-          <p className="text-white/80 text-sm">360° Aerial Views</p>
-        </div>
-      </header>
-
+      <GlobalNavbar currentPage="balcony" showRERA={false} />
 
       {/* Main Marzipano Viewer */}
       <div className="h-full w-full relative">
@@ -194,72 +231,30 @@ export default function BalconyView() {
             <div className="text-white text-lg">Loading Balcony View...</div>
           </div>
         )}
-
-        {/* Scene Name Badge */}
-        <div className="absolute bottom-24 left-1/2 transform -translate-x-1/2 bg-black/70 backdrop-blur-sm text-white px-6 py-3 rounded-full">
-          <h2 className="text-lg font-semibold">
-            {balconyScenes[currentScene]?.name || "Scene"}
-          </h2>
-        </div>
-
-        {/* Navigation Controls */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex items-center gap-4">
-          <button
-            onClick={prevScene}
-            className="bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors"
-            title="Previous Scene"
-          >
-            <Maximize2 size={24} className="rotate-180" />
-          </button>
-          <div className="flex gap-2">
-            {balconyScenes.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => switchScene(index)}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  index === currentScene ? "bg-white scale-125" : "bg-white/50"
-                }`}
-              />
-            ))}
-          </div>
-          <button
-            onClick={nextScene}
-            className="bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors"
-            title="Next Scene"
-          >
-            <Maximize2 size={24} />
-          </button>
-        </div>
       </div>
 
       {/* SIDEBAR */}
       <Sidebar
         header={{
-          title: "Tower A",
-          subtitle: "Balcony Views",
+          title: selectedTower,
+          subtitle: "Balcony Views - Floors",
         }}
         sections={createSidebarSections([
           {
-            id: "scenes",
+            id: "floors",
             items: createSidebarItems(
-              balconyScenes.map((scene, index) => ({
-                id: scene.id,
-                label: scene.name,
+              currentTowerFloors.map((floorData, index) => ({
+                id: floorData.id,
+                label: `Floor ${floorData.floor}`,
                 onClick: () => {
-                  switchScene(index);
-                  setIsMenuOpen(false);
+                  switchFloor(index);
                 },
-                isActive: currentScene === index,
+                isActive: currentFloorIndex === index,
               }))
             ),
           },
         ])}
       />
-
-      {/* Instructions */}
-      <div className="absolute top-24 right-4 bg-black/50 backdrop-blur-sm text-white px-4 py-2 rounded-lg text-sm">
-        Drag to look around
-      </div>
 
       {/* Fullscreen Toggle */}
       <button
@@ -269,6 +264,23 @@ export default function BalconyView() {
       >
         <Maximize2 size={20} />
       </button>
+
+      {/* Tower Selection Buttons */}
+      <div className="absolute bottom-24 left-1/2 z-40 flex -translate-x-1/2 gap-2">
+        {(Object.keys(towerFloors) as Array<"Tower 1" | "Tower 2" | "Tower 3">).map((tower) => (
+          <button
+            key={tower}
+            onClick={() => handleTowerChange(tower)}
+            className={`rounded-lg px-8 py-4 ${
+              selectedTower === tower
+                ? "bg-white text-black"
+                : "bg-black/80 text-white"
+            }`}
+          >
+            {tower}
+          </button>
+        ))}
+      </div>
 
       {/* BOTTOM NAV */}
       <BottomNavbar activeItem="balcony" />

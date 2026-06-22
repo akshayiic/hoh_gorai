@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Ruler, Bed, Calendar, Award, MapPin, Map, Waves, Hotel } from "lucide-react";
+import { Building2, Ruler, Bed, Calendar, MapPin, Map, Waves, Hotel } from "lucide-react";
 import { useRouter } from "next/navigation";
 import BottomNavbar from "@/components/BottomNavbar";
 import GlobalNavbar from "@/components/GlobalNavbar";
@@ -47,7 +47,7 @@ export default function BuildingInfo({ onNavigate }: BuildingInfoProps) {
       </div>
 
       {/* Global Navbar */}
-      <GlobalNavbar currentPage="apartments" showRERA={true} />
+      <GlobalNavbar currentPage="apartments" showRERA={false} />
 
       {/* MAIN CONTENT */}
       <div className="absolute left-1/2 top-1/2 z-20 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 px-4">
@@ -87,16 +87,6 @@ export default function BuildingInfo({ onNavigate }: BuildingInfoProps) {
               <div>
                 <p className="text-white/60 text-sm">Configurations</p>
                 <p className="text-white font-medium">{projectInfo.configuration.join(", ")}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 bg-white/5 rounded-lg p-4">
-              <div className="rounded bg-white/10 p-3">
-                <Award size={20} className="text-white" />
-              </div>
-              <div>
-                <p className="text-white/60 text-sm">RERA Number</p>
-                <p className="text-white font-medium">{projectInfo.reraNumber}</p>
               </div>
             </div>
           </div>

@@ -168,7 +168,7 @@ export default function ApartmentsPage() {
       <div className="absolute inset-0 bg-black/45" />
 
       {/* Global Navbar */}
-      <GlobalNavbar currentPage="apartments" showRERA={true} />
+      <GlobalNavbar currentPage="apartments" showRERA={false} />
 
       {/* Sidebar */}
       <Sidebar
@@ -203,14 +203,15 @@ export default function ApartmentsPage() {
       />
 
       {/* Floorplan Area */}
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="relative w-[1000px]">
+      <div className="absolute top-[80px] bottom-[100px] left-4 lg:left-[360px] right-4 lg:right-8 flex items-center justify-center p-4">
+        <div className="relative w-full max-w-[1000px] max-h-full aspect-[1400/900] flex items-center justify-center">
           <Image
             src={activePlan.image}
             alt=""
-            width={1400}
-            height={900}
-            className={`transition-all duration-500 ${
+            fill
+            priority
+            sizes="(max-width: 1000px) 100vw, 1000px"
+            className={`object-contain transition-all duration-500 ${
               showOverlay ? "opacity-100" : "opacity-20"
             }`}
           />
@@ -255,7 +256,7 @@ export default function ApartmentsPage() {
                 return units.slice(0, 4).map((unitNum, index) => (
                   <button
                     key={unitNum}
-                    className="absolute rounded-full bg-black/90 px-5 py-2 text-white"
+                    className="absolute rounded-full bg-black/90 px-5 py-2 text-white text-[12px] sm:text-[14px]"
                     style={
                       unitPositions[index]?.transform
                         ? {

@@ -16,7 +16,7 @@ export default function GlobalNavbar({
   onNavigate,
   showReset = false,
   onReset,
-  showRERA = false
+  showRERA = false,
 }: GlobalNavbarProps) {
   const router = useRouter();
 
