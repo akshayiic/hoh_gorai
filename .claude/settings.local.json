@@ -16,7 +16,11 @@
       "WebSearch",
       "Bash(curl -s http://localhost:3000/apartments)",
       "Bash(curl -s http://localhost:3000/home)",
-      "Bash(findstr :3000)"
+      "Bash(findstr :3000)",
+      "Bash(vercel:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }
