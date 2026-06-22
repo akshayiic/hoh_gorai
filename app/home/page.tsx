@@ -16,7 +16,7 @@ const navItems = [
   {
     title: "Interactive Map",
     description:
-      "Explore connectivity, schools, shopping and infrastructure surrounding Maitri Park.",
+      "Explore connectivity, schools, shopping and infrastructure surrounding Gorai Bayview.",
     icon: Map,
     href: "/location",
     color: "from-blue-500/20 to-cyan-500/20",
@@ -69,7 +69,7 @@ export default function HomeDashboard() {
             </div>
           </div>
           <span className="text-xs uppercase tracking-widest text-amber-500/80 bg-amber-500/5 border border-amber-500/10 px-3 py-1 rounded-full">
-            Maitri Park Tour
+            Gorai Bayview Tour
           </span>
         </div>
       </header>
@@ -169,7 +169,7 @@ export default function HomeDashboard() {
                 Ready for the Walkthrough?
               </h4>
               <p className="text-white/60 text-sm max-w-xl">
-                Enter the premium 360° interior virtual tour of Maitri Park.
+                Enter the premium 360° interior virtual tour of Gorai Bayview.
                 Directly walk through the entrance, living room, master bedroom,
                 kitchen and balcony.
               </p>

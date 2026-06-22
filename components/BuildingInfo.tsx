@@ -10,7 +10,7 @@ interface BuildingInfoProps {
 }
 
 const projectInfo = {
-  name: "Maitri Park",
+  name: "Gorai Bayview",
   developer: "House of Hiranandani",
   location: "Panvel, Mumbai",
   reraNumber: "P52000000000",

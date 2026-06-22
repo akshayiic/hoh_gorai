@@ -32,7 +32,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
 
-const MaitriParkLocation = { lat: 19.23417, lng: 72.82783 }; // Maitri Park Site
+const GoraiBayviewLocation = { lat: 19.23417, lng: 72.82783 }; // Gorai Bayview Site
 
 const infrastructure = {
   current: [
@@ -155,11 +155,6 @@ const infrastructure = {
       icon: Train,
       locations: [
         {
-          title: "Coastal Road",
-          name: "Coastal Road - 27km (1hr 20 mins)",
-          coordinates: { lat: 19.23417, lng: 72.82783 },
-        },
-        {
           title: "AIR & Doordarshan Station",
           name: "AIR & Doordarshan Receiving Station - 700m (2 Mins)",
           coordinates: { lat: 19.2316241, lng: 72.8298975 },
@@ -180,9 +175,9 @@ const infrastructure = {
           coordinates: { lat: 19.2217681, lng: 72.8691741 },
         },
         {
-          title: "SV Road",
-          name: "SV Road - 16km (48 Mins)",
-          coordinates: { lat: 19.23417, lng: 72.82783 },
+          title: "Mahindra Company Gate",
+          name: "Mahindra Company Gate (B.H.A.D. Colony) - 16km (48 Mins)",
+          coordinates: { lat: 19.212009, lng: 72.861557 },
         },
         {
           title: "Gorai Metro",
@@ -197,7 +192,7 @@ const infrastructure = {
         {
           title: "Western Express Highway",
           name: "Western Express Highway - 7km (20 Mins)",
-          coordinates: { lat: 19.23417, lng: 72.82783 },
+          coordinates: { lat: 19.167753, lng: 72.858787 },
         },
       ],
     },
@@ -366,11 +361,11 @@ export default function LocationExplorer({
   onNavigate,
 }: LocationExplorerProps) {
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState("Connectivity");
+  const [selectedCategory, setSelectedCategory] = useState("Hospitals");
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showRoutePanel, setShowRoutePanel] = useState(false);
   const [originAddress, setOriginAddress] = useState(
-    "Maitri Park, Borivali West, Mumbai",
+    "Gorai Bayview, Borivali West, Mumbai",
   );
   const [destinationAddress, setDestinationAddress] = useState("");
 
@@ -421,7 +416,7 @@ export default function LocationExplorer({
     //       },
     //     ],
     //   },
-    //   center: [MaitriParkLocation.lng, MaitriParkLocation.lat],
+    //   center: [GoraiBayviewLocation.lng, GoraiBayviewLocation.lat],
     //   zoom: 13,
     // });
 
@@ -449,14 +444,14 @@ export default function LocationExplorer({
     //       },
     //     ],
     //   },
-    //   center: [MaitriParkLocation.lng, MaitriParkLocation.lat],
+    //   center: [GoraiBayviewLocation.lng, GoraiBayviewLocation.lat],
     //   zoom: 13,
     // });
 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style: "mapbox://styles/mapbox/streets-v12",
-      center: [MaitriParkLocation.lng, MaitriParkLocation.lat],
+      center: [GoraiBayviewLocation.lng, GoraiBayviewLocation.lat],
       zoom: 13,
     });
 
@@ -482,7 +477,7 @@ export default function LocationExplorer({
         }
       });
 
-      // Add a distinct pulse marker for Maitri Park
+      // Add a distinct pulse marker for Gorai Bayview
       const el = document.createElement("div");
       el.className = "luxury-home-marker flex items-center justify-center";
       el.style.width = "48px";
@@ -500,7 +495,7 @@ export default function LocationExplorer({
       `;
 
       const homeMarker = new mapboxgl.Marker({ element: el })
-        .setLngLat([MaitriParkLocation.lng, MaitriParkLocation.lat])
+        .setLngLat([GoraiBayviewLocation.lng, GoraiBayviewLocation.lat])
         .setPopup(
           new mapboxgl.Popup({
             offset: 25,
@@ -509,7 +504,7 @@ export default function LocationExplorer({
           }).setHTML(
             `<div class="luxury-mini-card" style="padding: 2px;">
                 <div class="category">Hiranandani Project</div>
-                <div class="title" style="margin-bottom: 0; font-family: serif; font-size: 14px;">Maitri Park Site</div>
+                <div class="title" style="margin-bottom: 0; font-family: serif; font-size: 14px;">Gorai Bayview Site</div>
               </div>`,
           ),
         )
@@ -561,7 +556,7 @@ export default function LocationExplorer({
     };
 
     catData.locations.forEach((loc) => {
-      if (loc.title === "Maitri Park Site") return;
+      if (loc.title === "Gorai Bayview Site") return;
 
       const parsed = parseLocationName(loc.title, loc.name);
       const displayCat = categoryDisplayNames[category] || category;
@@ -704,7 +699,7 @@ export default function LocationExplorer({
   function handleShowRoute(
     destCoordinates: { lat: number; lng: number },
     destName: string,
-    originCoords = MaitriParkLocation,
+    originCoords = GoraiBayviewLocation,
   ) {
     const map = mapRef.current;
     if (!map) {
@@ -925,10 +920,10 @@ export default function LocationExplorer({
     clearRouteLayer();
     setSelectedLocation(null);
     setDestinationAddress("");
-    setOriginAddress("Maitri Park, Borivali West, Mumbai");
+    setOriginAddress("Gorai Bayview, Borivali West, Mumbai");
     if (mapRef.current) {
       mapRef.current.flyTo({
-        center: [MaitriParkLocation.lng, MaitriParkLocation.lat],
+        center: [GoraiBayviewLocation.lng, GoraiBayviewLocation.lat],
         zoom: 13,
         essential: true,
       });

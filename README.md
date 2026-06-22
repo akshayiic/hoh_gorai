@@ -1,6 +1,6 @@
-# Maitri Park Virtual Tour
+# Gorai Bayview Virtual Tour
 
-A Next.js virtual tour application for Maitri Park, featuring 360° panoramic views, interactive floor plans, and image gallery.
+A Next.js virtual tour application for Gorai Bayview, featuring 360° panoramic views, interactive floor plans, and image gallery.
 
 ## Features
 

@@ -13,128 +13,128 @@ import Sidebar, {
 
 // Tower configurations based on actual folder structure
 const towerConfigs = {
-  "Tower A": [
+  "Tower 1": [
     {
       id: "flat-1",
       title: "Flat 1 - 3 BHK",
       area: "824 sq.ft",
-      image: "/gallery/Tower A/tower1-flat-1-3bhk.jpg",
+      image: "/gallery/Tower 1/tower1-flat-1-3bhk.jpg",
       type: "3bhk",
     },
     {
       id: "flat-2_3",
       title: "Flat 2 & 3 - 2 BHK",
       area: "756 sq.ft",
-      image: "/gallery/Tower A/tower1-flat-2_3-2bhk.jpg",
+      image: "/gallery/Tower 1/tower1-flat-2_3-2bhk.jpg",
       type: "2bhk",
     },
     {
       id: "flat-4",
       title: "Flat 4 - 3 BHK",
       area: "824 sq.ft",
-      image: "/gallery/Tower A/tower1-flat-4-3bhk.jpg",
+      image: "/gallery/Tower 1/tower1-flat-4-3bhk.jpg",
       type: "3bhk",
     },
     {
       id: "flat-5",
       title: "Flat 5 - 2 BHK",
       area: "756 sq.ft",
-      image: "/gallery/Tower A/tower1-flat-5-2bhk.jpg",
+      image: "/gallery/Tower 1/tower1-flat-5-2bhk.jpg",
       type: "2bhk",
     },
     {
       id: "flat-6",
       title: "Flat 6 - 3 BHK",
       area: "824 sq.ft",
-      image: "/gallery/Tower A/tower1-flat-6-3bhk.jpg",
+      image: "/gallery/Tower 1/tower1-flat-6-3bhk.jpg",
       type: "3bhk",
     },
     {
       id: "master",
       title: "Master Floor Plan",
       area: "Complete Tower",
-      image: "/gallery/Tower A/tower1-floor.jpg",
+      image: "/gallery/Tower 1/tower1-floor.jpg",
       type: "master",
     },
   ],
-  "Tower B": [
+  "Tower 2": [
     {
       id: "flat-1_2",
       title: "Flat 1 & 2 - 2 BHK",
       area: "756 sq.ft",
-      image: "/gallery/Tower B/tower2-flat-1_2-2bhk.jpg",
+      image: "/gallery/Tower 2/tower2-flat-1_2-2bhk.jpg",
       type: "2bhk",
     },
     {
       id: "flat-3",
       title: "Flat 3 - 3 BHK",
       area: "810 sq.ft",
-      image: "/gallery/Tower B/tower2-flat-3-3bhk.jpg",
+      image: "/gallery/Tower 2/tower2-flat-3-3bhk.jpg",
       type: "3bhk",
     },
     {
       id: "flat-4",
       title: "Flat 4 - 2 BHK",
       area: "756 sq.ft",
-      image: "/gallery/Tower B/tower2-flat-4-2bhk.jpg",
+      image: "/gallery/Tower 2/tower2-flat-4-2bhk.jpg",
       type: "2bhk",
     },
     {
       id: "flat-5",
       title: "Flat 5 - 3 BHK",
       area: "810 sq.ft",
-      image: "/gallery/Tower B/tower2-flat-5-3bhk.jpg",
+      image: "/gallery/Tower 2/tower2-flat-5-3bhk.jpg",
       type: "3bhk",
     },
     {
       id: "master",
       title: "Master Floor Plan",
       area: "Complete Tower",
-      image: "/gallery/Tower B/tower2-floorplan.jpg",
+      image: "/gallery/Tower 2/tower2-floorplan.jpg",
       type: "master",
     },
   ],
-  "Tower C": [
+  "Tower 3": [
     {
       id: "flat-1",
       title: "Flat 1 - 3 BHK",
       area: "835 sq.ft",
-      image: "/gallery/Tower C/tower3-flat-1-3bhk.jpg",
+      image: "/gallery/Tower 3/tower3-flat-1-3bhk.jpg",
       type: "3bhk",
     },
     {
       id: "flat-2_3_4",
       title: "Flat 2, 3 & 4 - 2 BHK",
       area: "756 sq.ft",
-      image: "/gallery/Tower C/tower3-flat-2_3_4-2bhk.jpg",
+      image: "/gallery/Tower 3/tower3-flat-2_3_4-2bhk.jpg",
       type: "2bhk",
     },
     {
       id: "flat-5",
       title: "Flat 5 - 2 BHK",
       area: "756 sq.ft",
-      image: "/gallery/Tower C/tower3-flat-5-2bhk.jpg",
+      image: "/gallery/Tower 3/tower3-flat-5-2bhk.jpg",
       type: "2bhk",
     },
     {
       id: "flat-6_7",
       title: "Flat 6 & 7 - 2 BHK",
       area: "756 sq.ft",
-      image: "/gallery/Tower C/tower3-flat-6_7-2bhk.jpg",
+      image: "/gallery/Tower 3/tower3-flat-6_7-2bhk.jpg",
       type: "2bhk",
     },
     {
       id: "flat-8",
       title: "Flat 8 - 3 BHK",
       area: "835 sq.ft",
-      image: "/gallery/Tower C/tower3-flat-8-3bhk.jpg",
+      image: "/gallery/Tower 3/tower3-flat-8-3bhk.jpg",
       type: "3bhk",
     },
     {
       id: "master",
       title: "Master Floor Plan",
       area: "Complete Tower",
-      image: "/gallery/Tower C/tower3-floorplan.jpg",
+      image: "/gallery/Tower 3/tower3-floorplan.jpg",
       type: "master",
     },
   ],
@@ -144,8 +144,8 @@ export default function ApartmentsPage() {
   const router = useRouter();
 
   const [selectedTower, setSelectedTower] = useState<
-    "Tower A" | "Tower B" | "Tower C"
-  >("Tower A");
+    "Tower 1" | "Tower 2" | "Tower 3"
+  >("Tower 1");
 
   const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
 
@@ -215,69 +215,6 @@ export default function ApartmentsPage() {
               showOverlay ? "opacity-100" : "opacity-20"
             }`}
           />
-
-          {/* Dynamic Unit Buttons based on selected plan */}
-          {activePlan.type !== "master" && (
-            <>
-              {(() => {
-                // Parse the plan ID to determine unit numbers
-                const unitMatch = activePlan.id.match(/flat-(\d+)(?:_|$)/);
-                const baseUnit = unitMatch ? unitMatch[1] : "1";
-
-                // Check if it's a range (like flat-2_3)
-                const isRange = activePlan.id.includes("_");
-                const rangeMatch = activePlan.id.match(/flat-(\d+)_(\d+)/);
-
-                let units: number[] = [];
-                if (isRange && rangeMatch) {
-                  // Create range of units
-                  const start = parseInt(rangeMatch[1]);
-                  const end = parseInt(rangeMatch[2]);
-                  for (let i = start; i <= end; i++) {
-                    units.push(i);
-                  }
-                } else {
-                  // Single unit
-                  units = [parseInt(baseUnit)];
-                }
-
-                const unitPositions = [
-                  { top: "35%", left: "30%" },
-                  { top: "36%", right: "28%" },
-                  { bottom: "26%", right: "30%" },
-                  { bottom: "28%", left: "35%" },
-                  {
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                  },
-                ];
-
-                return units.slice(0, 4).map((unitNum, index) => (
-                  <button
-                    key={unitNum}
-                    className="absolute rounded-full bg-black/90 px-5 py-2 text-white text-[12px] sm:text-[14px]"
-                    style={
-                      unitPositions[index]?.transform
-                        ? {
-                            top: unitPositions[index].top,
-                            left: unitPositions[index].left,
-                            transform: unitPositions[index].transform as string,
-                          }
-                        : {
-                            top: unitPositions[index]?.top,
-                            right: unitPositions[index]?.right,
-                            bottom: unitPositions[index]?.bottom,
-                            left: unitPositions[index]?.left,
-                          }
-                    }
-                  >
-                    Flat {unitNum}
-                  </button>
-                ));
-              })()}
-            </>
-          )}
         </div>
       </div>
 
@@ -287,7 +224,7 @@ export default function ApartmentsPage() {
       {/* Towers */}
       <div className="absolute bottom-6 left-1/2 z-40 flex -translate-x-1/2 gap-2">
         {(
-          Object.keys(towerConfigs) as Array<"Tower A" | "Tower B" | "Tower C">
+          Object.keys(towerConfigs) as Array<"Tower 1" | "Tower 2" | "Tower 3">
         ).map((tower) => (
           <button
             key={tower}

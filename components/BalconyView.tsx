@@ -120,10 +120,15 @@ export default function BalconyView() {
         // Create scene function matching the reference implementation
         const create360Scene = (sceneId: string, towerPath: string) => {
           const scenePath = `${towerPath}/app-files/tiles/${sceneId}`;
+          const baseUrl = `https://assets.vestate.io/hiranandani-gorai/morning/${scenePath}`;
+
+          console.log('Loading scene from:', baseUrl);
+          console.log('Tile URL:', `${baseUrl}/{z}/{f}/{y}/{x}.jpg`);
+          console.log('Preview URL:', `${baseUrl}/preview.jpg`);
 
           const source = Marzipano.ImageUrlSource.fromString(
-            `https://assets.vestate.io/hiranandani-gorai/morning/${scenePath}/{z}/{f}/{y}/{x}.jpg`,
-            { cubeMapPreviewUrl: `https://assets.vestate.io/hiranandani-gorai/morning/${scenePath}/preview.jpg` }
+            `${baseUrl}/{z}/{f}/{y}/{x}.jpg`,
+            { cubeMapPreviewUrl: `${baseUrl}/preview.jpg` }
           );
 
           const size = [

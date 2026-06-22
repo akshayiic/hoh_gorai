@@ -74,7 +74,7 @@ export default function DirectionsMap({ origin, destination, destinationName, on
             // Add origin marker
             new mapboxgl.Marker({ color: '#4CAF50' })
               .setLngLat([origin.lng, origin.lat])
-              .setPopup(new mapboxgl.Popup({ offset: 25 }).setText('Maitri Park (Start)'))
+              .setPopup(new mapboxgl.Popup({ offset: 25 }).setText('Gorai Bayview (Start)'))
               .addTo(map);
 
             // Add destination marker
@@ -242,7 +242,7 @@ export default function DirectionsMap({ origin, destination, destinationName, on
       <div className="absolute bottom-24 left-6 z-40 bg-black/80 backdrop-blur text-white px-4 py-3 rounded-lg">
         <div className="flex items-center gap-2 mb-2">
           <Navigation size={16} className="text-green-400" />
-          <span className="font-semibold">Route from Maitri Park to {destinationName}</span>
+          <span className="font-semibold">Route from Gorai Bayview to {destinationName}</span>
         </div>
         {(distance || duration) && (
           <div className="flex items-center gap-4 text-sm">
