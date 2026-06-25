@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Map as MapIcon, Plus, Minus } from "lucide-react";
+import { Map as MapIcon, Plus, Minus, Landmark } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNavbar from "@/components/BottomNavbar";
@@ -42,7 +42,7 @@ const infrastructure = {
     },
     {
       title: "Banks",
-      icon: "/icons/hotel.svg",
+      icon: Landmark,
       locations: [
         {
           title: "HDFC Bank",
@@ -527,7 +527,7 @@ export default function LocationExplorer({
 
     const iconMap: Record<string, string> = {
       "Education Institutes": `<img src="/icons/education.svg" class="w-10 h-10 object-contain" alt="Education" />`,
-      Banks: `<img src="/icons/hotel.svg" class="w-10 h-10 object-contain" alt="Banks" />`,
+      Banks: `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #ffffff;"><line x1="3" y1="22" x2="21" y2="22" /><line x1="6" y1="18" x2="6" y2="11" /><line x1="10" y1="18" x2="10" y2="11" /><line x1="14" y1="18" x2="14" y2="11" /><line x1="18" y1="18" x2="18" y2="11" /><polygon points="12 2 20 7 4 7" /></svg>`,
       Recreational: `<img src="/icons/paint.svg" class="w-10 h-10 object-contain" alt="Recreational" />`,
       "Lifestyle & Social": `<img src="/icons/lifestyle.svg" class="w-10 h-10 object-contain" alt="Lifestyle" />`,
       Connectivity: `<img src="/icons/connectivity.svg" class="w-10 h-10 object-contain" alt="Connectivity" />`,
@@ -579,7 +579,11 @@ export default function LocationExplorer({
 
       // Create icon marker
       const iconEl = document.createElement("div");
-      iconEl.className = "luxury-poi-marker flex items-center justify-center";
+      if (category === "Banks") {
+        iconEl.className = "luxury-poi-marker lucide-bank-marker flex items-center justify-center";
+      } else {
+        iconEl.className = "luxury-poi-marker flex items-center justify-center";
+      }
       iconEl.innerHTML = iconMap[category] || "";
 
       wrapperEl.appendChild(iconEl);
@@ -1090,6 +1094,26 @@ export default function LocationExplorer({
           justify-content: center;
           transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
           z-index: 5;
+        }
+
+        .luxury-poi-marker.lucide-bank-marker {
+          background: #816D5B;
+          border: 1.5px solid rgba(255, 255, 255, 0.4);
+          border-radius: 50%;
+          color: white;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.45);
+        }
+
+        .luxury-poi-marker.lucide-bank-marker:hover {
+          background: #96816e;
+          border-color: rgba(255, 255, 255, 0.6);
+          box-shadow: 0 6px 12px rgba(199, 154, 89, 0.6);
+        }
+
+        .luxury-poi-marker.lucide-bank-marker.active {
+          background: #aa9582;
+          border-color: #ffffff;
+          box-shadow: 0 0 15px rgba(199, 154, 89, 0.9);
         }
 
         .luxury-poi-marker img {

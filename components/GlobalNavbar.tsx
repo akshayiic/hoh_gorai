@@ -92,15 +92,23 @@ export default function GlobalNavbar({
           RERA
         </button>
 
-        {/* {showReset && onReset && (
+        {showReset && onReset && (
           <button
             onClick={onReset}
-            className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 p-2.5 flex items-center justify-center text-[#E2E2E2] backdrop-blur-md hover:bg-[#2C3437]/85 hover:text-white transition duration-200 h-[38px] w-[38px] cursor-pointer shadow-lg"
+            className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 p-2.5 flex items-center justify-center text-[#E2E2E2] backdrop-blur-md hover:bg-[#2C3437]/85 hover:text-white transition duration-200 h-[42px] w-[42px] cursor-pointer shadow-lg"
             title="Reset View"
           >
             <RotateCcw size={18} />
           </button>
-        )} */}
+        )}
+
+        <div className="flex items-center justify-center p-3   ">
+          <img
+            src="/icons/powered.png"
+            alt="Logo"
+            className="  object-contain"
+          />
+        </div>
       </div>
     </>
   );
