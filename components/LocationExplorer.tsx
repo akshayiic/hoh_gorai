@@ -484,7 +484,7 @@ export default function LocationExplorer({
           }).setHTML(
             `<div class="luxury-mini-card" style="padding: 2px;">
                 <div class="category">Hiranandani Project</div>
-                <div class="title" style="margin-bottom: 0; font-family: serif; font-size: 14px;">Gorai Bayview</div>
+                <div class="title" style="margin-bottom: 0; font-family: sans-serif; font-size: 14px; font-weight: 600;">Gorai Bayview</div>
               </div>`,
           ),
         )
@@ -1008,7 +1008,7 @@ export default function LocationExplorer({
                   ? categoryDisplayNames[selectedCategory] || selectedCategory
                   : ""}
               </p>
-              <h3 className="text-white text-base sm:text-xl font-light font-serif tracking-wide truncate mt-0.5 sm:mt-1">
+              <h3 className="text-white text-base sm:text-xl font-light font-sans tracking-wide truncate mt-0.5 sm:mt-1">
                 {selectedLocation
                   ? parseLocationName(
                       selectedLocation.title,

@@ -130,17 +130,14 @@ export default function WelcomeExperience() {
               }}
             />
 
-            {/* Dark overlay */}
-            <div className="absolute inset-0 bg-black/45" />
-
             {/* Vignette */}
-            <div
+            {/* <div
               className="absolute inset-0"
               style={{
                 background:
                   "radial-gradient(circle at center, transparent 15%, rgba(0,0,0,.85) 100%)",
               }}
-            />
+            /> */}
 
             {/* Warm center glow */}
             <div
