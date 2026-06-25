@@ -51,7 +51,7 @@ export default function BuildingInfo({ onNavigate }: BuildingInfoProps) {
 
       {/* MAIN CONTENT */}
       <div className="absolute left-1/2 top-1/2 z-20 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 px-4">
-        <div className="rounded-lg border border-white/10 bg-[#2B363D]/90 backdrop-blur-md p-8">
+        <div className="rounded-lg border border-white/10 bg-black/40 backdrop-blur-md p-8">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-4xl font-bold text-white mb-2">{projectInfo.name}</h1>

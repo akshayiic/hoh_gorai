@@ -28,7 +28,7 @@ export default function CompactSidebar({
   onItemClick,
 }: CompactSidebarProps) {
   return (
-    <aside className={`absolute left-7 top-[140px] bottom-[110px] z-20 w-[280px] rounded-lg border border-white/10 bg-[#2B363D]/85 backdrop-blur-md flex flex-col ${className}`}>
+    <aside className={`absolute left-7 top-1/2 -translate-y-1/2 z-20 w-[280px] max-h-[80vh] rounded-lg border border-[#40484B]/70 bg-[#2C3437]/65 backdrop-blur-md flex flex-col ${className}`}>
       <div className="p-5 flex flex-col h-full">
         <div className="mb-6 flex items-center gap-3 shrink-0">
           {Icon && (
@@ -57,8 +57,8 @@ export default function CompactSidebar({
               }}
               className={`flex w-full items-center gap-3 rounded px-3 py-3 text-left transition capitalize ${
                 item.isActive
-                  ? "bg-white/8 text-white"
-                  : "text-white/60 hover:bg-white/5"
+                  ? "bg-black/35 text-white font-medium shadow-inner"
+                  : "text-white/60 hover:bg-black/15"
               }`}
             >
               <span className="text-sm">{item.label}</span>

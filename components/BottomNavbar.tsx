@@ -24,7 +24,7 @@ export default function BottomNavbar({ activeItem }: BottomNavbarProps) {
 
   return (
     <div className="fixed bottom-6 left-7 z-40">
-      <nav className="flex overflow-hidden rounded-lg border border-white/10 bg-[#29343B]/95 backdrop-blur-sm shadow-2xl">
+      <nav className="flex overflow-hidden rounded-lg border border-white/10 bg-black/40 backdrop-blur-md shadow-2xl">
         {navItems.map((item, idx) => {
           const Icon = item.icon;
           const isActive = activeItem === item.id;
@@ -36,10 +36,10 @@ export default function BottomNavbar({ activeItem }: BottomNavbarProps) {
                   router.push(item.path);
                 }
               }}
-              className={`flex items-center justify-center transition-all duration-300 ${
+              className={`flex items-center justify-center transition-all duration-300 cursor-pointer ${
                 isActive
-                  ? "bg-white text-black px-6 h-14 text-xs font-bold uppercase tracking-wider gap-2"
-                  : `text-white/70 hover:bg-white/5 hover:text-white w-14 h-14 ${
+                  ? "bg-white text-black px-6 h-8 text-xs font-bold uppercase tracking-wider gap-2"
+                  : `text-white/70 hover:bg-white/5 hover:text-white w-14 h-8 ${
                       idx !== 0 ? "border-l border-white/10" : ""
                     }`
               }`}

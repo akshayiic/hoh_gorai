@@ -53,7 +53,7 @@ export default function HomeDashboard() {
       <div className="absolute inset-0 bg-gradient-to-b from-[#0F172A]/90 via-[#0F172A] to-[#0F172A] pointer-events-none" />
 
       {/* Header */}
-      <header className="relative z-10 p-6 border-b border-white/5 bg-black/10 backdrop-blur-sm">
+      <header className="relative z-10 p-6 border-b border-white/10 bg-black/40 backdrop-blur-md">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded bg-amber-500/10 border border-amber-500/20">

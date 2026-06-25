@@ -19,7 +19,7 @@ export default function AmenitiesPage() {
   return (
     <div className="relative h-screen w-screen bg-[#111827] overflow-hidden flex flex-col justify-between">
       {/* Top Tab Bar Wrapper */}
-      <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-30 bg-black/60 border border-white/10 backdrop-blur rounded-full p-1 flex">
+      <div className="absolute top-6 left-1/2 transform -translate-x-1/2 z-30 bg-black/40 border border-white/10 backdrop-blur-md rounded-full p-1 flex">
         <button
           onClick={() => setActiveTab("amenities")}
           className={`px-6 py-2 rounded-full text-sm font-semibold transition ${

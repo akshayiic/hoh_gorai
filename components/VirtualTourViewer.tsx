@@ -124,7 +124,7 @@ export default function VirtualTourViewer({ sceneId }: VirtualTourViewerProps) {
       <GlobalNavbar currentPage="tour" />
 
       {/* Tour Information */}
-      <div className="absolute top-20 left-7 z-20 flex items-center gap-3 rounded-md bg-[#29343B]/90 px-4 py-3 backdrop-blur-sm">
+      <div className="absolute top-20 left-7 z-20 flex items-center gap-3 rounded-md border border-white/10 bg-black/40 px-4 py-3 backdrop-blur-md">
         <div className="flex h-10 w-10 items-center justify-center rounded bg-white/10">
           <Building2 size={20} className="text-white" />
         </div>
@@ -135,7 +135,7 @@ export default function VirtualTourViewer({ sceneId }: VirtualTourViewerProps) {
       </div>
 
       {/* MINI FLOOR PLAN IN CORNER */}
-      <div className="absolute bottom-24 right-6 z-20 bg-slate-950/80 border border-white/10 rounded-xl p-4 w-[240px] backdrop-blur-md shadow-2xl">
+      <div className="absolute bottom-24 right-6 z-20 bg-black/40 border border-white/10 rounded-xl p-4 w-[240px] backdrop-blur-md shadow-2xl">
         <h4 className="text-xs text-white/50 uppercase tracking-widest mb-3 font-semibold text-center">Mini Floor Plan</h4>
         <div className="relative aspect-[4/3] w-full bg-slate-900/50 rounded-lg border border-white/5 overflow-hidden">
           <svg viewBox="0 0 100 100" className="w-full h-full">

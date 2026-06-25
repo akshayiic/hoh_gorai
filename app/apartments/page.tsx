@@ -189,17 +189,6 @@ export default function ApartmentsPage() {
             ),
           },
         ])}
-        footer={
-          <label className="flex items-center gap-3 text-white cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showOverlay}
-              onChange={() => setShowOverlay(!showOverlay)}
-              className="cursor-pointer"
-            />
-            Show Floor Overlay
-          </label>
-        }
       />
 
       {/* Floorplan Area */}
@@ -232,10 +221,10 @@ export default function ApartmentsPage() {
               setSelectedTower(tower);
               setSelectedPlanIndex(0);
             }}
-            className={`rounded-lg px-8 py-4 ${
+            className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition duration-200 ${
               selectedTower === tower
-                ? "bg-white text-black"
-                : "bg-black/80 text-white"
+                ? "bg-white text-black border-transparent"
+                : "bg-black/40 text-white border-white/10 backdrop-blur-md hover:bg-black/60 hover:border-white/20"
             }`}
           >
             {tower}

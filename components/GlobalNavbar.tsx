@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Building2, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface GlobalNavbarProps {
   currentPage: string;
@@ -19,60 +20,87 @@ export default function GlobalNavbar({
   showRERA = false,
 }: GlobalNavbarProps) {
   const router = useRouter();
+  const [history, setHistory] = useState<string[]>([]);
 
-  const handleNavigate = (view: string) => {
-    if (view === currentPage) return;
-    router.push(`/${view}`);
-    onNavigate?.(view);
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("nav_history");
+      let navHistory: string[] = stored ? JSON.parse(stored) : [];
+
+      // Prevent consecutive duplicate entries of the same page in history
+      if (navHistory[navHistory.length - 1] !== currentPage) {
+        navHistory.push(currentPage);
+        sessionStorage.setItem("nav_history", JSON.stringify(navHistory));
+      }
+      setHistory(navHistory);
+    }
+  }, [currentPage]);
+
+  const handleGoBack = () => {
+    if (history.length > 1) {
+      const prevPage = history[history.length - 2];
+      const newHistory = history.slice(0, history.length - 1);
+      sessionStorage.setItem("nav_history", JSON.stringify(newHistory));
+
+      router.push(`/${prevPage}`);
+      onNavigate?.(prevPage);
+    }
   };
 
   return (
     <>
-      {/* LOGO */}
+      {/* LOGO & TITLE BOX */}
       <div className="absolute left-6 top-6 z-20 flex items-center gap-3">
         {/* Logo Box */}
-        <div className="rounded-md flex items-center justify-center">
+        <div className="flex items-center justify-center p-2.5 bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 rounded-[5px] shadow-lg">
           <img
-            src="/gallery/hoh.png"
+            src="/icons/hoh2.svg"
             alt="Logo"
-            className="h-18 w-18 object-contain"
+            className="h-8 w-8 object-contain"
           />
         </div>
 
-        {/* Text Box */}
-        <div className="">
-          <img
-            src="/gallery/hoh-og.png"
-            alt="House Of Hiranandani"
-            className="h-18 object-contain"
-          />
+        {/* Project Name Box (Sidebar themed UI style) */}
+        <div className="flex flex-col justify-center px-4 py-2.5 bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 rounded-[5px] shadow-lg">
+          <h1 className="text-[16px] font-bold text-white leading-tight tracking-wide">
+            Hiranandani Bay View
+          </h1>
+          <p className="text-[11px] font-medium text-[#BBBBBB] leading-none mt-1">
+            Gorai, Mumbai
+          </p>
         </div>
       </div>
 
       {/* TOP ACTIONS */}
-      <div className="absolute right-6 top-5 z-20 flex items-center gap-2">
-        <button
-          onClick={() => handleNavigate("home")}
-          className="rounded border border-white/10 bg-[#2B363D]/95 px-4 py-2 text-sm text-white backdrop-blur hover:bg-[#2B363D]/80 hover:border-white/20 transition duration-200 cursor-pointer"
-        >
-          ← Go Back
-        </button>
-
-        {showRERA && (
-          <button className="rounded border border-white/10 bg-[#2B363D]/95 px-4 py-2 text-sm text-white backdrop-blur hover:bg-[#2B363D]/80 hover:border-white/20 transition duration-200 cursor-pointer">
-            RERA
+      <div className="absolute right-6 top-6 z-20 flex items-center gap-2">
+        {/* Back Button (Only visible if the user has visited a page previously in history) */}
+        {history.length > 1 && (
+          <button
+            onClick={handleGoBack}
+            className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 px-5 py-2.5 text-[14px] font-medium text-[#E2E2E2] backdrop-blur-md hover:bg-[#2C3437]/85 hover:text-white transition duration-200 cursor-pointer flex items-center gap-1.5 shadow-lg"
+          >
+            <img
+              src="/icons/back.svg"
+              alt="Logo"
+              className="h-3 w-3 object-contain"
+            />
+            Go Back
           </button>
         )}
 
-        {showReset && onReset && (
+        <button className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 px-5 py-2.5 text-[14px] font-medium text-[#E2E2E2] backdrop-blur-md hover:bg-[#2C3437]/85 hover:text-white transition duration-200 cursor-pointer shadow-lg">
+          RERA
+        </button>
+
+        {/* {showReset && onReset && (
           <button
             onClick={onReset}
-            className="rounded-full border border-white/10 bg-[#2B363D]/95 p-2 flex items-center justify-center text-white backdrop-blur hover:bg-[#2B363D]/80 hover:border-white/20 transition duration-200 h-[38px] w-[38px] cursor-pointer"
+            className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 p-2.5 flex items-center justify-center text-[#E2E2E2] backdrop-blur-md hover:bg-[#2C3437]/85 hover:text-white transition duration-200 h-[38px] w-[38px] cursor-pointer shadow-lg"
             title="Reset View"
           >
             <RotateCcw size={18} />
           </button>
-        )}
+        )} */}
       </div>
     </>
   );

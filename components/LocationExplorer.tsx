@@ -1,24 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  Map as MapIcon,
-  Train,
-  ShoppingBag,
-  GraduationCap,
-  Hotel,
-  Hospital,
-  CircleDot,
-  Building2,
-  Waves,
-  Plus,
-  Minus,
-  Navigation,
-  MapPin,
-  ChevronDown,
-  Trees,
-  RotateCcw,
-} from "lucide-react";
+import { Map as MapIcon, Plus, Minus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNavbar from "@/components/BottomNavbar";
@@ -38,7 +21,7 @@ const infrastructure = {
   current: [
     {
       title: "Education Institutes",
-      icon: GraduationCap,
+      icon: "/icons/education.svg",
       locations: [
         {
           title: "VIBGYOR High School",
@@ -59,7 +42,7 @@ const infrastructure = {
     },
     {
       title: "Banks",
-      icon: Building2,
+      icon: "/icons/hotel.svg",
       locations: [
         {
           title: "HDFC Bank",
@@ -80,7 +63,7 @@ const infrastructure = {
     },
     {
       title: "Recreational",
-      icon: Trees,
+      icon: "/icons/paint.svg",
       locations: [
         {
           title: "Vipasana pagoda",
@@ -111,7 +94,7 @@ const infrastructure = {
     },
     {
       title: "Lifestyle & Social",
-      icon: ShoppingBag,
+      icon: "/icons/lifestyle.svg",
       locations: [
         {
           title: "Sky City mall",
@@ -152,7 +135,7 @@ const infrastructure = {
     },
     {
       title: "Connectivity",
-      icon: Train,
+      icon: "/icons/connectivity.svg",
       locations: [
         {
           title: "AIR & Doordarshan Station",
@@ -198,7 +181,7 @@ const infrastructure = {
     },
     {
       title: "Hospitals",
-      icon: Hospital,
+      icon: "/icons/hospital.svg",
       locations: [
         {
           title: "APEX Hospital",
@@ -487,10 +470,7 @@ export default function LocationExplorer({
       el.innerHTML = `
         <div class="luxury-home-pulse-ring"></div>
         <div class="luxury-home-inner">
-          <svg viewBox="0 0 100 100" width="24" height="24">
-            <circle cx="50" cy="50" r="44" stroke="#ffffff" stroke-width="1" fill="none" opacity="0.3"/>
-            <text x="50%" y="54%" dominant-baseline="middle" text-anchor="middle" font-family="'Cinzel', 'Playfair Display', 'Didot', 'Georgia', serif" font-weight="bold" font-size="36" fill="#ffffff">H</text>
-          </svg>
+          <img src="/icons/hoh.svg" class="w-12 h-12 object-contain animate-gentle-bounce" alt="Hiranandani Site" />
         </div>
       `;
 
@@ -504,7 +484,7 @@ export default function LocationExplorer({
           }).setHTML(
             `<div class="luxury-mini-card" style="padding: 2px;">
                 <div class="category">Hiranandani Project</div>
-                <div class="title" style="margin-bottom: 0; font-family: serif; font-size: 14px;">Gorai Bayview Site</div>
+                <div class="title" style="margin-bottom: 0; font-family: serif; font-size: 14px;">Gorai Bayview</div>
               </div>`,
           ),
         )
@@ -546,13 +526,13 @@ export default function LocationExplorer({
     if (!catData) return;
 
     const iconMap: Record<string, string> = {
-      "Education Institutes": `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z"/><path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5"/><path d="M21.5 12v6"/></svg>`,
-      Banks: `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V10"/><path d="M18 22V10"/><path d="M3 22h18"/><path d="M3 10h18"/><path d="M12 2v4"/><path d="m17 2-5 4-5-4M2 10l10-8 10 8"/><path d="M12 14v4"/><path d="M10 16h4"/></svg>`,
-      Recreational: `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13v7"/><path d="M10 18h4"/><path d="M3 22h18"/><path d="m19 13-3-3h-4v3l3 3h4Z"/></svg>`,
-      "Lifestyle & Social": `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>`,
-      Connectivity: `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="16" rx="2"/><path d="M4 11h16"/><path d="M12 3v8"/><path d="m8 19-2 3"/><path d="m16 19 2 3"/><path d="M8 15h.01"/><path d="M16 15h.01"/></svg>`,
-      Hospitals: `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M12 8v8"/><path d="M8 12h8"/></svg>`,
-      "Commercial Hubspots": `<svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 21V9h6v12"/><path d="M21 9H3"/><path d="M9 5h6"/></svg>`,
+      "Education Institutes": `<img src="/icons/education.svg" class="w-10 h-10 object-contain" alt="Education" />`,
+      Banks: `<img src="/icons/hotel.svg" class="w-10 h-10 object-contain" alt="Banks" />`,
+      Recreational: `<img src="/icons/paint.svg" class="w-10 h-10 object-contain" alt="Recreational" />`,
+      "Lifestyle & Social": `<img src="/icons/lifestyle.svg" class="w-10 h-10 object-contain" alt="Lifestyle" />`,
+      Connectivity: `<img src="/icons/connectivity.svg" class="w-10 h-10 object-contain" alt="Connectivity" />`,
+      Hospitals: `<img src="/icons/hospital.svg" class="w-10 h-10 object-contain" alt="Hospitals" />`,
+      "Commercial Hubspots": `<img src="/icons/hotel.svg" class="w-10 h-10 object-contain" alt="Commercial" />`,
     };
 
     catData.locations.forEach((loc) => {
@@ -565,16 +545,17 @@ export default function LocationExplorer({
       const markerEl = document.createElement("div");
       markerEl.className = "permanent-label";
       markerEl.style.cssText = `
-        background: rgba(0, 0, 0, 0.75);
-        backdrop-filter: blur(8px);
+        background: rgba(44, 52, 55, 0.65);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
         color: white;
         padding: 6px 10px;
         border-radius: 6px;
         font-size: 11px;
         font-weight: 500;
         white-space: nowrap;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(64, 72, 75, 0.7);
         pointer-events: none;
       `;
       markerEl.textContent = parsed.title;
@@ -592,8 +573,8 @@ export default function LocationExplorer({
       const wrapperEl = document.createElement("div");
       wrapperEl.className =
         "luxury-poi-marker-wrapper flex items-center justify-center";
-      wrapperEl.style.width = "32px";
-      wrapperEl.style.height = "32px";
+      wrapperEl.style.width = "40px";
+      wrapperEl.style.height = "40px";
       wrapperEl.style.cursor = "pointer";
 
       // Create icon marker
@@ -959,7 +940,7 @@ export default function LocationExplorer({
             onClick={() => {
               if (mapRef.current) mapRef.current.zoomIn();
             }}
-            className="w-10 h-10 rounded-lg bg-black/60 backdrop-blur border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer"
+            className="w-10 h-10 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer"
             title="Zoom In"
           >
             <Plus size={20} />
@@ -968,7 +949,7 @@ export default function LocationExplorer({
             onClick={() => {
               if (mapRef.current) mapRef.current.zoomOut();
             }}
-            className="w-10 h-10 rounded-lg bg-black/60 backdrop-blur border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer"
+            className="w-10 h-10 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer"
             title="Zoom Out"
           >
             <Minus size={20} />
@@ -1015,7 +996,7 @@ export default function LocationExplorer({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="absolute z-30 flex flex-row items-center justify-between gap-4 p-5 pr-10 rounded-[20px] bg-[#0c0c0c]/80 backdrop-blur-[20px] border border-white/10 shadow-[0_12px_40px_rgba(0,0,0,0.6)] left-4 right-4 bottom-28 md:w-[420px] md:bottom-32 md:left-1/2 md:-translate-x-1/2 lg:bottom-auto lg:top-6 lg:left-1/2 lg:-translate-x-1/2 lg:w-[480px] lg:max-w-none"
+            className="absolute z-30 flex flex-row items-center justify-between gap-4 p-2 px-4 pr-10 rounded-[10px] bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 shadow-[0_12px_40px_rgba(0,0,0,0.4)] left-4 right-4 bottom-28 md:w-[420px] md:bottom-32 md:left-1/2 md:-translate-x-1/2 lg:bottom-auto lg:top-6 lg:left-1/2 lg:-translate-x-1/2 lg:w-[480px] lg:max-w-none"
           >
             <div className="flex-1 min-w-0">
               <p className="text-[#C79A59] text-[9px] sm:text-xs uppercase tracking-[0.2em] font-semibold">
@@ -1023,7 +1004,7 @@ export default function LocationExplorer({
                   ? categoryDisplayNames[selectedCategory] || selectedCategory
                   : ""}
               </p>
-              <h3 className="text-white text-base sm:text-2xl font-light font-serif tracking-wide truncate mt-0.5 sm:mt-1">
+              <h3 className="text-white text-base sm:text-xl font-light font-serif tracking-wide truncate mt-0.5 sm:mt-1">
                 {selectedLocation
                   ? parseLocationName(
                       selectedLocation.title,
@@ -1037,7 +1018,7 @@ export default function LocationExplorer({
               (selectedLocation &&
                 parseLocationName(selectedLocation.title, selectedLocation.name)
                   .distance)) && (
-              <div className="flex flex-col items-end pl-4 border-l border-white/10 shrink-0">
+              <div className="flex flex-col items-end pl-4 border-l border-[#40484B]/50 shrink-0">
                 <p className="text-white text-sm sm:text-lg font-semibold tracking-wide">
                   {formatDurationForCard(
                     activeRoute
@@ -1101,48 +1082,51 @@ export default function LocationExplorer({
 
         /* Luxury markers styles */
         .luxury-poi-marker {
-          width: 32px;
-          height: 32px;
-          background: linear-gradient(135deg, #f3e5c8 0%, #c79a59 50%, #8c6227 100%);
-          border: 1.5px solid #ffffff;
-          border-radius: 50%;
-          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+          width: 40px;
+          height: 40px;
           cursor: pointer;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: #1a1204;
           transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
           z-index: 5;
         }
 
+        .luxury-poi-marker img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
+          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
         .luxury-poi-marker:hover {
           transform: scale(1.15);
-          background: linear-gradient(135deg, #ffffff 0%, #e8ca99 50%, #a27536 100%);
-          box-shadow: 0 6px 16px rgba(199, 154, 89, 0.6), 0 0 0 3px rgba(199, 154, 89, 0.2);
-          border-color: #ffffff;
           z-index: 10;
+        }
+
+        .luxury-poi-marker:hover img {
+          filter: drop-shadow(0 6px 12px rgba(199, 154, 89, 0.7)) brightness(1.05);
         }
 
         .luxury-poi-marker.active {
           transform: scale(1.25);
-          background: linear-gradient(135deg, #ffffff 0%, #e8ca99 30%, #c79a59 100%);
-          border: 2px solid #ffffff;
-          box-shadow: 0 0 25px rgba(199, 154, 89, 0.9), 0 0 0 5px rgba(199, 154, 89, 0.4);
-          color: #1a1204;
           z-index: 50;
-          animation: active-glow 2s infinite ease-in-out;
         }
 
-        @keyframes active-glow {
+        .luxury-poi-marker.active img {
+          animation: active-glow-img 2s infinite ease-in-out;
+        }
+
+        @keyframes active-glow-img {
           0% {
-            box-shadow: 0 0 15px rgba(199, 154, 89, 0.8), 0 0 0 4px rgba(199, 154, 89, 0.3);
+            filter: drop-shadow(0 0 12px rgba(199, 154, 89, 0.8)) brightness(1.05);
           }
           50% {
-            box-shadow: 0 0 25px rgba(199, 154, 89, 1), 0 0 0 8px rgba(199, 154, 89, 0.5);
+            filter: drop-shadow(0 0 20px rgba(199, 154, 89, 1)) brightness(1.15);
           }
           100% {
-            box-shadow: 0 0 15px rgba(199, 154, 89, 0.8), 0 0 0 4px rgba(199, 154, 89, 0.3);
+            filter: drop-shadow(0 0 12px rgba(199, 154, 89, 0.8)) brightness(1.05);
           }
         }
 
@@ -1155,12 +1139,8 @@ export default function LocationExplorer({
         }
 
         .luxury-home-inner {
-          width: 48px;
-          height: 48px;
-          background: radial-gradient(circle at 35% 35%, #f6e3b4 0%, #d4af37 40%, #aa7c11 80%, #684803 100%);
-          border: 2.5px solid #ffffff;
-          border-radius: 50%;
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 0 8px rgba(255, 255, 255, 0.4);
+          width: 52px;
+          height: 52px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1168,9 +1148,20 @@ export default function LocationExplorer({
           transition: all 0.3s ease;
         }
 
+        .luxury-home-inner img {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
+          transition: all 0.3s ease;
+        }
+
         .luxury-home-inner:hover {
-          transform: scale(1.1);
-          box-shadow: 0 12px 30px rgba(199, 154, 89, 0.8), inset 0 0 10px rgba(255, 255, 255, 0.5);
+          transform: scale(1.15);
+        }
+
+        .luxury-home-inner:hover img {
+          filter: drop-shadow(0 8px 16px rgba(199, 154, 89, 0.7));
         }
 
         .luxury-home-pulse-ring {
@@ -1200,10 +1191,10 @@ export default function LocationExplorer({
 
         /* Hover popup card styles */
         .luxury-hover-popup .mapboxgl-popup-content {
-          background: rgba(12, 12, 12, 0.85) !important;
-          backdrop-filter: blur(16px) !important;
-          -webkit-backdrop-filter: blur(16px) !important;
-          border: 1px solid rgba(255, 255, 255, 0.12) !important;
+          background: rgba(44, 52, 55, 0.65) !important;
+          backdrop-filter: blur(12px) !important;
+          -webkit-backdrop-filter: blur(12px) !important;
+          border: 1px solid rgba(64, 72, 75, 0.7) !important;
           border-radius: 12px !important;
           box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5) !important;
           padding: 10px 14px !important;

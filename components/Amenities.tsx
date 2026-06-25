@@ -122,8 +122,8 @@ export default function Amenities({ onNavigate }: AmenitiesProps) {
       />
 
       {/* AMENITIES LIST PANEL */}
-      <div className="absolute left-[330px] top-[140px] bottom-[110px] z-20 w-[400px] rounded-lg border border-white/10 bg-[#2B363D]/90 backdrop-blur-md flex flex-col">
-        <div className="border-b border-white/10 px-5 py-4 shrink-0">
+      <div className="absolute left-[330px] top-1/2 -translate-y-1/2 z-20 w-[400px] max-h-[80vh] rounded-lg border border-[#40484B]/70 bg-[#2C3437]/65 backdrop-blur-md flex flex-col">
+        <div className="border-b border-[#40484B]/50 px-5 py-4 shrink-0">
           <h4 className="text-white capitalize">{selectedCategory} Amenities</h4>
         </div>
 

@@ -15,6 +15,10 @@ export default function WelcomeExperience() {
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (progress / 100) * circumference;
 
+  const angle = (progress / 100) * 2 * Math.PI;
+  const dotX = 72 + radius * Math.cos(angle);
+  const dotY = 72 + radius * Math.sin(angle);
+
   useEffect(() => {
     const duration = 2500; // 2.5 seconds total loading
     const intervalTime = 25; // 25ms increments
@@ -47,8 +51,12 @@ export default function WelcomeExperience() {
             key="loading"
             initial={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            style={{
+              background:
+                "radial-gradient(circle at center, #222 0%, #1a1a1a 45%, #121212 100%)",
+            }}
             transition={{ duration: 0.6, ease: "easeInOut" }}
-            className="absolute inset-0 bg-[#111111] flex flex-col items-center justify-center z-50"
+            className="absolute inset-0   flex flex-col items-center justify-center z-50"
           >
             <div className="relative flex items-center justify-center mb-8">
               {/* Circular SVG Progress */}
@@ -58,7 +66,7 @@ export default function WelcomeExperience() {
                   cx="72"
                   cy="72"
                   r={radius}
-                  className="text-white/5"
+                  className="text-white/30"
                   strokeWidth="1.5"
                   stroke="currentColor"
                   fill="transparent"
@@ -68,7 +76,7 @@ export default function WelcomeExperience() {
                   cx="72"
                   cy="72"
                   r={radius}
-                  className="text-amber-500/80 transition-all duration-75"
+                  className="text-white transition-all duration-75"
                   strokeWidth="1.5"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
@@ -76,6 +84,18 @@ export default function WelcomeExperience() {
                   stroke="currentColor"
                   fill="transparent"
                 />
+                {/* Glowing dot in front of active progress ring */}
+                {progress > 0 && (
+                  <circle
+                    cx={dotX}
+                    cy={dotY}
+                    r="3.5"
+                    fill="#ffffff"
+                    style={{
+                      filter: "drop-shadow(0 0 4px rgba(255, 255, 255, 0.95))",
+                    }}
+                  />
+                )}
               </svg>
               {/* Central Serif Percentage */}
               <span className="absolute text-3xl font-serif italic font-normal tracking-wide text-white/90">
@@ -85,10 +105,10 @@ export default function WelcomeExperience() {
 
             {/* Labels */}
             <div className="text-center space-y-1">
-              <h2 className="text-sm uppercase tracking-[0.2em] font-medium text-white/80">
+              <h2 className="text-2xl uppercase tracking-[0.2em] font-medium text-white/80">
                 Loading Experience
               </h2>
-              <p className="text-[10px] uppercase tracking-[0.15em] text-white/40">
+              <p className="text-[10px] uppercase tracking-[0.15em] mt-2 text-white/40">
                 Please Wait
               </p>
             </div>
@@ -155,11 +175,6 @@ export default function WelcomeExperience() {
                 />
               </div>
 
-              {/* Intro */}
-              <p className="text-white/70 text-lg md:text-2xl font-light mb-2">
-                In the Heart of
-              </p>
-
               {/* Heading */}
               <h1 className="text-white font-light leading-none">
                 <span className="block text-5xl md:text-7xl">
@@ -173,20 +188,28 @@ export default function WelcomeExperience() {
               </h1>
 
               {/* Description */}
-              <p className="text-white/80 text-lg md:text-2xl font-light mb-4">
+              <p className="text-white/80 text-lg md:text-2xl font-light mb-4 mt-6">
                 Journey to Iconic Skylines Shaped by Timeless Design
               </p>
 
               {/* CTA */}
               <button
                 onClick={() => router.push("/location")}
-                className="group   text-white font-semibold text-2xl absolute bottom-[15rem] cursor-pointer "
+                className="group text-white font-semibold text-2xl absolute bottom-[10rem] cursor-pointer"
               >
                 <span className="relative z-10">Explore Now</span>
 
                 {/* Decorative corners */}
-                <span className="absolute -right-6 -top-3 w-8 h-8 border-r-2 border-t-2 border-[#C79A59] " />
-                <span className="absolute -left-6 -bottom-3 w-8 h-8 border-l-2 border-b-2 border-[#C79A59] " />
+                <img
+                  src="/icons/top.svg"
+                  className="absolute -right-4 -top-2 w-8 h-8 pointer-events-none transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
+                  alt=""
+                />
+                <img
+                  src="/icons/left.svg"
+                  className="absolute -left-4 -bottom-3 w-8 h-8 pointer-events-none transition-transform duration-300 group-hover:-translate-x-1 group-hover:translate-y-1"
+                  alt=""
+                />
               </button>
             </div>
           </motion.div>
