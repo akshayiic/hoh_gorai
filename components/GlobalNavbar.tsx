@@ -63,7 +63,7 @@ export default function GlobalNavbar({
         {/* Project Name Box (Sidebar themed UI style) */}
         <div className="flex flex-col justify-center h-[58px] px-4 bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 rounded-[5px] shadow-lg">
           <h1 className="text-[22px] font-bold text-white leading-tight tracking-wide">
-            Hiranandani Bay View
+            Hiranandani Bayview
           </h1>
           <p className="text-[14px] font-medium text-[#BBBBBB] leading-none mt-1">
             Gorai, Mumbai

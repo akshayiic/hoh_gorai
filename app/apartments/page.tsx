@@ -221,7 +221,7 @@ export default function ApartmentsPage() {
               setSelectedTower(tower);
               setSelectedPlanIndex(0);
             }}
-            className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition duration-200 ${
+            className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition cursor-pointer duration-200 ${
               selectedTower === tower
                 ? "bg-white text-black border-transparent"
                 : "bg-black/40 text-white border-white/10 backdrop-blur-md hover:bg-black/60 hover:border-white/20"

@@ -210,6 +210,11 @@ export default function BalconyView() {
         const tileList: any[] = [];
         layer.visibleTiles(tileList);
 
+        if (tileList.length === 0) {
+          // If no tiles are visible in layout yet, we are still preparing the scene
+          return;
+        }
+
         let allLoaded = true;
         for (let i = 0; i < tileList.length; i++) {
           if (!textureStore.query(tileList[i]).hasTexture) {
@@ -220,22 +225,25 @@ export default function BalconyView() {
 
         if (allLoaded) {
           setIsLoading(false);
+          clearInterval(pollInterval);
         }
       };
 
       // Add event listener for loading progress
       textureStore.addEventListener("textureLoad", checkLoaded);
       
-      // Run immediately check
-      checkLoaded();
+      // Poll every 100ms to check if visible tiles have been determined and loaded
+      const pollInterval = setInterval(checkLoaded, 100);
 
-      // Fallback safety timeout (3 seconds) so slow connections don't block the user forever
+      // Fallback safety timeout (4 seconds) so slow connections don't block the user forever
       const timeoutId = setTimeout(() => {
         setIsLoading(false);
-      }, 3000);
+        clearInterval(pollInterval);
+      }, 4000);
 
       return () => {
         textureStore.removeEventListener("textureLoad", checkLoaded);
+        clearInterval(pollInterval);
         clearTimeout(timeoutId);
       };
     }
@@ -323,7 +331,7 @@ export default function BalconyView() {
           <button
             key={tower}
             onClick={() => handleTowerChange(tower)}
-            className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition duration-200 ${
+            className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition cursor-pointer  duration-200 ${
               selectedTower === tower
                 ? "bg-white text-black border-transparent"
                 : "bg-black/40 text-white border-white/10 backdrop-blur-md hover:bg-black/60 hover:border-white/20"

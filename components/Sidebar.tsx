@@ -87,7 +87,7 @@ export default function Sidebar({
 }: SidebarProps) {
   return (
     <aside
-      className={`absolute left-6 top-0 translate-y-1/2 z-20 hidden lg:block ${className}`}
+      className={`absolute left-6 top-[6.5rem]   z-20 hidden lg:block ${className}`}
     >
       <div
         className="
