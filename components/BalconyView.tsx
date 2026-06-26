@@ -314,15 +314,7 @@ export default function BalconyView() {
         ])}
       />
 
-      {/* Fullscreen Toggle */}
-      <button
-        onClick={() => document.documentElement.requestFullscreen()}
-        className="absolute bottom-4 right-4 z-50 bg-black/50 text-white p-2 rounded-lg hover:bg-black/70"
-        title="Fullscreen"
-      >
-        <Maximize2 size={20} />
-      </button>
-
+    
       {/* Tower Selection Buttons */}
       <div className="absolute bottom-6 left-1/2 z-40 flex -translate-x-1/2 gap-2">
         {(
