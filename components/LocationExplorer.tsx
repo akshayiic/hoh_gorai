@@ -1000,15 +1000,15 @@ export default function LocationExplorer({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="absolute z-30 flex flex-row items-center justify-between gap-4 p-2 px-4 pr-10 rounded-[10px] bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 shadow-[0_12px_40px_rgba(0,0,0,0.4)] left-4 right-4 bottom-28 md:w-[420px] md:bottom-32 md:left-1/2 md:-translate-x-1/2 lg:bottom-auto lg:top-6 lg:left-1/2 lg:-translate-x-1/2 lg:w-[480px] lg:max-w-none"
+            className="absolute z-30 w-fit flex flex-col items-start gap-3 p-4 rounded-[10px] bg-[#2C3437]/75 backdrop-blur-md border border-[#40484B]/70 shadow-[0_12px_40px_rgba(0,0,0,0.4)] left-4 right-4 bottom-28  md:bottom-32 md:left-1/2 md:-translate-x-1/2 lg:bottom-auto lg:top-6 lg:left-1/2 lg:-translate-x-1/2  lg:max-w-none"
           >
-            <div className="flex-1 min-w-0">
-              <p className="text-[#C79A59] text-[9px] sm:text-xs uppercase tracking-[0.2em] font-semibold">
+            <div className="w-full pr-8 min-w-0">
+              <p className="text-[#C79A59] text-[10px] sm:text-xs uppercase tracking-[0.2em] font-semibold">
                 {selectedLocation
                   ? categoryDisplayNames[selectedCategory] || selectedCategory
                   : ""}
               </p>
-              <h3 className="text-white text-base sm:text-xl font-light font-sans tracking-wide truncate mt-0.5 sm:mt-1">
+              <h3 className="text-white text-base sm:text-lg font-light font-sans tracking-wide truncate mt-1">
                 {selectedLocation
                   ? parseLocationName(
                       selectedLocation.title,
@@ -1022,27 +1022,34 @@ export default function LocationExplorer({
               (selectedLocation &&
                 parseLocationName(selectedLocation.title, selectedLocation.name)
                   .distance)) && (
-              <div className="flex flex-col items-end pl-4 border-l border-[#40484B]/50 shrink-0">
-                <p className="text-white text-sm sm:text-lg font-semibold tracking-wide">
-                  {formatDurationForCard(
-                    activeRoute
-                      ? activeRoute.duration
-                      : parseLocationName(
-                          selectedLocation.title,
-                          selectedLocation.name,
-                        ).duration,
-                  )}
-                </p>
-                <p className="text-white/50 text-[10px] sm:text-xs tracking-wider mt-0.5">
-                  {formatDistanceForCard(
-                    activeRoute
-                      ? activeRoute.distance
-                      : parseLocationName(
-                          selectedLocation.title,
-                          selectedLocation.name,
-                        ).distance,
-                  )}
-                </p>
+              <div className="flex flex-row items-center gap-4 w-full border-t border-[#40484B]/30 pt-3 shrink-0">
+                <div className="flex flex-col items-start min-w-0">
+                  <span className="text-white/40 text-[9px] uppercase tracking-widest font-medium">Duration</span>
+                  <p className="text-white text-xs sm:text-sm font-semibold tracking-wide mt-0.5">
+                    {formatDurationForCard(
+                      activeRoute
+                        ? activeRoute.duration
+                        : parseLocationName(
+                            selectedLocation.title,
+                            selectedLocation.name,
+                          ).duration,
+                    )}
+                  </p>
+                </div>
+                <div className="h-6 w-px bg-[#40484B]/50" />
+                <div className="flex flex-col items-start min-w-0">
+                  <span className="text-[#C79A59] text-[9px] uppercase tracking-widest font-medium">Distance</span>
+                  <p className="text-white text-xs sm:text-sm font-semibold tracking-wide mt-0.5">
+                    {formatDistanceForCard(
+                      activeRoute
+                        ? activeRoute.distance
+                        : parseLocationName(
+                            selectedLocation.title,
+                            selectedLocation.name,
+                          ).distance,
+                    )}
+                  </p>
+                </div>
               </div>
             )}
 

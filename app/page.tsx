@@ -44,6 +44,9 @@ export default function WelcomeExperience() {
 
   return (
     <div className="h-screen w-screen bg-black overflow-hidden relative font-sans text-white">
+      {/* Preload background image to cache it during the loading screen */}
+      <img src="/gallery/explore_bg.webp" className="hidden" aria-hidden="true" alt="" />
+
       <AnimatePresence mode="wait">
         {loading ? (
           // LOADING SCREEN (Reflecting the screenshot design)
@@ -126,7 +129,7 @@ export default function WelcomeExperience() {
             <div
               className="absolute inset-0 bg-cover bg-center"
               style={{
-                backgroundImage: `url('/gallery/explore_bg.png')`,
+                backgroundImage: `url('/gallery/explore_bg.webp')`,
               }}
             />
 

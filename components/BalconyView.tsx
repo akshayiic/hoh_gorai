@@ -72,35 +72,36 @@ export default function BalconyView() {
     "Tower 1" | "Tower 2" | "Tower 3"
   >("Tower 1");
   const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
+  const [isViewerReady, setIsViewerReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const viewerRef = useRef<any>(null);
   const panoRef = useRef<HTMLDivElement>(null);
-  const marzipanoRef = useRef<any>(null);
   const allScenesRef = useRef<any>({});
 
   const currentTowerFloors = towerFloors[selectedTower];
   const currentFloor = currentTowerFloors[currentFloorIndex];
 
+  // Initialize Marzipano Viewer and All Scenes once on mount
   useEffect(() => {
     let mounted = true;
+    let viewer: any = null;
 
     const initializeMarzipano = async () => {
       try {
-        // Dynamic import of Marzipano
+        // Dynamic import of Marzipano (requires window/document)
         const Marzipano = (await import("marzipano")).default;
 
         if (!mounted || !panoRef.current) return;
 
-        // Create viewer
-        const viewer = new Marzipano.Viewer(panoRef.current, {
+        // Create viewer instance
+        viewer = new Marzipano.Viewer(panoRef.current, {
           controls: {
-            mouseViewMode: "drag", // drag|qtvr
+            mouseViewMode: "drag",
           },
         });
 
         viewerRef.current = viewer;
 
-        // Store scenes reference
         const allScenes: any = {};
         allScenesRef.current = allScenes;
 
@@ -112,14 +113,10 @@ export default function BalconyView() {
           return "tower1";
         };
 
-        // Create scene function matching the reference implementation
+        // Create scene helper
         const create360Scene = (sceneId: string, towerPath: string) => {
           const scenePath = `${towerPath}/app-files/tiles/${sceneId}`;
           const baseUrl = `https://assets.vestate.io/hiranandani-gorai/morning/${scenePath}`;
-
-          console.log("Loading scene from:", baseUrl);
-          console.log("Tile URL:", `${baseUrl}/{z}/{f}/{y}/{x}.jpg`);
-          console.log("Preview URL:", `${baseUrl}/preview.jpg`);
 
           const source = Marzipano.ImageUrlSource.fromString(
             `${baseUrl}/{z}/{f}/{y}/{x}.jpg`,
@@ -163,7 +160,7 @@ export default function BalconyView() {
           };
         };
 
-        // Initialize scenes for all towers and floors
+        // Initialize all 24 scenes (Tower 1, 2, 3) once
         Object.entries(towerFloors).forEach(([towerName, floors]) => {
           const towerPath = getTowerPath(towerName);
           floors.forEach((floorData) => {
@@ -171,23 +168,11 @@ export default function BalconyView() {
           });
         });
 
-        // Load current floor scene
-        const currentSceneId = currentFloor?.id;
-        if (currentSceneId && allScenes[currentSceneId]) {
-          allScenes[currentSceneId].scene
-            .switchTo()
-            .then(() => {
-              if (mounted) setIsLoading(false);
-            })
-            .catch(() => {
-              if (mounted) setIsLoading(false);
-            });
-        } else {
-          if (mounted) setIsLoading(false);
+        if (mounted) {
+          setIsViewerReady(true);
         }
       } catch (error) {
         console.error("Failed to initialize Marzipano:", error);
-        if (mounted) setIsLoading(false);
       }
     };
 
@@ -195,15 +180,69 @@ export default function BalconyView() {
 
     return () => {
       mounted = false;
+      if (viewer) {
+        viewer.destroy();
+      }
     };
-  }, [selectedTower, currentFloorIndex]);
+  }, []);
+
+  // Handle scene switching, transitions, and loading states
+  useEffect(() => {
+    if (!isViewerReady || !viewerRef.current) return;
+
+    const currentTowerFloors = towerFloors[selectedTower];
+    const currentFloor = currentTowerFloors[currentFloorIndex];
+    if (!currentFloor) return;
+
+    const sceneId = currentFloor.id;
+    const sceneData = allScenesRef.current[sceneId];
+    if (sceneData) {
+      setIsLoading(true);
+
+      // Perform a smooth fade transition (600ms) to avoid visual glitch/abrupt swap
+      sceneData.scene.switchTo({ transitionDuration: 600 });
+
+      // Track texture loading state to hide spinner once visible tiles are loaded
+      const layer = sceneData.scene.layer();
+      const textureStore = layer.textureStore();
+
+      const checkLoaded = () => {
+        const tileList: any[] = [];
+        layer.visibleTiles(tileList);
+
+        let allLoaded = true;
+        for (let i = 0; i < tileList.length; i++) {
+          if (!textureStore.query(tileList[i]).hasTexture) {
+            allLoaded = false;
+            break;
+          }
+        }
+
+        if (allLoaded) {
+          setIsLoading(false);
+        }
+      };
+
+      // Add event listener for loading progress
+      textureStore.addEventListener("textureLoad", checkLoaded);
+      
+      // Run immediately check
+      checkLoaded();
+
+      // Fallback safety timeout (3 seconds) so slow connections don't block the user forever
+      const timeoutId = setTimeout(() => {
+        setIsLoading(false);
+      }, 3000);
+
+      return () => {
+        textureStore.removeEventListener("textureLoad", checkLoaded);
+        clearTimeout(timeoutId);
+      };
+    }
+  }, [isViewerReady, selectedTower, currentFloorIndex]);
 
   const switchFloor = (index: number) => {
-    const floorData = currentTowerFloors[index];
-    if (floorData && allScenesRef.current[floorData.id]) {
-      setCurrentFloorIndex(index);
-      allScenesRef.current[floorData.id].scene.switchTo();
-    }
+    setCurrentFloorIndex(index);
   };
 
   const handleTowerChange = (tower: "Tower 1" | "Tower 2" | "Tower 3") => {
@@ -225,12 +264,23 @@ export default function BalconyView() {
           style={{ width: "100%", height: "100%" }}
         />
 
-        {/* Loading Overlay */}
-        {isLoading && (
-          <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-10">
-            <div className="text-white text-lg">Loading Balcony View...</div>
+        {/* Loading Overlay with premium design and animations */}
+        <div
+          className={`absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-10 transition-opacity duration-500 ease-in-out ${
+            isLoading ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          <div className="flex flex-col items-center gap-4">
+            {/* Custom high-end dual-ring loading spinner */}
+            <div className="relative w-14 h-14">
+              <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-t-white animate-spin"></div>
+            </div>
+            <div className="text-white text-sm font-semibold tracking-widest uppercase animate-pulse">
+              Loading 360° Panorama
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* SIDEBAR */}

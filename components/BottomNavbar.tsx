@@ -23,36 +23,45 @@ export default function BottomNavbar({ activeItem }: BottomNavbarProps) {
   const router = useRouter();
 
   return (
-    <div className="fixed bottom-6 left-7 z-40">
-      <nav className="flex overflow-hidden rounded-lg border border-white/10 bg-black/40 backdrop-blur-md shadow-2xl">
-        {navItems.map((item, idx) => {
-          const Icon = item.icon;
-          const isActive = activeItem === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => {
-                if (!isActive) {
-                  router.push(item.path);
-                }
-              }}
-              className={`flex items-center justify-center transition-all duration-300 cursor-pointer ${
-                isActive
-                  ? "bg-white text-black px-6 h-8 text-xs font-bold uppercase tracking-wider gap-2"
-                  : `text-white/70 hover:bg-white/5 hover:text-white w-14 h-8 ${
-                      idx !== 0 ? "border-l border-white/10" : ""
-                    }`
-              }`}
-            >
-              <Icon
-                size={18}
-                className={isActive ? "text-black" : "text-white/70"}
-              />
-              {isActive && <span>{item.label}</span>}
-            </button>
-          );
-        })}
-      </nav>
-    </div>
+    <>
+      <div className="fixed bottom-6 left-7 z-40">
+        <nav className="flex overflow-hidden rounded-lg border border-white/10 bg-black/40 backdrop-blur-md shadow-2xl">
+          {navItems.map((item, idx) => {
+            const Icon = item.icon;
+            const isActive = activeItem === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  if (!isActive) {
+                    router.push(item.path);
+                  }
+                }}
+                className={`flex items-center justify-center transition-all duration-300 cursor-pointer ${
+                  isActive
+                    ? "bg-white text-black px-6 h-8 text-xs font-bold uppercase tracking-wider gap-2"
+                    : `text-white/70 hover:bg-white/5 hover:text-white w-14 h-8 ${
+                        idx !== 0 ? "border-l border-white/10" : ""
+                      }`
+                }`}
+              >
+                <Icon
+                  size={18}
+                  className={isActive ? "text-black" : "text-white/70"}
+                />
+                {isActive && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      {/* RERA button in the right bottom corner */}
+      <div className="fixed bottom-6 right-7 z-40">
+        <button className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 px-5 py-2.5 text-[14px] font-medium text-[#E2E2E2] backdrop-blur-md transition duration-200 shadow-lg cursor-pointer hover:bg-[#2C3437]/85 hover:text-white">
+          RERA
+        </button>
+      </div>
+    </>
   );
 }

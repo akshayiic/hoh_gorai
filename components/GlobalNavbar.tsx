@@ -62,10 +62,10 @@ export default function GlobalNavbar({
 
         {/* Project Name Box (Sidebar themed UI style) */}
         <div className="flex flex-col justify-center h-[58px] px-4 bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 rounded-[5px] shadow-lg">
-          <h1 className="text-[16px] font-bold text-white leading-tight tracking-wide">
+          <h1 className="text-[22px] font-bold text-white leading-tight tracking-wide">
             Hiranandani Bay View
           </h1>
-          <p className="text-[11px] font-medium text-[#BBBBBB] leading-none mt-1">
+          <p className="text-[14px] font-medium text-[#BBBBBB] leading-none mt-1">
             Gorai, Mumbai
           </p>
         </div>
@@ -73,8 +73,8 @@ export default function GlobalNavbar({
 
       {/* TOP ACTIONS */}
       <div className="absolute right-6 top-8 z-20 flex items-center gap-2">
-        {/* Back Button (Only visible if the user has visited a page previously in history) */}
-        {history.length > 1 && (
+        {/* Back Button (Only visible if the user has visited a page previously in history, and not on /location) */}
+        {history.length > 1 && currentPage !== "location" && (
           <button
             onClick={handleGoBack}
             className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 px-5 py-2.5 text-[14px] font-medium text-[#E2E2E2] backdrop-blur-md hover:bg-[#2C3437]/85 hover:text-white transition duration-200 cursor-pointer flex items-center gap-1.5 shadow-lg"
@@ -87,11 +87,6 @@ export default function GlobalNavbar({
             Go Back
           </button>
         )}
-
-        <button className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 px-5 py-2.5 text-[14px] font-medium text-[#E2E2E2] backdrop-blur-md    transition duration-200  shadow-lg">
-          RERA
-        </button>
-
         {showReset && onReset && (
           <button
             onClick={onReset}
