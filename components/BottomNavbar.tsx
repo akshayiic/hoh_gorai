@@ -58,9 +58,12 @@ export default function BottomNavbar({ activeItem }: BottomNavbarProps) {
 
       {/* RERA button in the right bottom corner */}
       <div className="fixed bottom-6 right-7 z-40 ">
-        <button className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/85  px-5 py-2.5 text-[14px] font-medium text-white backdrop-blur-md transition duration-200 shadow-lg text-white">
-          RERA
-        </button>
+          <img
+            src="/icons/powered.png"
+            alt="Logo"
+            className="h-12 object-contain"
+          />
+    
       </div>
     </>
   );

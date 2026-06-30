@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Map as MapIcon, Plus, Minus, Landmark } from "lucide-react";
+import { Map as MapIcon, Plus, Minus, Landmark, Briefcase } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNavbar from "@/components/BottomNavbar";
@@ -107,8 +107,8 @@ const infrastructure = {
           coordinates: { lat: 19.1729281, lng: 72.8359056 },
         },
         {
-          title: "Chroma",
-          name: "Chroma - 3.2km (11 Mins)",
+          title: "Croma",
+          name: "Croma - 3.2km (11 Mins)",
           coordinates: { lat: 19.2337106, lng: 72.8538108 },
         },
         {
@@ -215,74 +215,74 @@ const infrastructure = {
         },
       ],
     },
-    // {
-    //   title: "Commercial Hubspots",
-    //   icon: Hotel,
-    //   locations: [
-    //     {
-    //       title: "Goregaon",
-    //       name: "Goregaon - 12km (41 Mins)",
-    //       coordinates: { lat: 19.1662566, lng: 72.8525696 },
-    //     },
-    //     {
-    //       title: "Nariman Point",
-    //       name: "Nariman Point - 44km (1hr 31 Mins)",
-    //       coordinates: { lat: 18.9255728, lng: 72.8242221 },
-    //     },
-    //     {
-    //       title: "Malad",
-    //       name: "Malad - 8km (36 Mins)",
-    //       coordinates: { lat: 19.1874459, lng: 72.8483689 },
-    //     },
-    //     {
-    //       title: "CST",
-    //       name: "CST - 43km (1hr 34 Mins)",
-    //       coordinates: { lat: 18.9401131, lng: 72.8357207 },
-    //     },
-    //     {
-    //       title: "BKC",
-    //       name: "BKC - 26km (1hr)",
-    //       coordinates: { lat: 19.0687893, lng: 72.8702647 },
-    //     },
-    //     {
-    //       title: "Andheri",
-    //       name: "Andheri - 19km (1 hr)",
-    //       coordinates: { lat: 19.113645, lng: 72.8697339 },
-    //     },
-    //     {
-    //       title: "Worli",
-    //       name: "Worli - 34km (1 Hr 26 Mins)",
-    //       coordinates: { lat: 18.9986406, lng: 72.8173599 },
-    //     },
-    //     {
-    //       title: "Thane",
-    //       name: "Thane - 28km (1hr 21 Mins)",
-    //       coordinates: { lat: 19.2122949, lng: 72.9771661 },
-    //     },
-    //     {
-    //       title: "Lower Parel",
-    //       name: "Lower Parel - 35km (1hr 35 Mins)",
-    //       coordinates: { lat: 18.9982461, lng: 72.8269646 },
-    //     },
-    //     {
-    //       title: "Powai",
-    //       name: "Powai - 21km (1hr 13 Mins)",
-    //       coordinates: { lat: 19.1175993, lng: 72.9059747 },
-    //     },
-    //   ],
-    // },
+    {
+      title: "Commercial Hubspots",
+      icon:  Briefcase,
+      locations: [
+        {
+          title: "Goregaon",
+          name: "Goregaon - 12km (41 Mins)",
+          coordinates: { lat: 19.1662566, lng: 72.8525696 },
+        },
+        {
+          title: "Nariman Point",
+          name: "Nariman Point - 44km (1hr 31 Mins)",
+          coordinates: { lat: 18.9255728, lng: 72.8242221 },
+        },
+        {
+          title: "Malad",
+          name: "Malad - 8km (36 Mins)",
+          coordinates: { lat: 19.1874459, lng: 72.8483689 },
+        },
+        {
+          title: "CST",
+          name: "CST - 43km (1hr 34 Mins)",
+          coordinates: { lat: 18.9401131, lng: 72.8357207 },
+        },
+        {
+          title: "BKC",
+          name: "BKC - 26km (1hr)",
+          coordinates: { lat: 19.0687893, lng: 72.8702647 },
+        },
+        {
+          title: "Andheri",
+          name: "Andheri - 19km (1 hr)",
+          coordinates: { lat: 19.113645, lng: 72.8697339 },
+        },
+        {
+          title: "Worli",
+          name: "Worli - 34km (1 Hr 26 Mins)",
+          coordinates: { lat: 18.9986406, lng: 72.8173599 },
+        },
+        {
+          title: "Thane",
+          name: "Thane - 28km (1hr 21 Mins)",
+          coordinates: { lat: 19.2122949, lng: 72.9771661 },
+        },
+        {
+          title: "Lower Parel",
+          name: "Lower Parel - 35km (1hr 35 Mins)",
+          coordinates: { lat: 18.9982461, lng: 72.8269646 },
+        },
+        {
+          title: "Powai",
+          name: "Powai - 21km (1hr 13 Mins)",
+          coordinates: { lat: 19.1175993, lng: 72.9059747 },
+        },
+      ],
+    },
   ],
   upcoming: [],
 };
 
 const categoryDisplayNames: Record<string, string> = {
-  "Education Institutes": "Education",
-  Banks: "Banks",
+  "Education Institutes": "Education Institutes",
+  Banks: "Bank",
   Recreational: "Recreational",
-  "Lifestyle & Social": "Shopping & Lifestyle",
+  "Lifestyle & Social": "SLifestyle & Social",
   Connectivity: "Connectivity",
-  Hospitals: "Healthcare",
-  "Commercial Hubspots": "Commercial Hub",
+  Hospitals: "Hospital",
+  "Commercial Hubspots": "Commercial Hubspot",
 };
 
 function parseLocationName(title: string, name: string) {
@@ -371,65 +371,19 @@ export default function LocationExplorer({
   const animationFrameRef = useRef<number | null>(null);
   const hoverPopupRef = useRef<mapboxgl.Popup | null>(null);
 
+  const collisionTimeoutRef = useRef<number | null>(null);
+  const selectedLocationRef = useRef<LocationItem | null>(null);
+
+  useEffect(() => {
+    selectedLocationRef.current = selectedLocation;
+    resolveLabelCollisions();
+  }, [selectedLocation]);
+
   // Initialize Map
   useEffect(() => {
     if (!mapContainerRef.current) return;
 
-    // const map = new maplibregl.Map({
-    //   container: mapContainerRef.current,
-    //   style: {
-    //     version: 8,
-    //     sources: {
-    //       carto: {
-    //         type: "raster",
-    //         tiles: [
-    //           "https://basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}.png",
-    //         ],
-    //         tileSize: 256,
-    //         attribution: "© OpenStreetMap contributors, © CARTO",
-    //       },
-    //     },
-    //     layers: [
-    //       {
-    //         id: "carto-tiles",
-    //         type: "raster",
-    //         source: "carto",
-    //         minzoom: 0,
-    //         maxzoom: 20,
-    //       },
-    //     ],
-    //   },
-    //   center: [GoraiBayviewLocation.lng, GoraiBayviewLocation.lat],
-    //   zoom: 13,
-    // });
-
-    // const map = new maplibregl.Map({
-    //   container: mapContainerRef.current,
-    //   style: {
-    //     version: 8,
-    //     sources: {
-    //       google: {
-    //         type: "raster",
-    //         tiles: [
-    //           "https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&apistyle=s.t%3A0%7Cs.e%3Al%7Cp.v%3Aoff",
-    //         ],
-    //         tileSize: 256,
-    //         attribution: "© Google Maps",
-    //       },
-    //     },
-    //     layers: [
-    //       {
-    //         id: "google-tiles",
-    //         type: "raster",
-    //         source: "google",
-    //         minzoom: 0,
-    //         maxzoom: 22,
-    //       },
-    //     ],
-    //   },
-    //   center: [GoraiBayviewLocation.lng, GoraiBayviewLocation.lat],
-    //   zoom: 13,
-    // });
+  
 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
@@ -505,6 +459,384 @@ export default function LocationExplorer({
     };
   }, []);
 
+  const resolveLabelCollisions = () => {
+    if (collisionTimeoutRef.current) {
+      cancelAnimationFrame(collisionTimeoutRef.current);
+    }
+
+    collisionTimeoutRef.current = requestAnimationFrame(() => {
+      const map = mapRef.current;
+      if (!map) return;
+
+      const labelMarkers = labelMarkersRef.current;
+      if (labelMarkers.length === 0) return;
+
+      const selectedTitle = selectedLocationRef.current?.title;
+      const R = 18; // Marker radius
+      const gap = 10; // Gap between circle marker and label text
+
+      interface ResolvedLabel {
+        title: string;
+        rect: { left: number; right: number; top: number; bottom: number };
+        circleX: number;
+        circleY: number;
+        hidden: boolean;
+      }
+      const resolvedLabels: ResolvedLabel[] = [];
+
+      // Sort markers: active selected marker first
+      const markerInfos = labelMarkers.map((marker) => {
+        const el = marker.getElement();
+        const locTitle = (marker as CustomMarker).locTitle || "";
+        const isSelected = locTitle === selectedTitle;
+        const lngLat = marker.getLngLat();
+        const screenPos = map.project(lngLat);
+
+        const textEl = el.querySelector(".luxury-label-text-wrapper") as HTMLDivElement;
+        const textRect = textEl ? textEl.getBoundingClientRect() : { width: 0, height: 0 };
+        let width = textRect.width;
+        let height = textRect.height;
+        
+        // Fallback for first-render / hidden layout width
+        if (!width || width < 5) {
+          width = locTitle.length * 6.5 + 10;
+        }
+        if (!height || height < 5) {
+          height = 14;
+        }
+
+        return {
+          marker,
+          el,
+          title: locTitle,
+          isSelected,
+          x: screenPos.x,
+          y: screenPos.y,
+          width,
+          height,
+        };
+      });
+
+      markerInfos.sort((a, b) => (b.isSelected ? 1 : 0) - (a.isSelected ? 1 : 0));
+
+      const positionsOrder = [
+        "Top",
+        "TopRight",
+        "Right",
+        "BottomRight",
+        "Bottom",
+        "BottomLeft",
+        "Left",
+        "TopLeft",
+      ];
+
+      const lineLengths = [24, 48, 72];
+
+      const getLabelCenter = (x: number, y: number, offsetX: number, offsetY: number, pos: string, W_lbl: number, H_lbl: number) => {
+        let cx = x + offsetX;
+        let cy = y + offsetY;
+
+        if (pos === "Left") {
+          cx = x + offsetX - R - gap - W_lbl;
+        } else if (pos === "Right") {
+          cx = x + offsetX + R + gap + W_lbl;
+        } else if (pos.includes("Top")) {
+          cy = y + offsetY - R - gap - H_lbl;
+        } else if (pos.includes("Bottom")) {
+          cy = y + offsetY + R + gap + H_lbl;
+        }
+        return { cx, cy };
+      };
+
+      const getLabelRect = (cx: number, cy: number, W_lbl: number, H_lbl: number) => {
+        return {
+          left: cx - W_lbl,
+          right: cx + W_lbl,
+          top: cy - H_lbl,
+          bottom: cy + H_lbl,
+        };
+      };
+
+      const checkOverlap = (
+        r1: { left: number; right: number; top: number; bottom: number },
+        r2: { left: number; right: number; top: number; bottom: number },
+        padding = 6
+      ) => {
+        return !(
+          r1.right + padding < r2.left ||
+          r2.right + padding < r1.left ||
+          r1.bottom + padding < r2.top ||
+          r2.bottom + padding < r1.top
+        );
+      };
+
+      const checkCircleRectOverlap = (
+        cx: number,
+        cy: number,
+        r: number,
+        rect: { left: number; right: number; top: number; bottom: number }
+      ) => {
+        const closestX = Math.max(rect.left, Math.min(cx, rect.right));
+        const closestY = Math.max(rect.top, Math.min(cy, rect.bottom));
+        const distanceX = cx - closestX;
+        const distanceY = cy - closestY;
+        const distanceSquared = distanceX * distanceX + distanceY * distanceY;
+        return distanceSquared < (r + 4) * (r + 4);
+      };
+
+      markerInfos.forEach((info) => {
+        const W_lbl = info.width / 2;
+        const H_lbl = info.height / 2;
+
+        let bestPosition = "Top";
+        let bestOffsetX = 0;
+        let bestOffsetY = -R - 24;
+        let bestD = 24;
+        let found = false;
+
+        if (info.isSelected) {
+          bestPosition = "Top";
+          bestOffsetX = 0;
+          bestOffsetY = -R - 24;
+          bestD = 24;
+          found = true;
+        } else {
+          for (let dIdx = 0; dIdx < lineLengths.length && !found; dIdx++) {
+            const D = lineLengths[dIdx];
+
+            for (let pIdx = 0; pIdx < positionsOrder.length; pIdx++) {
+              const pos = positionsOrder[pIdx];
+              let offsetX = 0;
+              let offsetY = 0;
+
+              const diag = Math.round((R + D) * 0.707);
+
+              switch (pos) {
+                case "Top":
+                  offsetX = 0;
+                  offsetY = -R - D;
+                  break;
+                case "TopRight":
+                  offsetX = diag;
+                  offsetY = -diag;
+                  break;
+                case "Right":
+                  offsetX = R + D;
+                  offsetY = 0;
+                  break;
+                case "BottomRight":
+                  offsetX = diag;
+                  offsetY = diag;
+                  break;
+                case "Bottom":
+                  offsetX = 0;
+                  offsetY = R + D;
+                  break;
+                case "BottomLeft":
+                  offsetX = -diag;
+                  offsetY = diag;
+                  break;
+                case "Left":
+                  offsetX = -R - D;
+                  offsetY = 0;
+                  break;
+                case "TopLeft":
+                  offsetX = -diag;
+                  offsetY = -diag;
+                  break;
+              }
+
+              const { cx, cy } = getLabelCenter(info.x, info.y, offsetX, offsetY, pos, W_lbl, H_lbl);
+              const candidateRect = getLabelRect(cx, cy, W_lbl, H_lbl);
+              let hasCollision = false;
+
+              // Check label overlap with other labels
+              for (let k = 0; k < resolvedLabels.length; k++) {
+                if (resolvedLabels[k].hidden) continue;
+                if (checkOverlap(candidateRect, resolvedLabels[k].rect)) {
+                  hasCollision = true;
+                  break;
+                }
+              }
+
+              // Check label overlap with any POI marker coordinates (circle at coordinate)
+              if (!hasCollision) {
+                for (let k = 0; k < markerInfos.length; k++) {
+                  if (markerInfos[k].title === info.title) continue;
+
+                  if (checkCircleRectOverlap(markerInfos[k].x, markerInfos[k].y, R, candidateRect)) {
+                    hasCollision = true;
+                    break;
+                  }
+                }
+              }
+
+              // Check circle marker overlap with other circle markers
+              if (!hasCollision) {
+                const candidateCircleX = info.x + offsetX;
+                const candidateCircleY = info.y + offsetY;
+                for (let k = 0; k < resolvedLabels.length; k++) {
+                  if (resolvedLabels[k].hidden) continue;
+                  const dx = candidateCircleX - resolvedLabels[k].circleX;
+                  const dy = candidateCircleY - resolvedLabels[k].circleY;
+                  const distCircles = Math.sqrt(dx * dx + dy * dy);
+                  if (distCircles < 2 * R + 8) {
+                    hasCollision = true;
+                    break;
+                  }
+                }
+              }
+
+              if (!hasCollision) {
+                bestPosition = pos;
+                bestOffsetX = offsetX;
+                bestOffsetY = offsetY;
+                bestD = D;
+                found = true;
+                break;
+              }
+            }
+          }
+        }
+
+        // NEVER hide labels or circles! Always fall back to first position option if no collision-free space is found
+        const hidden = false;
+        const { cx: finalCx, cy: finalCy } = getLabelCenter(info.x, info.y, bestOffsetX, bestOffsetY, bestPosition, W_lbl, H_lbl);
+        const finalRect = getLabelRect(finalCx, finalCy, W_lbl, H_lbl);
+        
+        resolvedLabels.push({
+          title: info.title,
+          rect: finalRect,
+          circleX: info.x + bestOffsetX,
+          circleY: info.y + bestOffsetY,
+          hidden,
+        });
+
+        const circleEl = info.el.querySelector(".luxury-marker-circle") as HTMLDivElement;
+        const pathEl = info.el.querySelector(".luxury-leader-path") as SVGPathElement;
+
+        info.el.classList.remove("hidden-label");
+
+        const posClass = `pos-${bestPosition.toLowerCase()}`;
+        positionsOrder.forEach(p => info.el.classList.remove(`pos-${p.toLowerCase()}`));
+        info.el.classList.add(posClass);
+
+        const isSelected = info.title === selectedTitle;
+        if (isSelected) {
+          info.el.classList.add("active");
+        } else {
+          info.el.classList.remove("active");
+        }
+
+        if (circleEl) {
+          circleEl.style.opacity = "1";
+          circleEl.style.pointerEvents = "auto";
+          circleEl.style.setProperty("--offset-x", `${bestOffsetX}px`);
+          circleEl.style.setProperty("--offset-y", `${bestOffsetY}px`);
+        }
+
+        if (pathEl) {
+          // Apply stroke & stroke-width inline
+          pathEl.style.stroke = isSelected ? "#C79A59" : "#000000";
+          pathEl.style.strokeWidth = isSelected ? "2px" : "1.5px";
+
+          const cx_svg = 150;
+          const cy_svg = 150;
+          const dotRadius = 5; // 5px radius for 10px diameter dot
+          
+          let startX = 0;
+          let startY = 0;
+          let endX = bestOffsetX;
+          let endY = bestOffsetY;
+          let cornerX = 0;
+          let cornerY = 0;
+          let hasCorner = false;
+
+          const absX = Math.abs(bestOffsetX);
+          const absY = Math.abs(bestOffsetY);
+
+          if (absX < 5 || absY < 5) {
+            // Purely vertical or horizontal straight line
+            const dist = Math.sqrt(bestOffsetX * bestOffsetX + bestOffsetY * bestOffsetY);
+            if (dist > R + dotRadius) {
+              startX = bestOffsetX * (dotRadius / dist);
+              startY = bestOffsetY * (dotRadius / dist);
+              endX = bestOffsetX * ((dist - R) / dist);
+              endY = bestOffsetY * ((dist - R) / dist);
+            }
+          } else if (Math.abs(absX - absY) < 5) {
+            // Purely 45-degree straight line
+            const dist = Math.sqrt(bestOffsetX * bestOffsetX + bestOffsetY * bestOffsetY);
+            if (dist > R + dotRadius) {
+              startX = bestOffsetX * (dotRadius / dist);
+              startY = bestOffsetY * (dotRadius / dist);
+              endX = bestOffsetX * ((dist - R) / dist);
+              endY = bestOffsetY * ((dist - R) / dist);
+            }
+          } else {
+            // 45-degree diagonal segment first, then horizontal/vertical segment
+            hasCorner = true;
+            if (absY > absX) {
+              // Vertical segment at the end
+              cornerX = bestOffsetX;
+              cornerY = Math.sign(bestOffsetY) * absX;
+            } else {
+              // Horizontal segment at the end
+              cornerX = Math.sign(bestOffsetX) * absY;
+              cornerY = bestOffsetY;
+            }
+
+            // Clip start of Segment A (from 0,0 to cornerX,cornerY)
+            const lenA = Math.sqrt(cornerX * cornerX + cornerY * cornerY);
+            if (lenA > dotRadius) {
+              startX = cornerX * (dotRadius / lenA);
+              startY = cornerY * (dotRadius / lenA);
+            }
+
+            // Clip end of Segment B (from cornerX,cornerY to bestOffsetX,bestOffsetY)
+            if (cornerX === bestOffsetX) {
+              // Vertical segment
+              const lenB = Math.abs(bestOffsetY - cornerY);
+              if (lenB > R) {
+                endX = bestOffsetX;
+                endY = bestOffsetY - Math.sign(bestOffsetY - cornerY) * R;
+              } else {
+                endX = cornerX;
+                endY = cornerY;
+              }
+            } else {
+              // Horizontal segment
+              const lenB = Math.abs(bestOffsetX - cornerX);
+              if (lenB > R) {
+                endX = bestOffsetX - Math.sign(bestOffsetX - cornerX) * R;
+                endY = bestOffsetY;
+              } else {
+                endX = cornerX;
+                endY = cornerY;
+              }
+            }
+          }
+
+          // Adjust to SVG coordinates (centered at 150, 150)
+          const sX = cx_svg + startX;
+          const sY = cy_svg + startY;
+          const eX = cx_svg + endX;
+          const eY = cx_svg + endY;
+
+          let dAttr = "";
+          if (hasCorner) {
+            const cX = cx_svg + cornerX;
+            const cY = cx_svg + cornerY;
+            dAttr = `M ${sX},${sY} L ${cX},${cY} L ${eX},${eY}`;
+          } else {
+            dAttr = `M ${sX},${sY} L ${eX},${eY}`;
+          }
+          pathEl.setAttribute("d", dAttr);
+        }
+      });
+    });
+  };
+
   // Update Category Markers when category changes (created once per category)
   const updateCategoryMarkers = (
     map: mapboxgl.Map | null,
@@ -532,87 +864,69 @@ export default function LocationExplorer({
       "Lifestyle & Social": `<img src="/icons/lifestyle.svg" class="w-10 h-10 object-contain" alt="Lifestyle" />`,
       Connectivity: `<img src="/icons/connectivity.svg" class="w-10 h-10 object-contain" alt="Connectivity" />`,
       Hospitals: `<img src="/icons/hospital.svg" class="w-10 h-10 object-contain" alt="Hospitals" />`,
-      "Commercial Hubspots": `<img src="/icons/hotel.svg" class="w-10 h-10 object-contain" alt="Commercial" />`,
+      "Commercial Hubspots": `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #ffffff;"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /><rect width="20" height="14" x="2" y="6" rx="2" /></svg>`,
     };
 
     catData.locations.forEach((loc) => {
       if (loc.title === "Gorai Bayview Site") return;
 
       const parsed = parseLocationName(loc.title, loc.name);
-      const displayCat = categoryDisplayNames[category] || category;
 
-      // Create permanent label marker
       const markerEl = document.createElement("div");
-      markerEl.className = "permanent-label";
-      markerEl.style.cssText = `
-        background: rgba(44, 52, 55, 0.65);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        color: white;
-        padding: 6px 10px;
-        border-radius: 6px;
-        font-size: 11px;
-        font-weight: 500;
-        white-space: nowrap;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-        border: 1px solid rgba(64, 72, 75, 0.7);
-        pointer-events: none;
-      `;
-      markerEl.textContent = parsed.title;
+      markerEl.className = "luxury-annotation-container";
 
-      // Add permanent label to map
+      // 1. Create pinpoint ring (hollow black circle dot)
+      const dotEl = document.createElement("div");
+      dotEl.className = "luxury-dot";
+      dotEl.style.cssText = "position: absolute; width: 10px; height: 10px; border: 2px solid #000000; background-color: transparent; border-radius: 50%; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); transform: translate(-50%, -50%); z-index: 4; transition: transform 250ms ease;";
+      markerEl.appendChild(dotEl);
+
+      // 2. Create SVG and path programmatically (namespace-safe)
+      const svgEl = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      svgEl.setAttribute("class", "luxury-leader-svg");
+      svgEl.setAttribute("width", "300");
+      svgEl.setAttribute("height", "300");
+      svgEl.style.cssText = "position: absolute; top: -150px; left: -150px; width: 300px; height: 300px; pointer-events: none; overflow: visible; z-index: 2;";
+
+      const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      pathEl.setAttribute("class", "luxury-leader-path");
+      pathEl.setAttribute("fill", "none");
+      pathEl.setAttribute("stroke", "#ffffff");
+      pathEl.setAttribute("stroke-width", "1.5");
+      pathEl.setAttribute("d", "");
+      svgEl.appendChild(pathEl);
+      markerEl.appendChild(svgEl);
+
+      // 3. Create Circle Marker
+      const circleEl = document.createElement("div");
+      circleEl.className = "luxury-marker-circle";
+      circleEl.innerHTML = `
+        <div class="luxury-marker-icon">${iconMap[category] || ""}</div>
+        <div class="luxury-label-text-wrapper">
+          <span class="luxury-label-text">${parsed.title}</span>
+        </div>
+      `;
+      markerEl.appendChild(circleEl);
+
       const labelMarker = new mapboxgl.Marker({
         element: markerEl,
-        anchor: "bottom",
-        offset: [0, -8],
+        anchor: "center",
+        offset: [0, 0],
       })
         .setLngLat([loc.coordinates.lng, loc.coordinates.lat])
         .addTo(map);
 
-      // Create wrapper element for MapLibre positioning (avoids transition conflicts with transforms)
-      const wrapperEl = document.createElement("div");
-      wrapperEl.className =
-        "luxury-poi-marker-wrapper flex items-center justify-center";
-      wrapperEl.style.width = "40px";
-      wrapperEl.style.height = "40px";
-      wrapperEl.style.cursor = "pointer";
-
-      // Create icon marker
-      const iconEl = document.createElement("div");
-      if (category === "Banks") {
-        iconEl.className = "luxury-poi-marker lucide-bank-marker flex items-center justify-center";
-      } else {
-        iconEl.className = "luxury-poi-marker flex items-center justify-center";
-      }
-      iconEl.innerHTML = iconMap[category] || "";
-
-      wrapperEl.appendChild(iconEl);
-
-      const marker = new mapboxgl.Marker({ element: wrapperEl })
-        .setLngLat([loc.coordinates.lng, loc.coordinates.lat])
-        .addTo(map);
-
-      // Add label marker to ref for cleanup
-      labelMarkersRef.current.push(labelMarker);
-
-      // Store title and DOM ref on marker object
-      (marker as CustomMarker).locTitle = loc.title;
-      (marker as CustomMarker).elementRef = iconEl;
-
-      // Click/Tap handler supporting both Desktop and Mobile
-      iconEl.addEventListener("click", (e) => {
+      // Click/Tap handler directly on circle wrapper
+      circleEl.addEventListener("click", (e) => {
         e.stopPropagation();
 
-        const isMobile =
-          typeof window !== "undefined" && window.innerWidth < 1024;
-        const isActive = iconEl.classList.contains("active");
+        const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
+        const isActive = markerEl.classList.contains("active");
 
         if (isMobile) {
           if (isActive) {
-            // Second tap: draw route
             handleShowRoute(loc.coordinates, loc.title);
           } else {
-            // First tap: select location and fly to it
             setSelectedLocation(loc);
             if (mapRef.current) {
               mapRef.current.flyTo({
@@ -623,14 +937,36 @@ export default function LocationExplorer({
             }
           }
         } else {
-          // Desktop: immediately select and show route
           setSelectedLocation(loc);
           handleShowRoute(loc.coordinates, loc.title);
         }
       });
 
-      markersRef.current.push(marker);
+      (labelMarker as CustomMarker).locTitle = loc.title;
+      (labelMarker as CustomMarker).elementRef = markerEl;
+
+      labelMarkersRef.current.push(labelMarker);
+      markersRef.current.push(labelMarker);
     });
+
+    // Auto-fit bounds to encompass all locations in the category plus the main site
+    if (catData.locations.length > 0) {
+      const bounds = new mapboxgl.LngLatBounds();
+      bounds.extend([GoraiBayviewLocation.lng, GoraiBayviewLocation.lat]);
+      catData.locations.forEach((loc) => {
+        if (loc.title !== "Gorai Bayview Site") {
+          bounds.extend([loc.coordinates.lng, loc.coordinates.lat]);
+        }
+      });
+      map.fitBounds(bounds, {
+        padding: { top: 80, bottom: 80, left: 340, right: 80 },
+        maxZoom: 13,
+        essential: true,
+      });
+    }
+
+    // Solve collisions immediately
+    setTimeout(resolveLabelCollisions, 100);
   };
 
   // Sync Category Markers only when category changes or map finishes loading
@@ -639,6 +975,25 @@ export default function LocationExplorer({
       updateCategoryMarkers(mapRef.current, selectedCategory);
     }
   }, [selectedCategory, mapLoaded]);
+
+
+  // Bind map event listeners for real-time collision recalculation
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded) return;
+
+    const onZoomOrMove = () => {
+      resolveLabelCollisions();
+    };
+
+    map.on("zoom", onZoomOrMove);
+    map.on("move", onZoomOrMove);
+
+    return () => {
+      map.off("zoom", onZoomOrMove);
+      map.off("move", onZoomOrMove);
+    };
+  }, [mapLoaded]);
 
   // Handle active marker styling changes in-place by adding/removing CSS classes
   useEffect(() => {
@@ -700,8 +1055,14 @@ export default function LocationExplorer({
     setIsRouteLoading(true);
     clearRouteLayer();
 
+    let profile = "driving";
+    const titleLower = destName.toLowerCase();
+    if (titleLower.includes("pagoda") || titleLower.includes("beach")) {
+      profile = "foot";
+    }
+
     fetch(
-      `https://router.project-osrm.org/route/v1/driving/${originCoords.lng},${originCoords.lat};${destCoordinates.lng},${destCoordinates.lat}?overview=full&geometries=geojson`,
+      `https://router.project-osrm.org/route/v1/${profile}/${originCoords.lng},${originCoords.lat};${destCoordinates.lng},${destCoordinates.lat}?overview=full&geometries=geojson`,
     )
       .then((r) => r.json())
       .then((data) => {
@@ -711,7 +1072,11 @@ export default function LocationExplorer({
           const coords = route.geometry.coordinates;
 
           const distanceKm = (route.distance / 1000).toFixed(1);
-          const durationMin = Math.round(route.duration / 60);
+          let durationMin = Math.round(route.duration / 60);
+          if (profile === "foot") {
+            // Walking is ~5km/h, cycling/bike is ~12-15km/h, so divide duration by 2.5
+            durationMin = Math.max(1, Math.round(durationMin / 2.5));
+          }
 
           setActiveRoute({
             distance: `${distanceKm} km`,
@@ -1091,74 +1456,182 @@ export default function LocationExplorer({
           filter: saturate(1.25) contrast(1.05) brightness(0.98);
         }
 
-        /* Luxury markers styles */
-        .luxury-poi-marker {
-          width: 40px;
-          height: 40px;
-          cursor: pointer;
+        .luxury-annotation-container {
+          position: absolute;
+          width: 0;
+          height: 0;
+          pointer-events: none;
+        }
+
+        /* Coordinate Spot: Hollow Black Circle Ring */
+        .luxury-dot {
+          position: absolute;
+          width: 10px;
+          height: 10px;
+          border: 2px solid #000000;
+          background-color: transparent;
+          border-radius: 50%;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+          transform: translate(-50%, -50%);
+          z-index: 4;
+          transition: transform 250ms ease, box-shadow 250ms ease;
+        }
+
+        .luxury-annotation-container.active .luxury-dot {
+          transform: translate(-50%, -50%) scale(1.25);
+          box-shadow: 0 0 8px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Marker Container: solid brown background (#5B4A3D), no border, size 36px */
+        .luxury-marker-circle {
+          position: absolute;
+          width: 36px;
+          height: 36px;
+          top: 50%;
+          left: 50%;
+          transform: translate(calc(-50% + var(--offset-x, 0px)), calc(-50% + var(--offset-y, -45px)));
+          background: #5B4A3D;
+          border: none;
+          border-radius: 50%;
+          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+          pointer-events: auto; /* enable click */
+          cursor: pointer;
+          transition: transform 250ms cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 250ms ease;
           z-index: 5;
         }
 
-        .luxury-poi-marker.lucide-bank-marker {
-          background: #816D5B;
-          border: 1.5px solid rgba(255, 255, 255, 0.4);
-          border-radius: 50%;
-          color: white;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.45);
+        .luxury-marker-icon {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 36px;
+          height: 36px;
         }
-
-        .luxury-poi-marker.lucide-bank-marker:hover {
-          background: #96816e;
-          border-color: rgba(255, 255, 255, 0.6);
-          box-shadow: 0 6px 12px rgba(199, 154, 89, 0.6);
-        }
-
-        .luxury-poi-marker.lucide-bank-marker.active {
-          background: #aa9582;
-          border-color: #ffffff;
-          box-shadow: 0 0 15px rgba(199, 154, 89, 0.9);
-        }
-
-        .luxury-poi-marker img {
+        .luxury-marker-icon img {
           width: 100%;
           height: 100%;
           object-fit: contain;
-          filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
-          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .luxury-marker-icon svg {
+          width: 18px;
+          height: 18px;
+          stroke: #ffffff !important;
+          color: #ffffff !important;
         }
 
-        .luxury-poi-marker:hover {
-          transform: scale(1.15);
+        /* On selection: enlarge 1.15x with gold glow shadow */
+        .luxury-annotation-container.active .luxury-marker-circle {
+          transform: translate(calc(-50% + var(--offset-x, 0px)), calc(-50% + var(--offset-y, -45px))) scale(1.15);
+          box-shadow: 0 0 15px rgba(199, 154, 89, 0.8), 0 4px 12px rgba(0, 0, 0, 0.45);
+        }
+
+        /* Leader Line SVG */
+        .luxury-leader-svg {
+          position: absolute;
+          top: -150px;
+          left: -150px;
+          width: 300px;
+          height: 300px;
+          pointer-events: none;
+          overflow: visible;
+          z-index: 2;
+        }
+
+        .luxury-leader-path {
+          stroke: #000000;
+          stroke-width: 1.5px;
+          fill: none;
+          filter: drop-shadow(0px 1px 1px rgba(255, 255, 255, 0.75));
+          transition: stroke 200ms ease, stroke-width 200ms ease;
+        }
+        .luxury-annotation-container.active .luxury-leader-path {
+          stroke: #C79A59;
+          stroke-width: 2px;
+          filter: drop-shadow(0px 1px 2px rgba(255, 255, 255, 0.8));
+        }
+
+        /* Label Text: Bold black text with solid white drop shadow outline and no background */
+        .luxury-label-text-wrapper {
+          position: absolute;
+          pointer-events: none;
+          font-family: inherit;
+          font-size: 11px;
+          font-weight: 700;
+          color: #000000;
+          text-shadow: 
+            -1px -1px 0 #fff,  
+             1px -1px 0 #fff,
+            -1px  1px 0 #fff,
+             1px  1px 0 #fff,
+            -2px -2px 0 #fff,
+             2px -2px 0 #fff,
+            -2px  2px 0 #fff,
+             2px  2px 0 #fff;
+          line-height: 1.25;
+          width: max-content;
+          max-width: 90px;
+          white-space: normal;
           z-index: 10;
         }
 
-        .luxury-poi-marker:hover img {
-          filter: drop-shadow(0 6px 12px rgba(199, 154, 89, 0.7)) brightness(1.05);
+        .luxury-label-text {
+          display: block;
         }
 
-        .luxury-poi-marker.active {
-          transform: scale(1.25);
-          z-index: 50;
+        .luxury-annotation-container.active .luxury-label-text-wrapper {
+          color: #000000;
         }
 
-        .luxury-poi-marker.active img {
-          animation: active-glow-img 2s infinite ease-in-out;
+        /* Position mapping of text label relative to circle marker */
+        /* Top, TopLeft, TopRight positions (label sits above the circle) */
+        .pos-top .luxury-label-text-wrapper,
+        .pos-topleft .luxury-label-text-wrapper,
+        .pos-topright .luxury-label-text-wrapper {
+          bottom: 100%;
+          left: 50%;
+          transform: translate(-50%, -10px);
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
         }
 
-        @keyframes active-glow-img {
-          0% {
-            filter: drop-shadow(0 0 12px rgba(199, 154, 89, 0.8)) brightness(1.05);
-          }
-          50% {
-            filter: drop-shadow(0 0 20px rgba(199, 154, 89, 1)) brightness(1.15);
-          }
-          100% {
-            filter: drop-shadow(0 0 12px rgba(199, 154, 89, 0.8)) brightness(1.05);
-          }
+        /* Bottom, BottomLeft, BottomRight positions (label sits below the circle) */
+        .pos-bottom .luxury-label-text-wrapper,
+        .pos-bottomleft .luxury-label-text-wrapper,
+        .pos-bottomright .luxury-label-text-wrapper {
+          top: 100%;
+          left: 50%;
+          transform: translate(-50%, 10px);
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+
+        /* Left position (label sits on the left of the circle) */
+        .pos-left .luxury-label-text-wrapper {
+          right: 100%;
+          top: 50%;
+          transform: translate(-10px, -50%);
+          text-align: right;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+        }
+
+        /* Right position (label sits on the right of the circle) */
+        .pos-right .luxury-label-text-wrapper {
+          left: 100%;
+          top: 50%;
+          transform: translate(10px, -50%);
+          text-align: left;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
         }
 
         /* Luxury Main Home Marker Styles */
