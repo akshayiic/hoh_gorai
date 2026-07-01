@@ -15,7 +15,7 @@ import "mapbox-gl/dist/mapbox-gl.css";
 
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
 
-const GoraiBayviewLocation = { lat: 19.23417, lng: 72.82783 }; // Gorai Bayview Site
+const GoraiBayviewLocation = { lat: 19.2341126, lng: 72.8291472 }; // Gorai Bayview Site
 
 const infrastructure = {
   current: [
@@ -67,17 +67,17 @@ const infrastructure = {
       locations: [
         {
           title: "Vipasana pagoda",
-          name: "Vipasana pagoda - 3.5km (14 Mins)",
-          coordinates: { lat: 19.2282034, lng: 72.8058891 },
+          name: "Vipasana pagoda - 4.6km (23 Mins)",
+          coordinates: { lat: 19.2279216, lng: 72.8066493 },
         },
         {
           title: "Gorai beach",
-          name: "Gorai Beach - 7.4km (32 Mins)",
+          name: "Gorai Beach - 5.8km (28 Mins)",
           coordinates: { lat: 19.2458, lng: 72.7845 },
         },
         {
           title: "National park",
-          name: "National park - 6.4km (18 Mins)",
+          name: "National park - 6.9km (9 Mins)",
           coordinates: { lat: 19.2204535, lng: 72.9128422 },
         },
         {
@@ -1063,9 +1063,23 @@ export default function LocationExplorer({
       profile = "walking";
     }
 
+    let effectiveDestCoords = destCoordinates;
+    if (destName.toLowerCase().includes("national park")) {
+      effectiveDestCoords = { lat: 19.226937, lng: 72.864951 };
+    }
+
+    let coordinatePath = `${originCoords.lng},${originCoords.lat};${effectiveDestCoords.lng},${effectiveDestCoords.lat}`;
+    if (isBikeRoute) {
+      if (titleLower.includes("pagoda")) {
+        coordinatePath = `${originCoords.lng},${originCoords.lat};72.81695,19.237171;72.808,19.233;${effectiveDestCoords.lng},${effectiveDestCoords.lat}`;
+      } else if (titleLower.includes("beach")) {
+        coordinatePath = `${originCoords.lng},${originCoords.lat};72.81695,19.237171;${effectiveDestCoords.lng},${effectiveDestCoords.lat}`;
+      }
+    }
+
     const url = isBikeRoute
-      ? `https://api.mapbox.com/directions/v5/mapbox/${profile}/${originCoords.lng},${originCoords.lat};${destCoordinates.lng},${destCoordinates.lat}?overview=full&geometries=geojson&access_token=${mapboxgl.accessToken}`
-      : `https://router.project-osrm.org/route/v1/${profile}/${originCoords.lng},${originCoords.lat};${destCoordinates.lng},${destCoordinates.lat}?overview=full&geometries=geojson`;
+      ? `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coordinatePath}?overview=full&geometries=geojson&access_token=${mapboxgl.accessToken}`
+      : `https://router.project-osrm.org/route/v1/${profile}/${coordinatePath}?overview=full&geometries=geojson`;
 
     fetch(url)
       .then((r) => r.json())
