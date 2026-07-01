@@ -37,6 +37,11 @@ export default function GlobalNavbar({
   }, [currentPage]);
 
   const handleGoBack = () => {
+    if (currentPage === "location") {
+      router.push("/");
+      onNavigate?.("");
+      return;
+    }
     if (history.length > 1) {
       const prevPage = history[history.length - 2];
       const newHistory = history.slice(0, history.length - 1);
@@ -73,8 +78,8 @@ export default function GlobalNavbar({
 
       {/* TOP ACTIONS */}
       <div className="absolute right-6 top-8 z-20 flex items-center gap-2">
-        {/* Back Button (Only visible if the user has visited a page previously in history, and not on /location) */}
-        {history.length > 1 && currentPage !== "location" && (
+        {/* Back Button (Visible if there is history and not on /location, or if on /location) */}
+        {((history.length > 1 && currentPage !== "location") || currentPage === "location") && (
           <button
             onClick={handleGoBack}
             className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 px-5 py-2.5 text-[14px] font-medium text-[#E2E2E2] backdrop-blur-md hover:bg-[#2C3437]/85 hover:text-white transition duration-200 cursor-pointer flex items-center gap-1.5 shadow-lg"
@@ -84,7 +89,7 @@ export default function GlobalNavbar({
               alt="Logo"
               className="h-3 w-3 object-contain"
             />
-            Go Back
+            {currentPage === "location" ? "Go Home" : "Go Back"}
           </button>
         )}
         {showReset && onReset && (

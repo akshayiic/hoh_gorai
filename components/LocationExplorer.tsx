@@ -67,12 +67,12 @@ const infrastructure = {
       locations: [
         {
           title: "Vipasana pagoda",
-          name: "Vipasana pagoda - 29km (1hr 20 Mins)",
+          name: "Vipasana pagoda - 3.5km (14 Mins)",
           coordinates: { lat: 19.2282034, lng: 72.8058891 },
         },
         {
           title: "Gorai beach",
-          name: "Gorai Beach - 2-3km",
+          name: "Gorai Beach - 7.4km (32 Mins)",
           coordinates: { lat: 19.2458, lng: 72.7845 },
         },
         {
@@ -150,7 +150,7 @@ const infrastructure = {
         {
           title: "Wire Bridge",
           name: "Wire Bridge - 1.4km (5 Mins)",
-          coordinates: { lat: 19.226091, lng: 72.827978 },
+          coordinates: { lat: 19.23306, lng: 72.82417 },
         },
         {
           title: "Borivali Thane Tunnel",
@@ -279,7 +279,7 @@ const categoryDisplayNames: Record<string, string> = {
   "Education Institutes": "Education Institutes",
   Banks: "Bank",
   Recreational: "Recreational",
-  "Lifestyle & Social": "SLifestyle & Social",
+  "Lifestyle & Social": "Lifestyle & Social",
   Connectivity: "Connectivity",
   Hospitals: "Hospital",
   "Commercial Hubspots": "Commercial Hubspot",
@@ -1057,23 +1057,27 @@ export default function LocationExplorer({
 
     let profile = "driving";
     const titleLower = destName.toLowerCase();
-    if (titleLower.includes("pagoda") || titleLower.includes("beach")) {
-      profile = "foot";
+    const isBikeRoute = titleLower.includes("pagoda") || titleLower.includes("beach");
+    
+    if (isBikeRoute) {
+      profile = "walking";
     }
 
-    fetch(
-      `https://router.project-osrm.org/route/v1/${profile}/${originCoords.lng},${originCoords.lat};${destCoordinates.lng},${destCoordinates.lat}?overview=full&geometries=geojson`,
-    )
+    const url = isBikeRoute
+      ? `https://api.mapbox.com/directions/v5/mapbox/${profile}/${originCoords.lng},${originCoords.lat};${destCoordinates.lng},${destCoordinates.lat}?overview=full&geometries=geojson&access_token=${mapboxgl.accessToken}`
+      : `https://router.project-osrm.org/route/v1/${profile}/${originCoords.lng},${originCoords.lat};${destCoordinates.lng},${destCoordinates.lat}?overview=full&geometries=geojson`;
+
+    fetch(url)
       .then((r) => r.json())
       .then((data) => {
-        console.log("OSRM response:", data);
+        console.log("Routing response:", data);
         if (data.routes && data.routes[0]) {
           const route = data.routes[0];
           const coords = route.geometry.coordinates;
 
           const distanceKm = (route.distance / 1000).toFixed(1);
           let durationMin = Math.round(route.duration / 60);
-          if (profile === "foot") {
+          if (profile === "walking") {
             // Walking is ~5km/h, cycling/bike is ~12-15km/h, so divide duration by 2.5
             durationMin = Math.max(1, Math.round(durationMin / 2.5));
           }
