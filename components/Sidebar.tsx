@@ -1,7 +1,7 @@
 "use client";
 
 import { ReactNode, useEffect, useState } from "react";
-import { LucideIcon } from "lucide-react";
+import { LucideIcon, ChevronDown } from "lucide-react";
 
 interface SidebarHeader {
   icon?: LucideIcon;
@@ -22,6 +22,9 @@ interface SidebarSection {
   id: string;
   title?: string;
   items: SidebarItem[];
+  isCollapsible?: boolean;
+  isExpanded?: boolean;
+  onHeaderClick?: () => void;
 }
 
 interface SidebarIconProps {
@@ -149,19 +152,35 @@ export default function Sidebar({
           {sections.map((section, index) => (
             <div key={section.id}>
               {section.title && (
-                <h3
-                  className="
-                    text-[14px]
-                    font-semibold
-                    text-[#E2E2E2]
-                    mb-2
-                  "
-                >
-                  {section.title}
-                </h3>
+                section.isCollapsible ? (
+                  <button
+                    onClick={section.onHeaderClick}
+                    className="w-full flex items-center justify-between text-[14px] font-semibold text-[#E2E2E2] mb-2 cursor-pointer hover:text-white transition-colors text-left"
+                  >
+                    <span>{section.title}</span>
+                    <span className={`transform transition-transform duration-200 ${section.isExpanded ? "rotate-180" : ""}`}>
+                      <ChevronDown size={14} className="text-[#C7C7C7]" />
+                    </span>
+                  </button>
+                ) : (
+                  <h3
+                    className="
+                      text-[14px]
+                      font-semibold
+                      text-[#E2E2E2]
+                      mb-2
+                    "
+                  >
+                    {section.title}
+                  </h3>
+                )
               )}
 
-              <div className="space-y-[2px]">
+              <div
+                className={`space-y-[2px] overflow-hidden transition-all duration-300 ${
+                  section.isCollapsible && !section.isExpanded ? "max-h-0 opacity-0" : "max-h-[500px] opacity-100"
+                }`}
+              >
                 {section.items.map((item) => {
                   const Icon = item.icon;
 
