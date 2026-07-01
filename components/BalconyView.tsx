@@ -43,7 +43,6 @@ const allTowersFloors = {
   },
   afternoon: {
     "Tower 1": [
-      { id: "1-8", floor: 8 },
       { id: "2-13", floor: 13 },
       { id: "3-18", floor: 18 },
       { id: "4-23", floor: 23 },
@@ -54,7 +53,6 @@ const allTowersFloors = {
       { id: "9-48", floor: 48 },
     ],
     "Tower 2": [
-      { id: "1-8", floor: 8 },
       { id: "2-13", floor: 13 },
       { id: "3-18", floor: 18 },
       { id: "4-23", floor: 23 },
@@ -65,7 +63,6 @@ const allTowersFloors = {
       { id: "9-48", floor: 48 },
     ],
     "Tower 3": [
-      { id: "1-8", floor: 8 },
       { id: "2-13", floor: 13 },
       { id: "3-18", floor: 18 },
       { id: "4-23", floor: 23 },
@@ -78,7 +75,6 @@ const allTowersFloors = {
   },
   evening: {
     "Tower 1": [
-      { id: "1-8", floor: 8 },
       { id: "2-13", floor: 13 },
       { id: "3-18", floor: 18 },
       { id: "4-23", floor: 23 },
@@ -89,7 +85,6 @@ const allTowersFloors = {
       { id: "9-48", floor: 48 },
     ],
     "Tower 2": [
-      { id: "1-8", floor: 8 },
       { id: "2-13", floor: 13 },
       { id: "3-18", floor: 18 },
       { id: "4-23", floor: 23 },
@@ -100,7 +95,6 @@ const allTowersFloors = {
       { id: "9-48", floor: 48 },
     ],
     "Tower 3": [
-      { id: "1-8", floor: 8 },
       { id: "2-13", floor: 13 },
       { id: "3-18", floor: 18 },
       { id: "4-23", floor: 23 },
@@ -113,7 +107,6 @@ const allTowersFloors = {
   },
   night: {
     "Tower 1": [
-      { id: "1-8", floor: 8 },
       { id: "2-13", floor: 13 },
       { id: "3-18", floor: 18 },
       { id: "4-23", floor: 23 },
@@ -124,7 +117,6 @@ const allTowersFloors = {
       { id: "9-48", floor: 48 },
     ],
     "Tower 2": [
-      { id: "1-8", floor: 8 },
       { id: "2-13", floor: 13 },
       { id: "3-18", floor: 18 },
       { id: "4-23", floor: 23 },
@@ -135,7 +127,6 @@ const allTowersFloors = {
       { id: "9-48", floor: 48 },
     ],
     "Tower 3": [
-      { id: "1-8", floor: 8 },
       { id: "2-13", floor: 13 },
       { id: "3-18", floor: 18 },
       { id: "4-23", floor: 23 },

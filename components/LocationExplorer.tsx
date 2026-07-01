@@ -81,6 +81,11 @@ const infrastructure = {
           coordinates: { lat: 19.2204535, lng: 72.9128422 },
         },
         {
+          title: "National park gate",
+          name: "National park gate - 6.9km (9 Mins)",
+          coordinates: { lat: 19.226937, lng: 72.864951 },
+        },
+        {
           title: "Madh island",
           name: "Madh island - 14km (42 Mins)",
           coordinates: { lat: 19.1484913, lng: 72.7891606 },
