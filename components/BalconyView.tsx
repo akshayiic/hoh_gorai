@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import BottomNavbar from "@/components/BottomNavbar";
 import GlobalNavbar from "@/components/GlobalNavbar";
 import Sidebar, {
@@ -139,6 +139,12 @@ const allTowersFloors = {
   }
 };
 
+// Marzipano pins a scene's first tile level in GPU memory for as long as the
+// scene exists, even when it isn't visible. Keeping only a handful of scenes
+// alive at once (instead of all 96 tower/time/floor combinations) keeps that
+// pinned memory bounded so high-resolution tiles don't render as black boxes.
+const MAX_CACHED_SCENES = 6;
+
 const getFloorLabel = (floor: number | string) => {
   if (typeof floor === "number") return `Floor ${floor}`;
   const fLower = floor.toLowerCase();
@@ -160,16 +166,121 @@ export default function BalconyView() {
   >("morning");
   const [isViewerReady, setIsViewerReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasRenderedOnce, setHasRenderedOnce] = useState(false);
   const viewerRef = useRef<any>(null);
   const panoRef = useRef<HTMLDivElement>(null);
+  const marzipanoRef = useRef<any>(null);
   const allScenesRef = useRef<any>({});
+  const sceneOrderRef = useRef<string[]>([]);
 
-  const currentTowerFloors = allTowersFloors[selectedTime][selectedTower];
-  const currentFloor = currentFloorIndex < currentTowerFloors.length 
-    ? currentTowerFloors[currentFloorIndex] 
-    : currentTowerFloors[0];
+  // URL prefix for tiles based on selected tower and time of day. Verified
+  // directly against https://assets.vestate.io/hiranandani-gorai/... — the
+  // asset layout is inconsistent per time slot. Afternoon Tower 1 renders
+  // live under the hyphenated "Tower-1" folder; the unhyphenated "tower1"
+  // and "Tower 1" folders exist too but serve lower-quality/blurred renders.
+  const getTowerPath = useCallback((tower: string, time: string) => {
+    if (time === "morning") {
+      if (tower === "Tower 1") return "tower1";
+      if (tower === "Tower 2") return "tower2";
+      if (tower === "Tower 3") return "tower3";
+    } else if (time === "afternoon") {
+      if (tower === "Tower 1") return "Tower-1";
+      if (tower === "Tower 2") return "Tower 2";
+      if (tower === "Tower 3") return "Tower 3";
+    } else if (time === "evening") {
+      if (tower === "Tower 1") return "TOWER 1";
+      if (tower === "Tower 2") return "TOWER 2";
+      if (tower === "Tower 3") return "TOWER 3";
+    } else {
+      if (tower === "Tower 1") return "Tower 1";
+      if (tower === "Tower 2") return "Tower 2";
+      if (tower === "Tower 3") return "Tower 3";
+    }
+    return "tower1";
+  }, []);
 
-  // Initialize Marzipano Viewer and All Scenes once on mount
+  // Lazily creates (and caches) the scene for a given tower/time/floor combo.
+  // Scenes are created on demand instead of all 96 up front, and the cache is
+  // capped so only a handful of scenes stay pinned in GPU memory at once.
+  const getOrCreateScene = useCallback(
+    (sceneId: string, towerName: string, time: string) => {
+      const Marzipano = marzipanoRef.current;
+      const viewer = viewerRef.current;
+      if (!Marzipano || !viewer) return null;
+
+      const sceneKey = `${time}_${towerName}_${sceneId}`;
+      const allScenes = allScenesRef.current;
+
+      if (allScenes[sceneKey]) {
+        sceneOrderRef.current = sceneOrderRef.current.filter((key) => key !== sceneKey);
+        sceneOrderRef.current.push(sceneKey);
+        return allScenes[sceneKey];
+      }
+
+      const towerPath = getTowerPath(towerName, time);
+      const scenePath = `${towerPath}/app-files/tiles/${sceneId}`;
+      const baseUrl = `https://assets.vestate.io/hiranandani-gorai/${time}/${scenePath}`;
+
+      const source = Marzipano.ImageUrlSource.fromString(
+        `${baseUrl}/{z}/{f}/{y}/{x}.jpg`,
+        { cubeMapPreviewUrl: `${baseUrl}/preview.jpg` },
+      );
+
+      const size = [
+        { tileSize: 256, size: 256, fallbackOnly: true },
+        { tileSize: 512, size: 512 },
+        { tileSize: 512, size: 1024 },
+        { tileSize: 512, size: 2048 },
+        { tileSize: 512, size: 4096 },
+      ];
+
+      const geometry = new Marzipano.CubeGeometry(size);
+
+      const limiter = Marzipano.RectilinearView.limit.traditional(
+        3840,
+        (130 * Math.PI) / 180,
+      );
+
+      const initialView = {
+        yaw: 0,
+        pitch: 0,
+        fov: (130 * Math.PI) / 180,
+      };
+
+      const view = new Marzipano.RectilinearView(initialView, limiter);
+
+      const scene = viewer.createScene({
+        source: source,
+        geometry: geometry,
+        view: view,
+        pinFirstLevel: true,
+      });
+
+      const sceneData = { source, view, scene };
+      allScenes[sceneKey] = sceneData;
+      sceneOrderRef.current.push(sceneKey);
+
+      // Evict least-recently-used scenes beyond the cache cap. Marzipano
+      // pins a scene's first tile level in GPU memory for its entire
+      // lifetime, so leaving all visited scenes alive is what was starving
+      // the high-resolution tiles of texture memory and rendering black.
+      while (sceneOrderRef.current.length > MAX_CACHED_SCENES) {
+        const evictKey = sceneOrderRef.current.shift();
+        if (!evictKey || evictKey === sceneKey) continue;
+        const evictData = allScenes[evictKey];
+        if (evictData) {
+          viewer.destroyScene(evictData.scene);
+          delete allScenes[evictKey];
+        }
+      }
+
+      return sceneData;
+    },
+    [getTowerPath],
+  );
+
+  // Initialize the Marzipano Viewer once on mount. Scenes are created lazily
+  // by getOrCreateScene as the user navigates, not all up front.
   useEffect(() => {
     let mounted = true;
     let viewer: any = null;
@@ -181,6 +292,8 @@ export default function BalconyView() {
 
         if (!mounted || !panoRef.current) return;
 
+        marzipanoRef.current = Marzipano;
+
         // Create viewer instance
         viewer = new Marzipano.Viewer(panoRef.current, {
           controls: {
@@ -189,86 +302,8 @@ export default function BalconyView() {
         });
 
         viewerRef.current = viewer;
-
-        const allScenes: any = {};
-        allScenesRef.current = allScenes;
-
-        // URL prefix for tiles based on selected tower and time of day
-        const getTowerPath = (tower: string, time: string) => {
-          if (time === "morning") {
-            if (tower === "Tower 1") return "tower1";
-            if (tower === "Tower 2") return "tower2";
-            if (tower === "Tower 3") return "tower3";
-          } else if (time === "evening") {
-            if (tower === "Tower 1") return "TOWER 1";
-            if (tower === "Tower 2") return "TOWER 2";
-            if (tower === "Tower 3") return "TOWER 3";
-          } else {
-            if (tower === "Tower 1") return "Tower 1";
-            if (tower === "Tower 2") return "Tower 2";
-            if (tower === "Tower 3") return "Tower 3";
-          }
-          return "tower1";
-        };
-
-        // Create scene helper
-        const create360Scene = (sceneId: string, towerName: string, time: string) => {
-          const towerPath = getTowerPath(towerName, time);
-          const scenePath = `${towerPath}/app-files/tiles/${sceneId}`;
-          const baseUrl = `https://assets.vestate.io/hiranandani-gorai/${time}/${scenePath}`;
-
-          const source = Marzipano.ImageUrlSource.fromString(
-            `${baseUrl}/{z}/{f}/{y}/{x}.jpg`,
-            { cubeMapPreviewUrl: `${baseUrl}/preview.jpg` },
-          );
-
-          const size = [
-            { tileSize: 256, size: 256, fallbackOnly: true },
-            { tileSize: 512, size: 512 },
-            { tileSize: 512, size: 1024 },
-            { tileSize: 512, size: 2048 },
-            { tileSize: 512, size: 4096 },
-          ];
-
-          const geometry = new Marzipano.CubeGeometry(size);
-
-          const limiter = Marzipano.RectilinearView.limit.traditional(
-            3840,
-            (130 * Math.PI) / 180,
-          );
-
-          const initialView = {
-            yaw: 0,
-            pitch: 0,
-            fov: (130 * Math.PI) / 180,
-          };
-
-          const view = new Marzipano.RectilinearView(initialView, limiter);
-
-          const scene = viewer.createScene({
-            source: source,
-            geometry: geometry,
-            view: view,
-            pinFirstLevel: true,
-          });
-
-          const sceneKey = `${time}_${towerName}_${sceneId}`;
-          allScenes[sceneKey] = {
-            source,
-            view,
-            scene,
-          };
-        };
-
-        // Initialize all 96 scenes (4 times * 3 towers * custom floors)
-        const timesOfDay = ["morning", "afternoon", "evening", "night"] as const;
-        timesOfDay.forEach((time) => {
-          Object.entries(allTowersFloors[time]).forEach(([towerName, floors]) => {
-            floors.forEach((floorData) => {
-              create360Scene(floorData.id, towerName, time);
-            });
-          });
-        });
+        allScenesRef.current = {};
+        sceneOrderRef.current = [];
 
         if (mounted) {
           setIsViewerReady(true);
@@ -288,70 +323,92 @@ export default function BalconyView() {
     };
   }, []);
 
-  // Handle scene switching, transitions, and loading states
+  // Handle scene switching. Rather than cutting instantly behind an opaque
+  // loader, this waits only for the tiny pinned fallback level (a handful of
+  // small tiles) to be ready and then lets Marzipano's own crossfade
+  // transition play — the same thing the working Svelte page gets for free
+  // by calling plain `scene.switchTo()`. Full-resolution tiles keep
+  // streaming in progressively after the crossfade, same as Marzipano's
+  // built-in behavior.
   useEffect(() => {
     if (!isViewerReady || !viewerRef.current) return;
 
-    const currentTowerFloors = allTowersFloors[selectedTime][selectedTower];
-    const currentFloor = currentFloorIndex < currentTowerFloors.length 
-      ? currentTowerFloors[currentFloorIndex] 
-      : currentTowerFloors[0];
+    const towerFloors = allTowersFloors[selectedTime][selectedTower];
+    const currentFloor = currentFloorIndex < towerFloors.length
+      ? towerFloors[currentFloorIndex]
+      : towerFloors[0];
     if (!currentFloor) return;
 
-    const sceneKey = `${selectedTime}_${selectedTower}_${currentFloor.id}`;
-    const sceneData = allScenesRef.current[sceneKey];
-    if (sceneData) {
+    const sceneData = getOrCreateScene(currentFloor.id, selectedTower, selectedTime);
+    if (!sceneData) return;
+
+    let cancelled = false;
+    const layer = sceneData.scene.layer();
+    const textureStore = layer.textureStore();
+    const geometry = layer.geometry();
+    const level0Tiles =
+      geometry && geometry.levelList && geometry.levelList[0]
+        ? geometry.levelTiles(geometry.levelList[0])
+        : [];
+
+    const isFallbackReady = () =>
+      level0Tiles.length > 0 &&
+      level0Tiles.every((tile: any) => textureStore.query(tile).hasTexture);
+
+    const activate = () => {
+      if (cancelled) return;
+      setIsLoading(false);
+      setHasRenderedOnce(true);
+      sceneData.scene.switchTo();
+    };
+
+    let pollInterval: ReturnType<typeof setInterval> | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+    let settled = false;
+
+    const checkReady = () => {
+      if (settled || !isFallbackReady()) return;
+      settled = true;
+      textureStore.removeEventListener("textureLoad", checkReady);
+      clearInterval(pollInterval);
+      clearTimeout(timeoutId);
+      activate();
+    };
+
+    if (isFallbackReady()) {
+      settled = true;
+      activate();
+    } else {
       setIsLoading(true);
-
-      // Perform a smooth fade transition (600ms) to avoid visual glitch/abrupt swap
-      sceneData.scene.switchTo({ transitionDuration: 600 });
-
-      // Track texture loading state to hide spinner once visible tiles are loaded
-      const layer = sceneData.scene.layer();
-      const textureStore = layer.textureStore();
-
-      const checkLoaded = () => {
-        const tileList: any[] = [];
-        layer.visibleTiles(tileList);
-
-        if (tileList.length === 0) {
-          // If no tiles are visible in layout yet, we are still preparing the scene
-          return;
-        }
-
-        let allLoaded = true;
-        for (let i = 0; i < tileList.length; i++) {
-          if (!textureStore.query(tileList[i]).hasTexture) {
-            allLoaded = false;
-            break;
-          }
-        }
-
-        if (allLoaded) {
-          setIsLoading(false);
-          clearInterval(pollInterval);
-        }
-      };
-
-      // Add event listener for loading progress
-      textureStore.addEventListener("textureLoad", checkLoaded);
-      
-      // Poll every 100ms to check if visible tiles have been determined and loaded
-      const pollInterval = setInterval(checkLoaded, 100);
-
-      // Fallback safety timeout (4 seconds) so slow connections don't block the user forever
-      const timeoutId = setTimeout(() => {
-        setIsLoading(false);
+      textureStore.addEventListener("textureLoad", checkReady);
+      pollInterval = setInterval(checkReady, 100);
+      // Safety timeout so a slow connection doesn't block navigation forever.
+      timeoutId = setTimeout(() => {
+        settled = true;
+        textureStore.removeEventListener("textureLoad", checkReady);
         clearInterval(pollInterval);
+        activate();
       }, 4000);
-
-      return () => {
-        textureStore.removeEventListener("textureLoad", checkLoaded);
-        clearInterval(pollInterval);
-        clearTimeout(timeoutId);
-      };
     }
-  }, [isViewerReady, selectedTower, currentFloorIndex, selectedTime]);
+
+    // Warm the neighboring floors' fallback tiles in the background so
+    // clicking through the floor list (the common case) feels instant
+    // instead of triggering a fresh fetch every time.
+    const prefetchTimer = setTimeout(() => {
+      [currentFloorIndex - 1, currentFloorIndex + 1].forEach((idx) => {
+        const neighbor = towerFloors[idx];
+        if (neighbor) getOrCreateScene(neighbor.id, selectedTower, selectedTime);
+      });
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      textureStore.removeEventListener("textureLoad", checkReady);
+      clearInterval(pollInterval);
+      clearTimeout(timeoutId);
+      clearTimeout(prefetchTimer);
+    };
+  }, [isViewerReady, selectedTower, currentFloorIndex, selectedTime, getOrCreateScene]);
 
   const switchFloor = (index: number) => {
     setCurrentFloorIndex(index);
@@ -376,14 +433,16 @@ export default function BalconyView() {
           style={{ width: "100%", height: "100%" }}
         />
 
-        {/* Loading Overlay with premium design and animations */}
+        {/* Full-screen splash only before anything has ever rendered — there's
+            no prior frame to keep showing yet. */}
         <div
-          className={`absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-10 transition-opacity duration-500 ease-in-out ${
-            isLoading ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+          className={`absolute inset-0 bg-black flex flex-col items-center justify-center z-50 ${
+            !hasRenderedOnce && isLoading
+              ? "opacity-100 pointer-events-auto"
+              : "opacity-0 pointer-events-none transition-opacity duration-500 ease-in-out"
           }`}
         >
           <div className="flex flex-col items-center gap-4">
-            {/* Custom high-end dual-ring loading spinner */}
             <div className="relative w-14 h-14">
               <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
               <div className="absolute inset-0 rounded-full border-4 border-t-white animate-spin"></div>
@@ -392,6 +451,24 @@ export default function BalconyView() {
               Loading 360° Panorama
             </div>
           </div>
+        </div>
+
+        {/* Once a scene has rendered at least once, subsequent floor/tower
+            switches keep the previous frame visible and only show a small
+            non-blocking indicator while the next scene's fallback warms up,
+            matching the Svelte page's instant-feeling switchTo(). */}
+        <div
+          className={`absolute bottom-24 right-6 z-50 flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 backdrop-blur-md transition-opacity duration-300 ${
+            hasRenderedOnce && isLoading ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <div className="relative h-4 w-4">
+            <div className="absolute inset-0 rounded-full border-2 border-white/20"></div>
+            <div className="absolute inset-0 rounded-full border-2 border-t-white animate-spin"></div>
+          </div>
+          <span className="text-xs font-semibold uppercase tracking-widest text-white">
+            Loading
+          </span>
         </div>
       </div>
 
