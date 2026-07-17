@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Map as MapIcon, Plus, Minus, Landmark, Briefcase } from "lucide-react";
+import { Map as MapIcon, Plus, Minus, Landmark, Briefcase, Trees, Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNavbar from "@/components/BottomNavbar";
@@ -63,7 +63,7 @@ const infrastructure = {
     },
     {
       title: "Recreational",
-      icon: "/icons/paint.svg",
+      icon: Trees,
       locations: [
         {
           title: "Vipasana pagoda",
@@ -158,11 +158,11 @@ const infrastructure = {
           coordinates: { lat: 19.23306, lng: 72.82417 },
         },
         {
-          title: "Borivali Thane Tunnel",
-          name: "Borivali Thane twin Tunnel - 5.8km (19 Mins)",
-          coordinates: { lat: 19.2217681, lng: 72.8691741 },
+          title: "Coastal Road",
+          name: "Coastal Road - 2.5km (8 Mins)",
+          coordinates: { lat: 19.220, lng: 72.810 },
         },
-        {
+             {
           title: "Mahindra Company Gate",
           name: "Mahindra Company Gate (B.H.A.D. Colony) - 16km (48 Mins)",
           coordinates: { lat: 19.212009, lng: 72.861557 },
@@ -273,11 +273,28 @@ const infrastructure = {
           title: "Powai",
           name: "Powai - 21km (1hr 13 Mins)",
           coordinates: { lat: 19.1175993, lng: 72.9059747 },
+        }
+      ],
+    },
+  ],
+  upcoming: [
+    {
+      title: "In Progress",
+      icon: "/icons/connectivity.svg",
+      locations: [
+        {
+          title: "Borivali Thane Tunnel",
+          name: "Borivali Thane twin Tunnel - 5.8km (19 Mins)",
+          coordinates: { lat: 19.2217681, lng: 72.8691741 },
+        },
+        {
+          title: "Coastal Road (Upcoming)",
+          name: "Coastal Road (Upcoming) - 2.5km (8 Mins)",
+          coordinates: { lat: 19.220, lng: 72.810 },
         },
       ],
     },
   ],
-  upcoming: [],
 };
 
 const categoryDisplayNames: Record<string, string> = {
@@ -288,6 +305,7 @@ const categoryDisplayNames: Record<string, string> = {
   Connectivity: "Connectivity",
   Hospitals: "Hospital",
   "Commercial Hubspots": "Commercial Hubspot",
+  "Upcoming Infrastructure": "Upcoming Infrastructure",
 };
 
 function parseLocationName(title: string, name: string) {
@@ -356,6 +374,7 @@ export default function LocationExplorer({
     "Gorai Bayview, Borivali West, Mumbai",
   );
   const [destinationAddress, setDestinationAddress] = useState("");
+  const [isCleanView, setIsCleanView] = useState(false);
 
   const [selectedLocation, setSelectedLocation] = useState<LocationItem | null>(
     null,
@@ -392,7 +411,7 @@ export default function LocationExplorer({
 
     const map = new mapboxgl.Map({
       container: mapContainerRef.current,
-      style: "mapbox://styles/mapbox/streets-v12",
+      style: "mapbox://styles/mapbox/light-v11",
       center: [GoraiBayviewLocation.lng, GoraiBayviewLocation.lat],
       zoom: 13,
     });
@@ -412,12 +431,196 @@ export default function LocationExplorer({
     map.on("load", () => {
       map.resize();
 
-      // Hide all default symbol/label layers to keep map clean
-      map.getStyle().layers?.forEach((layer) => {
-        if (layer.type === "symbol") {
-          map.setLayoutProperty(layer.id, "visibility", "none");
+      // ============================================
+      // PREMIUM REAL ESTATE BROCHURE MAP STYLING
+      // ============================================
+
+      const allLayers = map.getStyle().layers;
+      if (!allLayers) return;
+
+      // Helper to safely set paint/layout property
+      const setPaint = (layerId: string, property: string, value: any) => {
+        try {
+          if (map.getLayer(layerId)) {
+            map.setPaintProperty(layerId, property, value);
+          }
+        } catch (e) {
+          // Layer might not exist in this style
+        }
+      };
+
+      const setLayout = (layerId: string, property: string, value: any) => {
+        try {
+          if (map.getLayer(layerId)) {
+            map.setLayoutProperty(layerId, property, value);
+          }
+        } catch (e) {
+          // Layer might not exist in this style
+        }
+      };
+
+      // Process all layers with pattern matching for comprehensive coverage
+      allLayers.forEach((layer: any) => {
+        const id = layer.id;
+        const type = layer.type;
+
+        // === 1. BACKGROUND - Warm cream ===
+        if (id === "background") {
+          setPaint(id, "background-color", "#E5D8C8");
+          return;
+        }
+
+        // === 2. WATER - Soft blue pastel ===
+        if (id.includes("water") || id.includes("waterway")) {
+          setPaint(id, "fill-color", "#A0C8D8");
+          setPaint(id, "line-color", "#A0C8D8");
+          setPaint(id, "fill-opacity", 0.95);
+          return;
+        }
+
+        // === 3. LAND & LANDUSE - Warm sand ===
+        if (id.includes("land") || id.includes("landuse") || id.includes("landcover")) {
+          setPaint(id, "fill-color", "#E5D8C8");
+          setPaint(id, "background-color", "#E5D8C8");
+          return;
+        }
+
+        // === 4. PARKS & GREEN SPACES - Muted sage green ===
+        if (id.includes("park") || id.includes("garden") ||
+            id.includes("forest") || id.includes("wood") ||
+            id.includes("grass") || id.includes("green") ||
+            id.includes("golf") || id.includes("nature") ||
+            id.includes("cemetery")) {
+          setPaint(id, "fill-color", "#A8B898");
+          setPaint(id, "fill-opacity", 0.9);
+          return;
+        }
+
+        // === 5. BUILDINGS - Hide all ===
+        if (id.includes("building") || id.includes("structure")) {
+          setLayout(id, "visibility", "none");
+          return;
+        }
+
+        // === 6. BOUNDARIES - Hide all ===
+        if (id.includes("admin") || id.includes("boundary") ||
+            id.includes("border") || id.includes("disputed")) {
+          setLayout(id, "visibility", "none");
+          return;
+        }
+
+        // === 9. POI & ICONS - Hide all ===
+        if (id.includes("poi") || id.includes("point") ||
+            id.includes("icon") || id.includes("marina")) {
+          try {
+            if (map.getLayer(id)) {
+              map.setLayoutProperty(id, "visibility", "none");
+            }
+          } catch (e) {}
+          return;
+        }
+
+        // === 10. TRANSIT - Hide all ===
+        if (id.includes("transit") || id.includes("bus") ||
+            id.includes("metro") || id.includes("subway") ||
+            id.includes("rail") || id.includes("train") ||
+            id.includes("tram") || id.includes("station")) {
+          try {
+            if (map.getLayer(id)) {
+              map.setLayoutProperty(id, "visibility", "none");
+            }
+          } catch (e) {}
+          return;
+        }
+
+        // === 11. ROAD SHIELDS & NUMBERS - Hide ===
+        if (id.includes("shield") || id.includes("ref") ||
+            id.includes("number") || id.includes("junction")) {
+          try {
+            if (map.getLayer(id)) {
+              map.setLayoutProperty(id, "visibility", "none");
+            }
+          } catch (e) {}
+          return;
+        }
+
+        // === 12. SYMBOLS & LABELS - Hide ALL text labels ===
+        if (type === "symbol") {
+          // Hide all labels - no text on map
+          try {
+            if (map.getLayer(id)) {
+              map.setLayoutProperty(id, "visibility", "none");
+            }
+          } catch (e) {}
+          return;
+        }
+
+        // === 13. AERIAL WAY, BRIDGES, TUNNELS ===
+        if (id.includes("aerial") || id.includes("tunnel") || id.includes("bridge")) {
+          setPaint(id, "line-opacity", 0.2);
+          setPaint(id, "line-color", "#C89D73");
+          return;
+        }
+
+        // === 14. MAN-MADE STRUCTURES ===
+        if (id.includes("pier") || id.includes("breakwater") ||
+            id.includes("dam") || id.includes("aerodrome")) {
+          setPaint(id, "line-color", "#C89D73");
+          setPaint(id, "fill-color", "#D8C1A0");
+          setPaint(id, "fill-opacity", 0.5);
+          return;
+        }
+
+        // === 15. AIRPORTS ===
+        if (id.includes("airport") || id.includes("runway") ||
+            id.includes("aeroway")) {
+          setPaint(id, "fill-color", "#E8DCC8");
+          setPaint(id, "line-color", "#C89D73");
+          setPaint(id, "line-opacity", 0.4);
+          return;
+        }
+
+        // === 16. CONSTRUCTION & PROJECTED ===
+        if (id.includes("construction") || id.includes("projected")) {
+          setPaint(id, "line-color", "#C89D73");
+          setPaint(id, "line-opacity", 0.3);
+          return;
         }
       });
+
+      // Road styling
+      const darkBrown = "#8B5A3C";
+      const lightBrown = "#E8D5C0";
+
+      allLayers.forEach((layer: any) => {
+        if (layer.type !== "line") return;
+
+        const id = layer.id.toLowerCase();
+
+        // Skip if not a road layer
+        if (!id.includes("road") && !id.includes("street") &&
+            !id.includes("highway") && !id.includes("motorway")) {
+          return;
+        }
+
+        try {
+          if (map.getLayer(layer.id)) {
+            // Main roads (highways, motorways, trunk, primary) - dark brown
+            if (id.includes("motorway") || id.includes("trunk") ||
+                id.includes("highway") || id.includes("primary")) {
+              map.setPaintProperty(layer.id, "line-color", darkBrown);
+            }
+            // Other roads - ultra light brown
+            else if (id.includes("secondary") || id.includes("tertiary") ||
+                     id.includes("street") || id.includes("road")) {
+              map.setPaintProperty(layer.id, "line-color", lightBrown);
+            }
+          }
+        } catch (e) {}
+      });
+
+      // END BROCHURE MAP STYLING
+      // ============================================
 
       // Add a distinct pulse marker for Gorai Bayview
       const el = document.createElement("div");
@@ -425,6 +628,7 @@ export default function LocationExplorer({
       el.style.width = "48px";
       el.style.height = "48px";
       el.style.cursor = "pointer";
+      el.style.zIndex = "9999";
 
       el.innerHTML = `
         <div class="luxury-home-pulse-ring"></div>
@@ -477,8 +681,13 @@ export default function LocationExplorer({
       if (labelMarkers.length === 0) return;
 
       const selectedTitle = selectedLocationRef.current?.title;
-      const R = 18; // Marker radius
+      const R = 15; // Marker radius (since diameter is 30px, R = 15)
       const gap = 10; // Gap between circle marker and label text
+
+      // Screen position and collision box for Home Marker
+      const homeLngLat = new mapboxgl.LngLat(GoraiBayviewLocation.lng, GoraiBayviewLocation.lat);
+      const homeScreenPos = map.project(homeLngLat);
+      const homeR = 26; // Radius around home monogram (48px / 2 + padding)
 
       interface ResolvedLabel {
         title: string;
@@ -535,7 +744,7 @@ export default function LocationExplorer({
         "TopLeft",
       ];
 
-      const lineLengths = [24, 48, 72];
+      const lineLengths = [20, 40, 60, 80, 100, 120];
 
       const getLabelCenter = (x: number, y: number, offsetX: number, offsetY: number, pos: string, W_lbl: number, H_lbl: number) => {
         let cx = x + offsetX;
@@ -655,12 +864,23 @@ export default function LocationExplorer({
               const candidateRect = getLabelRect(cx, cy, W_lbl, H_lbl);
               let hasCollision = false;
 
+              // Check label overlap with Home Marker
+              const distToHome = Math.sqrt(
+                (cx - homeScreenPos.x) * (cx - homeScreenPos.x) +
+                (cy - homeScreenPos.y) * (cy - homeScreenPos.y)
+              );
+              if (distToHome < homeR + W_lbl + 4) {
+                hasCollision = true;
+              }
+
               // Check label overlap with other labels
-              for (let k = 0; k < resolvedLabels.length; k++) {
-                if (resolvedLabels[k].hidden) continue;
-                if (checkOverlap(candidateRect, resolvedLabels[k].rect)) {
-                  hasCollision = true;
-                  break;
+              if (!hasCollision) {
+                for (let k = 0; k < resolvedLabels.length; k++) {
+                  if (resolvedLabels[k].hidden) continue;
+                  if (checkOverlap(candidateRect, resolvedLabels[k].rect)) {
+                    hasCollision = true;
+                    break;
+                  }
                 }
               }
 
@@ -692,6 +912,19 @@ export default function LocationExplorer({
                 }
               }
 
+              // Check circle marker overlap with Home Marker
+              if (!hasCollision) {
+                const candidateCircleX = info.x + offsetX;
+                const candidateCircleY = info.y + offsetY;
+                const distCircleToHome = Math.sqrt(
+                  (candidateCircleX - homeScreenPos.x) * (candidateCircleX - homeScreenPos.x) +
+                  (candidateCircleY - homeScreenPos.y) * (candidateCircleY - homeScreenPos.y)
+                );
+                if (distCircleToHome < homeR + R + 4) {
+                  hasCollision = true;
+                }
+              }
+
               if (!hasCollision) {
                 bestPosition = pos;
                 bestOffsetX = offsetX;
@@ -704,11 +937,11 @@ export default function LocationExplorer({
           }
         }
 
-        // NEVER hide labels or circles! Always fall back to first position option if no collision-free space is found
-        const hidden = false;
+        // Hide label if no collision-free position was found
+        const hidden = !found && !info.isSelected;
         const { cx: finalCx, cy: finalCy } = getLabelCenter(info.x, info.y, bestOffsetX, bestOffsetY, bestPosition, W_lbl, H_lbl);
         const finalRect = getLabelRect(finalCx, finalCy, W_lbl, H_lbl);
-        
+
         resolvedLabels.push({
           title: info.title,
           rect: finalRect,
@@ -720,7 +953,11 @@ export default function LocationExplorer({
         const circleEl = info.el.querySelector(".luxury-marker-circle") as HTMLDivElement;
         const pathEl = info.el.querySelector(".luxury-leader-path") as SVGPathElement;
 
-        info.el.classList.remove("hidden-label");
+        if (hidden) {
+          info.el.classList.add("hidden-label");
+        } else {
+          info.el.classList.remove("hidden-label");
+        }
 
         const posClass = `pos-${bestPosition.toLowerCase()}`;
         positionsOrder.forEach(p => info.el.classList.remove(`pos-${p.toLowerCase()}`));
@@ -741,8 +978,8 @@ export default function LocationExplorer({
         }
 
         if (pathEl) {
-          // Apply stroke & stroke-width inline
-          pathEl.style.stroke = isSelected ? "#C79A59" : "#000000";
+          // Apply stroke & stroke-width inline (using brown (#5B4A3D) as baseline color)
+          pathEl.style.stroke = isSelected ? "#C79A59" : "#5B4A3D";
           pathEl.style.strokeWidth = isSelected ? "2px" : "1.5px";
 
           const cx_svg = 150;
@@ -857,19 +1094,20 @@ export default function LocationExplorer({
 
     if (!category) return;
 
-    const catData = infrastructure.current.find(
-      (item) => item.title === category,
-    );
+    const catData =
+      infrastructure.current.find((item) => item.title === category) ||
+      infrastructure.upcoming.find((item) => item.title === category);
     if (!catData) return;
 
     const iconMap: Record<string, string> = {
-      "Education Institutes": `<img src="/icons/education.svg" class="w-10 h-10 object-contain" alt="Education" />`,
-      Banks: `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #ffffff;"><line x1="3" y1="22" x2="21" y2="22" /><line x1="6" y1="18" x2="6" y2="11" /><line x1="10" y1="18" x2="10" y2="11" /><line x1="14" y1="18" x2="14" y2="11" /><line x1="18" y1="18" x2="18" y2="11" /><polygon points="12 2 20 7 4 7" /></svg>`,
-      Recreational: `<img src="/icons/paint.svg" class="w-10 h-10 object-contain" alt="Recreational" />`,
-      "Lifestyle & Social": `<img src="/icons/lifestyle.svg" class="w-10 h-10 object-contain" alt="Lifestyle" />`,
-      Connectivity: `<img src="/icons/connectivity.svg" class="w-10 h-10 object-contain" alt="Connectivity" />`,
-      Hospitals: `<img src="/icons/hospital.svg" class="w-10 h-10 object-contain" alt="Hospitals" />`,
-      "Commercial Hubspots": `<svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #ffffff;"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /><rect width="20" height="14" x="2" y="6" rx="2" /></svg>`,
+      "Education Institutes": `<img src="/icons/education.svg" class="w-[22px] h-[22px] object-contain" alt="Education" />`,
+      Banks: `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #ffffff;"><line x1="3" y1="22" x2="21" y2="22" /><line x1="6" y1="18" x2="6" y2="11" /><line x1="10" y1="18" x2="10" y2="11" /><line x1="14" y1="18" x2="14" y2="11" /><line x1="18" y1="18" x2="18" y2="11" /><polygon points="12 2 20 7 4 7" /></svg>`,
+      Recreational: `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #ffffff;"><path d="M10 22v-5" /><path d="M10 17a4 4 0 0 1-4-4c0-2 2-3 2-3s0-1 1-2 2-1 2-1 1 0 2 1 1 2 1 2 2 1 2 3a4 4 0 0 1-4 4z" /><path d="M14 22v-4" /><path d="M14 18a3 3 0 0 0 3-3c0-1.5-1.5-2.25-1.5-2.25s0-.75-.75-1.5-1.5-.75-1.5-.75-.75 0-1.5.75-.75 1.5-.75 1.5-1.5.75-1.5 2.25a3 3 0 0 0 3 3z" /></svg>`,
+      "Lifestyle & Social": `<img src="/icons/lifestyle.svg" class="w-[22px] h-[22px] object-contain" alt="Lifestyle" />`,
+      Connectivity: `<img src="/icons/connectivity.svg" class="w-[22px] h-[22px] object-contain" alt="Connectivity" />`,
+      Hospitals: `<img src="/icons/hospital.svg" class="w-[22px] h-[22px] object-contain" alt="Hospitals" />`,
+      "Commercial Hubspots": `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #ffffff;"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /><rect width="20" height="14" x="2" y="6" rx="2" /></svg>`,
+      "Upcoming Infrastructure": `<img src="/icons/connectivity.svg" class="w-[22px] h-[22px] object-contain" alt="Upcoming Infrastructure" />`,
     };
 
     catData.locations.forEach((loc) => {
@@ -880,10 +1118,10 @@ export default function LocationExplorer({
       const markerEl = document.createElement("div");
       markerEl.className = "luxury-annotation-container";
 
-      // 1. Create pinpoint ring (hollow black circle dot)
+      // 1. Create pinpoint ring (hollow brown circle dot)
       const dotEl = document.createElement("div");
       dotEl.className = "luxury-dot";
-      dotEl.style.cssText = "position: absolute; width: 10px; height: 10px; border: 2px solid #000000; background-color: transparent; border-radius: 50%; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); transform: translate(-50%, -50%); z-index: 4; transition: transform 250ms ease;";
+      dotEl.style.cssText = "position: absolute; width: 10px; height: 10px; border: 2px solid #5B4A3D; background-color: transparent; border-radius: 50%; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); transform: translate(-50%, -50%); z-index: 4; transition: transform 250ms ease;";
       markerEl.appendChild(dotEl);
 
       // 2. Create SVG and path programmatically (namespace-safe)
@@ -896,7 +1134,7 @@ export default function LocationExplorer({
       const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
       pathEl.setAttribute("class", "luxury-leader-path");
       pathEl.setAttribute("fill", "none");
-      pathEl.setAttribute("stroke", "#ffffff");
+      pathEl.setAttribute("stroke", "#5B4A3D");
       pathEl.setAttribute("stroke-width", "1.5");
       pathEl.setAttribute("d", "");
       svgEl.appendChild(pathEl);
@@ -964,7 +1202,7 @@ export default function LocationExplorer({
         }
       });
       map.fitBounds(bounds, {
-        padding: { top: 80, bottom: 80, left: 340, right: 80 },
+        padding: { top: 120, bottom: 120, left: 340, right: 120 },
         maxZoom: 13,
         essential: true,
       });
@@ -1158,7 +1396,7 @@ export default function LocationExplorer({
       },
     });
 
-    // Add route glow under-layer
+    // Add route glow under-layer (reduced width for Feedback 6)
     map.addLayer({
       id: "route-glow",
       type: "line",
@@ -1169,13 +1407,13 @@ export default function LocationExplorer({
       },
       paint: {
         "line-color": "#c79a59",
-        "line-width": 14,
+        "line-width": 8,
         "line-opacity": 0.4,
-        "line-blur": 6,
+        "line-blur": 4,
       },
     });
 
-    // Add main route line layer
+    // Add main route line layer (reduced width for Feedback 6)
     map.addLayer({
       id: "route",
       type: "line",
@@ -1186,7 +1424,7 @@ export default function LocationExplorer({
       },
       paint: {
         "line-color": "#E5C158",
-        "line-width": 6,
+        "line-width": 3,
         "line-opacity": 0.95,
       },
     });
@@ -1234,9 +1472,9 @@ export default function LocationExplorer({
           type: "circle",
           source: "animated-marker",
           paint: {
-            "circle-radius": 9,
+            "circle-radius": 4, // Smaller dot size for Feedback 8 & 6
             "circle-color": "#ffffff",
-            "circle-stroke-width": 3,
+            "circle-stroke-width": 2,
             "circle-stroke-color": "#E5C158",
           },
         });
@@ -1246,6 +1484,10 @@ export default function LocationExplorer({
 
       if (currentIndex < coordinates.length) {
         animationFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        // Animation finished: remove the animating marker dot so it doesn't coincide/overlap with destination marker (Feedback 6)
+        if (map.getLayer("animated-marker")) map.removeLayer("animated-marker");
+        if (map.getSource("animated-marker")) map.removeSource("animated-marker");
       }
     };
 
@@ -1306,14 +1548,14 @@ export default function LocationExplorer({
   return (
     <section className="relative h-screen w-full overflow-hidden bg-black">
       {/* MAP CONTAINER */}
-      <div
-        ref={mapContainerRef}
-        className="absolute inset-0 h-full w-full premium-map-container"
-        style={{ zIndex: 10 }}
-      />
+      <div className="absolute inset-0 h-full w-full premium-map-container" style={{ zIndex: 10 }}>
+        <div ref={mapContainerRef} className="w-full h-full" />
+        {/* Animated Moving Clouds Overlay */}
+        <div className="luxury-clouds-overlay pointer-events-none" />
+      </div>
 
       {/* MAP OVERLAY (Subtle shadow gradient for panel readability) */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-transparent to-black/30 pointer-events-none z-15" />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/25 via-transparent to-black/15 pointer-events-none z-15" />
 
       {/* LOADING OVERLAY */}
       {isRouteLoading && (
@@ -1326,7 +1568,16 @@ export default function LocationExplorer({
       )}
 
       {/* MAP CONTROLS */}
-      <div className="absolute right-6 bottom-32 z-20">
+      <div className="absolute right-6 bottom-32 z-20 flex flex-col gap-2">
+        {/* Toggle UI clean view button (Feedback 13) */}
+        <button
+          onClick={() => setIsCleanView(!isCleanView)}
+          className="w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer"
+          title={isCleanView ? "Show UI Panels" : "Hide UI Panels (Clean View)"}
+        >
+          {isCleanView ? <Eye size={20} /> : <EyeOff size={20} />}
+        </button>
+
         <div className="flex flex-col gap-2 luxury-zoom-control">
           <button
             onClick={() => {
@@ -1350,45 +1601,62 @@ export default function LocationExplorer({
       </div>
 
       {/* Global Navbar */}
-      <GlobalNavbar
-        currentPage="location"
-        showReset={true}
-        onReset={resetMap}
-      />
+      {!isCleanView && (
+        <GlobalNavbar
+          currentPage="location"
+          showReset={true}
+          onReset={resetMap}
+        />
+      )}
 
       {/* SIDEBAR PANEL */}
-      <Sidebar
-        header={{
-          icon: MapIcon,
-          subtitle: "Click to Explore",
-          title: "Locations",
-        }}
-        sections={createSidebarSections([
-          {
-            id: "current-infrastructure",
-            title: "Current Infrastructure",
-            items: createSidebarItems(
-              infrastructure.current.map((item) => ({
-                id: item.title,
-                label: item.title,
-                icon: item.icon,
-                onClick: () => handleCategoryChange(item.title),
-                isActive: selectedCategory === item.title,
-              })),
-            ),
-          },
-        ])}
-      />
+      {!isCleanView && (
+        <Sidebar
+          header={{
+            icon: MapIcon,
+            subtitle: "Click to Explore",
+            title: "Locations",
+          }}
+          sections={createSidebarSections([
+            {
+              id: "current-infrastructure",
+              title: "Current Infrastructure",
+              items: createSidebarItems(
+                infrastructure.current.map((item) => ({
+                  id: item.title,
+                  label: item.title,
+                  icon: item.icon,
+                  onClick: () => handleCategoryChange(item.title),
+                  isActive: selectedCategory === item.title,
+                })),
+              ),
+            },
+            {
+              id: "upcoming-infrastructure",
+              title: "Upcoming Infrastructure",
+              items: createSidebarItems(
+                infrastructure.upcoming.map((item) => ({
+                  id: item.title,
+                  label: item.title,
+                  icon: item.icon,
+                  onClick: () => handleCategoryChange(item.title),
+                  isActive: selectedCategory === item.title,
+                })),
+              ),
+            },
+          ])}
+        />
+      )}
 
-      {/* PREMIUM LARGE INFORMATION CARD */}
+      {/* PREMIUM LARGE INFORMATION CARD (moved to the right on desktop for Feedback 1) */}
       <AnimatePresence>
-        {selectedLocation && (
+        {!isCleanView && selectedLocation && (
           <motion.div
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="absolute z-30 w-fit flex flex-col items-start gap-3 p-4 rounded-[10px] bg-[#2C3437]/75 backdrop-blur-md border border-[#40484B]/70 shadow-[0_12px_40px_rgba(0,0,0,0.4)] left-4 right-4 bottom-28  md:bottom-32 md:left-1/2 md:-translate-x-1/2 lg:bottom-auto lg:top-6 lg:left-1/2 lg:-translate-x-1/2  lg:max-w-none"
+            className="absolute z-30 w-fit lg:w-[250px] flex flex-col items-start gap-3 p-4 rounded-[10px] bg-[#2C3437]/75 backdrop-blur-md border border-[#40484B]/70 shadow-[0_12px_40px_rgba(0,0,0,0.4)] left-4 right-4 bottom-28 md:bottom-32 md:left-1/2 md:-translate-x-1/2 lg:bottom-auto lg:top-[6.5rem] lg:right-6 lg:left-auto lg:translate-x-0 lg:max-w-none"
           >
             <div className="w-full pr-8 min-w-0">
               <p className="text-[#C79A59] text-[10px] sm:text-xs uppercase tracking-[0.2em] font-semibold">
@@ -1470,13 +1738,65 @@ export default function LocationExplorer({
       </AnimatePresence>
 
       {/* BOTTOM NAV */}
-      <BottomNavbar activeItem="location" />
+      {!isCleanView && <BottomNavbar activeItem="location" />}
 
       {/* CUSTOM LUXURY STYLES */}
       <style>{`
-        /* Premium custom style for map tiles */
+        /* Premium Brochure Map Container - clean, no filters */
         .premium-map-container .mapboxgl-canvas-container {
-          filter: saturate(1.25) contrast(1.05) brightness(0.98);
+          filter: none;
+        }
+
+        .premium-map-container .mapboxgl-canvas {
+          background: #E5D8C8;
+        }
+
+        /* Animated Moving Clouds Overlay (Feedback) */
+        .luxury-clouds-overlay {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          z-index: 1; /* Floats above canvas but below custom markers */
+          opacity: 0.18;
+          mix-blend-mode: soft-light;
+          overflow: hidden;
+          background: transparent;
+        }
+
+        .luxury-clouds-overlay::before,
+        .luxury-clouds-overlay::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 200%;
+          height: 100%;
+          background: url('/icons/clouds.svg') repeat-x;
+          background-size: 50% 100%;
+        }
+
+        .luxury-clouds-overlay::before {
+          animation: floatClouds1 140s linear infinite;
+        }
+
+        .luxury-clouds-overlay::after {
+          animation: floatClouds2 95s linear infinite;
+          opacity: 0.65;
+        }
+
+        @keyframes floatClouds1 {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+
+        @keyframes floatClouds2 {
+          0% { transform: translateX(-25%); }
+          100% { transform: translateX(-75%); }
+        }
+
+        /* Keep H monogram always on top of other markers (Feedback 7 & 9) */
+        .mapboxgl-marker:has(.luxury-home-marker) {
+          z-index: 9999 !important;
         }
 
         .luxury-annotation-container {
@@ -1486,12 +1806,12 @@ export default function LocationExplorer({
           pointer-events: none;
         }
 
-        /* Coordinate Spot: Hollow Black Circle Ring */
+        /* Coordinate Spot: Hollow Brown Circle Ring (Feedback 3) */
         .luxury-dot {
           position: absolute;
           width: 10px;
           height: 10px;
-          border: 2px solid #000000;
+          border: 2px solid #5B4A3D;
           background-color: transparent;
           border-radius: 50%;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -1505,11 +1825,11 @@ export default function LocationExplorer({
           box-shadow: 0 0 8px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
         }
 
-        /* Marker Container: solid brown background (#5B4A3D), no border, size 36px */
+        /* Marker Container: solid brown background (#5B4A3D), size reduced to 30px (Feedback 3) */
         .luxury-marker-circle {
           position: absolute;
-          width: 36px;
-          height: 36px;
+          width: 30px;
+          height: 30px;
           top: 50%;
           left: 50%;
           transform: translate(calc(-50% + var(--offset-x, 0px)), calc(-50% + var(--offset-y, -45px)));
@@ -1530,8 +1850,8 @@ export default function LocationExplorer({
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 36px;
-          height: 36px;
+          width: 30px;
+          height: 30px;
         }
         .luxury-marker-icon img {
           width: 100%;
@@ -1539,8 +1859,8 @@ export default function LocationExplorer({
           object-fit: contain;
         }
         .luxury-marker-icon svg {
-          width: 18px;
-          height: 18px;
+          width: 15px;
+          height: 15px;
           stroke: #ffffff !important;
           color: #ffffff !important;
         }
@@ -1563,8 +1883,9 @@ export default function LocationExplorer({
           z-index: 2;
         }
 
+        /* Leader Line stroke is brown (#5B4A3D) instead of black (Feedback 3) */
         .luxury-leader-path {
-          stroke: #000000;
+          stroke: #5B4A3D;
           stroke-width: 1.5px;
           fill: none;
           filter: drop-shadow(0px 1px 1px rgba(255, 255, 255, 0.75));
@@ -1576,23 +1897,15 @@ export default function LocationExplorer({
           filter: drop-shadow(0px 1px 2px rgba(255, 255, 255, 0.8));
         }
 
-        /* Label Text: Bold black text with solid white drop shadow outline and no background */
+        /* Label Text: Dark brown text with subtle shadow for readability on warm map */
         .luxury-label-text-wrapper {
           position: absolute;
           pointer-events: none;
           font-family: inherit;
           font-size: 11px;
           font-weight: 700;
-          color: #000000;
-          text-shadow: 
-            -1px -1px 0 #fff,  
-             1px -1px 0 #fff,
-            -1px  1px 0 #fff,
-             1px  1px 0 #fff,
-            -2px -2px 0 #fff,
-             2px -2px 0 #fff,
-            -2px  2px 0 #fff,
-             2px  2px 0 #fff;
+          color: #5B4230;
+          text-shadow: 0 0 4px rgba(221, 208, 192, 0.9), 0 1px 2px rgba(221, 208, 192, 0.7);
           line-height: 1.25;
           width: max-content;
           max-width: 90px;
@@ -1600,12 +1913,23 @@ export default function LocationExplorer({
           z-index: 10;
         }
 
+        /* Hide overlapping labels */
+        .hidden-label .luxury-label-text-wrapper {
+          display: none;
+        }
+
+        .hidden-label .luxury-marker-circle {
+          opacity: 0.6;
+        }
+
         .luxury-label-text {
           display: block;
         }
 
         .luxury-annotation-container.active .luxury-label-text-wrapper {
-          color: #000000;
+          color: #1A1510;
+          font-weight: 800;
+          text-shadow: 0 0 6px rgba(221, 208, 192, 1), 0 1px 3px rgba(221, 208, 192, 0.8);
         }
 
         /* Position mapping of text label relative to circle marker */

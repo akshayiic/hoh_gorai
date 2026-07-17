@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 600" width="1000" height="600">
+  <defs>
+    <filter id="cloud-blur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="40" />
+    </filter>
+  </defs>
+  <!-- Soft, realistic floating cloud textures -->
+  <g filter="url(#cloud-blur)" fill="#ffffff" opacity="0.75">
+    <ellipse cx="150" cy="180" rx="160" ry="90" />
+    <ellipse cx="280" cy="220" rx="180" ry="100" />
+    <ellipse cx="480" cy="150" rx="220" ry="110" />
+    <ellipse cx="680" cy="240" rx="190" ry="95" />
+    <ellipse cx="850" cy="190" rx="170" ry="85" />
+    
+    <ellipse cx="80" cy="420" rx="150" ry="80" />
+    <ellipse cx="260" cy="470" rx="200" ry="100" />
+    <ellipse cx="580" cy="430" rx="240" ry="120" />
+    <ellipse cx="800" cy="470" rx="180" ry="90" />
+    <ellipse cx="970" cy="400" rx="150" ry="75" />
+  </g>
+</svg>

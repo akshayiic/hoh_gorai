@@ -90,7 +90,7 @@ export default function Sidebar({
 }: SidebarProps) {
   return (
     <aside
-      className={`absolute left-6 top-[6.5rem]   z-20 hidden lg:block ${className}`}
+      className={`absolute left-10 top-[6.5rem]   z-20 hidden lg:block ${className}`}
     >
       <div
         className="
@@ -192,6 +192,7 @@ export default function Sidebar({
                         w-[calc(100%+1.5rem)]
                         -mx-3
                         px-3
+                        pl-6
                         py-[8px]
                         flex
                         items-center
