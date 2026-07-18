@@ -24,19 +24,24 @@ const infrastructure = {
       icon: "/icons/education.svg",
       locations: [
         {
-          title: "VIBGYOR High School",
-          name: "VIBGYOR High School - 9.3km (29 mins)",
-          coordinates: { lat: 19.1594674, lng: 72.8355775 },
+          title: "VIBGYOR",
+          name: "VIBGYOR - 4.4km (13 Mins)",
+          coordinates: { lat: 19.2508934, lng: 72.8506325 },
         },
         {
-          title: "Swami Vivekanandand International",
-          name: "Swami Vivekanandand International school - 6.1km (18 mins)",
+          title: "ORCHIDS",
+          name: "ORCHIDS - 1.7km (7 Mins)",
+          coordinates: { lat: 19.227209, lng: 72.8345879 },
+        },
+        {
+          title: "DON BOSCO",
+          name: "DON BOSCO - 1.7km (5 Mins)",
+          coordinates: { lat: 19.230664, lng: 72.8415354 },
+        },
+        {
+          title: "Swami Vivekanandand International school",
+          name: "Swami Vivekanandand International school - 5.8km (19 Mins)",
           coordinates: { lat: 19.2096745, lng: 72.8472554 },
-        },
-        {
-          title: "Orchids The International School",
-          name: "Orchids The International School - 6.2km (18 mins)",
-          coordinates: { lat: 19.1938196, lng: 72.8411626 },
         },
       ],
     },
@@ -45,19 +50,49 @@ const infrastructure = {
       icon: Landmark,
       locations: [
         {
-          title: "HDFC Bank",
-          name: "HDFC Bank - 550m (2 Mins)",
-          coordinates: { lat: 19.235184, lng: 72.8284681 },
+          title: "HDFC",
+          name: "HDFC - 3km (10 Mins)",
+          coordinates: { lat: 19.230887, lng: 72.8512622 },
+        },
+        {
+          title: "bank of baroda",
+          name: "bank of baroda - 3.2km (12 Mins)",
+          coordinates: { lat: 19.2263277, lng: 72.8531056 },
+        },
+        {
+          title: "NKGSB Bank",
+          name: "NKGSB Bank - 450m (6 Mins)",
+          coordinates: { lat: 19.2323957, lng: 72.8296357 },
         },
         {
           title: "Axis Bank",
-          name: "Axis Bank - 1.4km (5 Mins)",
-          coordinates: { lat: 19.2270023, lng: 72.8242808 },
+          name: "Axis Bank - 6.2km (20 Mins)",
+          coordinates: { lat: 19.2285996, lng: 72.8636277 },
+        },
+        {
+          title: "CKP Bank",
+          name: "CKP Bank - 600m (8 Mins)",
+          coordinates: { lat: 19.2301197, lng: 72.8289677 },
+        },
+        {
+          title: "Uco Bank",
+          name: "Uco Bank - 5.6km (18 Mins)",
+          coordinates: { lat: 19.2293833, lng: 72.8588835 },
         },
         {
           title: "Union Bank of India",
-          name: "Union Bank of India - 1km (4 Mins)",
-          coordinates: { lat: 19.2270052, lng: 72.8280828 },
+          name: "Union Bank of India - 3.7km (11 Mins)",
+          coordinates: { lat: 19.2464863, lng: 72.8495949 },
+        },
+        {
+          title: "bank of maharashtra",
+          name: "bank of maharashtra - 2.8km (10 Mins)",
+          coordinates: { lat: 19.2127887, lng: 72.8283273 },
+        },
+        {
+          title: "ICICI",
+          name: "ICICI - 300m (4 Mins)",
+          coordinates: { lat: 19.2322104, lng: 72.8287817 },
         },
       ],
     },
@@ -67,33 +102,33 @@ const infrastructure = {
       locations: [
         {
           title: "Vipasana pagoda",
-          name: "Vipasana pagoda - 4.6km (23 Mins)",
-          coordinates: { lat: 19.2279216, lng: 72.8066493 },
+          name: "Vipasana pagoda - 4.2km (31 Mins)",
+          coordinates: { lat: 19.2282034, lng: 72.8058891 },
         },
         {
-          title: "Gorai beach",
-          name: "Gorai Beach - 5.8km (28 Mins)",
-          coordinates: { lat: 19.2458, lng: 72.7845 },
+          title: "gorai beach",
+          name: "gorai beach - 5.4km (35 Mins)",
+          coordinates: { lat: 19.2419548, lng: 72.7808269 },
         },
         {
-          title: "National park",
-          name: "National park - 6.9km (9 Mins)",
-          coordinates: { lat: 19.2204535, lng: 72.9128422 },
+          title: "Sanjay Gandhi National park",
+          name: "Sanjay Gandhi National park - 6.4km (21 Mins)",
+          coordinates: { lat: 19.2314868, lng: 72.8636083 },
         },
         {
-          title: "National park gate",
-          name: "National park gate - 6.9km (9 Mins)",
-          coordinates: { lat: 19.226937, lng: 72.864951 },
+          title: "uttan beach",
+          name: "uttan beach - 10.9km (48 Mins)",
+          coordinates: { lat: 19.2819076, lng: 72.7835253 },
         },
         {
           title: "Madh island",
-          name: "Madh island - 14km (42 Mins)",
+          name: "Madh island - 14.4km (38 Mins)",
           coordinates: { lat: 19.1484913, lng: 72.7891606 },
         },
         {
-          title: "iskon temple",
-          name: "Iskon temple - 650m (2 Mins)",
-          coordinates: { lat: 19.2302128, lng: 72.8264632 },
+          title: "water kingdom",
+          name: "water kingdom - 3.9km (35 Mins)",
+          coordinates: { lat: 19.2314893, lng: 72.7819392 },
         },
       ],
     },
@@ -103,12 +138,12 @@ const infrastructure = {
       locations: [
         {
           title: "Sky City mall",
-          name: "Sky City mall - 5.7km (17 Mins)",
+          name: "Sky City mall - 5.6km (21 Mins)",
           coordinates: { lat: 19.223302, lng: 72.8642378 },
         },
         {
-          title: "Inorbit Mall",
-          name: "Inorbit Mall - 8.8km (35 Mins)",
+          title: "inorbit mall",
+          name: "inorbit mall - 9km (31 Mins)",
           coordinates: { lat: 19.1729281, lng: 72.8359056 },
         },
         {
@@ -118,59 +153,59 @@ const infrastructure = {
         },
         {
           title: "Goregaon sports club",
-          name: "Goregaon sports club - 7km (28 Mins)",
+          name: "Goregaon sports club - 6.9km (25 Mins)",
           coordinates: { lat: 19.1820887, lng: 72.8355377 },
         },
         {
-          title: "Oberoi Mall",
-          name: "Oberoi - goregaon mall - 12km (37 Mins)",
+          title: "Oberoi mall",
+          name: "Oberoi mall - 12.4km (39 Mins)",
           coordinates: { lat: 19.1741983, lng: 72.8604101 },
         },
         {
-          title: "Infinity Mall",
-          name: "Infinity Mall - 12km (52 Mins)",
-          coordinates: { lat: 19.14129, lng: 72.8311659 },
+          title: "vijay sales",
+          name: "vijay sales - 4.1km (14 Mins)",
+          coordinates: { lat: 19.2169591, lng: 72.8514918 },
         },
         {
-          title: "Nesco",
-          name: "Nesco - 15km (43 Mins)",
-          coordinates: { lat: 19.1490086, lng: 72.8536449 },
+          title: "infinity mall",
+          name: "infinity mall - 6.8km (25 Mins)",
+          coordinates: { lat: 19.184753, lng: 72.8341927 },
+        },
+        {
+          title: "nesco",
+          name: "nesco - 12.8km (48 Mins)",
+          coordinates: { lat: 19.150269, lng: 72.8530249 },
+        },
+        {
+          title: "Reliance",
+          name: "Reliance - 2.4km (8 Mins)",
+          coordinates: { lat: 19.2302534, lng: 72.8477749 },
         },
       ],
     },
     {
-      title: "Connectivity",
+      title: "Transport",
       icon: "/icons/connectivity.svg",
       locations: [
         {
-          title: "AIR & Doordarshan Station",
-          name: "AIR & Doordarshan Receiving Station - 700m (2 Mins)",
-          coordinates: { lat: 19.2316241, lng: 72.8298975 },
-        },
-        {
-          title: "New link road",
-          name: "New link road - 6.3km (23 Mins)",
-          coordinates: { lat: 19.1898948, lng: 72.8354623 },
-        },
-        {
-          title: "Wire Bridge",
-          name: "Wire Bridge - 1.4km (5 Mins)",
-          coordinates: { lat: 19.23306, lng: 72.82417 },
-        },
-        {
           title: "Coastal Road",
-          name: "Coastal Road - 2.5km (8 Mins)",
-          coordinates: { lat: 19.220, lng: 72.810 },
-        },
-             {
-          title: "Mahindra Company Gate",
-          name: "Mahindra Company Gate (B.H.A.D. Colony) - 16km (48 Mins)",
-          coordinates: { lat: 19.212009, lng: 72.861557 },
+          name: "Coastal Road - upcoming - 4km (13 Mins)",
+          coordinates: { lat: 19.214745, lng: 72.8117535 },
         },
         {
-          title: "Gorai Metro",
-          name: "Gorai Metro - 1.4km (5 Mins)",
-          coordinates: { lat: 19.2259009, lng: 72.8280027 },
+          title: "Borivali Thane twin Tunnel",
+          name: "Borivali Thane twin Tunnel - upcoming - 5.8km (22 Mins)",
+          coordinates: { lat: 19.2217681, lng: 72.8691741 },
+        },
+        {
+          title: "western express highway",
+          name: "western express highway - 11.9km (36 Mins)",
+          coordinates: { lat: 19.1663509, lng: 72.8586328 },
+        },
+        {
+          title: "borivali Metro",
+          name: "borivali Metro - 1.7km (5 Mins)",
+          coordinates: { lat: 19.231312, lng: 72.840864 },
         },
         {
           title: "Mumbai Metro Line 9 & 7A",
@@ -178,9 +213,14 @@ const infrastructure = {
           coordinates: { lat: 19.2712538, lng: 72.8808657 },
         },
         {
-          title: "Western Express Highway",
-          name: "Western Express Highway - 7km (20 Mins)",
-          coordinates: { lat: 19.167753, lng: 72.858787 },
+          title: "New link road",
+          name: "New link road - 5.9km (20 Mins)",
+          coordinates: { lat: 19.1898948, lng: 72.8354623 },
+        },
+        {
+          title: "SV Road",
+          name: "SV Road - 9.8km (35 Mins)",
+          coordinates: { lat: 19.1734416, lng: 72.8541016 },
         },
       ],
     },
@@ -189,112 +229,95 @@ const infrastructure = {
       icon: "/icons/hospital.svg",
       locations: [
         {
-          title: "APEX Hospital",
-          name: "APEX Hospital - 2.2km (8 Mins)",
-          coordinates: { lat: 19.2293416, lng: 72.8466084 },
-        },
-        {
-          title: "Arihant Super Speciality",
-          name: "Arihant Super Speciality - 4.3km (13 mins)",
-          coordinates: { lat: 19.2189271, lng: 72.8523851 },
-        },
-        {
-          title: "Phoenix Hospital",
-          name: "Phoenix hospital - 3km (11 mins)",
-          coordinates: { lat: 19.2195799, lng: 72.838099 },
-        },
-        {
-          title: "Lotus Hospital",
-          name: "Lotus Hospital - 2.4km (8 mins)",
-          coordinates: { lat: 19.2270842, lng: 72.8460337 },
+          title: "Apex Hospital",
+          name: "Apex Hospital - 2.5km (8 Mins)",
+          coordinates: { lat: 19.231218, lng: 72.8494247 },
         },
         {
           title: "Zenith Hospital",
-          name: "Zenith Hospital - 5.7km (22 mins)",
+          name: "Zenith Hospital - 5.3km (18 Mins)",
           coordinates: { lat: 19.1951084, lng: 72.8340496 },
         },
         {
+          title: "Phoenix hospital",
+          name: "Pheonix hospital - 4.8km (13 Mins)",
+          coordinates: { lat: 19.2522023, lng: 72.8509017 },
+        },
+        {
+          title: "Lotus Hospital",
+          name: "Lotus Hospital - 3.1km (9 Mins)",
+          coordinates: { lat: 19.2405126, lng: 72.8451783 },
+        },
+        {
+          title: "Arihant Super Speciality",
+          name: "Arihant Super Speciality - 4.3km (13 Mins)",
+          coordinates: { lat: 19.2189271, lng: 72.8523851 },
+        },
+        {
           title: "Karuna Hospital",
-          name: "Karuna Hospital - 4.8km (16 Mins)",
+          name: "Karuna Hospital - 4.7km (14 Mins)",
           coordinates: { lat: 19.2412571, lng: 72.8529326 },
         },
       ],
     },
     {
       title: "Commercial Hubspots",
-      icon:  Briefcase,
+      icon: Briefcase,
       locations: [
         {
           title: "Goregaon",
-          name: "Goregaon - 12km (41 Mins)",
+          name: "Goregaon - 10.6km (37 Mins)",
           coordinates: { lat: 19.1662566, lng: 72.8525696 },
+        },
+        {
+          title: "Worli",
+          name: "Worli - 34.3km (1hr 25 Mins)",
+          coordinates: { lat: 18.9986406, lng: 72.8173599 },
+        },
+        {
+          title: "malad",
+          name: "malad - 6km (20 Mins)",
+          coordinates: { lat: 19.1889541, lng: 72.835543 },
+        },
+        {
+          title: "Lower Parel",
+          name: "Lower Parel - 33.3km (1 hr 21 Mins)",
+          coordinates: { lat: 18.9982461, lng: 72.8269646 },
+        },
+        {
+          title: "BKC",
+          name: "BKC - 26.8km (1hr 9 Mins)",
+          coordinates: { lat: 19.0687893, lng: 72.8702647 },
+        },
+        {
+          title: "Powai",
+          name: "Powai - 21.6km (59 Mins)",
+          coordinates: { lat: 19.1175993, lng: 72.9059747 },
+        },
+        {
+          title: "Thane",
+          name: "Thane - 28.4km (1hr 19 Mins)",
+          coordinates: { lat: 19.2122949, lng: 72.9771661 },
+        },
+        {
+          title: "CST",
+          name: "CST - 43.8km (1hr 35 Mins)",
+          coordinates: { lat: 18.9401131, lng: 72.8357207 },
+        },
+        {
+          title: "Andheri",
+          name: "Andheri - 18.6km (52 Mins)",
+          coordinates: { lat: 19.1178548, lng: 72.8631304 },
         },
         {
           title: "Nariman Point",
           name: "Nariman Point - 44km (1hr 31 Mins)",
-          coordinates: { lat: 18.9255728, lng: 72.8242221 },
-        },
-        {
-          title: "Malad",
-          name: "Malad - 8km (36 Mins)",
-          coordinates: { lat: 19.1874459, lng: 72.8483689 },
-        },
-        {
-          title: "CST",
-          name: "CST - 43km (1hr 34 Mins)",
-          coordinates: { lat: 18.9401131, lng: 72.8357207 },
-        },
-        {
-          title: "BKC",
-          name: "BKC - 26km (1hr)",
-          coordinates: { lat: 19.0687893, lng: 72.8702647 },
-        },
-        {
-          title: "Andheri",
-          name: "Andheri - 19km (1 hr)",
-          coordinates: { lat: 19.113645, lng: 72.8697339 },
-        },
-        {
-          title: "Worli",
-          name: "Worli - 34km (1 Hr 26 Mins)",
-          coordinates: { lat: 18.9986406, lng: 72.8173599 },
-        },
-        {
-          title: "Thane",
-          name: "Thane - 28km (1hr 21 Mins)",
-          coordinates: { lat: 19.2122949, lng: 72.9771661 },
-        },
-        {
-          title: "Lower Parel",
-          name: "Lower Parel - 35km (1hr 35 Mins)",
-          coordinates: { lat: 18.9982461, lng: 72.8269646 },
-        },
-        {
-          title: "Powai",
-          name: "Powai - 21km (1hr 13 Mins)",
-          coordinates: { lat: 19.1175993, lng: 72.9059747 },
-        }
-      ],
-    },
-  ],
-  upcoming: [
-    {
-      title: "In Progress",
-      icon: "/icons/connectivity.svg",
-      locations: [
-        {
-          title: "Borivali Thane Tunnel",
-          name: "Borivali Thane twin Tunnel - 5.8km (19 Mins)",
-          coordinates: { lat: 19.2217681, lng: 72.8691741 },
-        },
-        {
-          title: "Coastal Road (Upcoming)",
-          name: "Coastal Road (Upcoming) - 2.5km (8 Mins)",
-          coordinates: { lat: 19.220, lng: 72.810 },
+          coordinates: { lat: 18.9257027, lng: 72.8186357 },
         },
       ],
     },
   ],
+  upcoming: [],
 };
 
 const categoryDisplayNames: Record<string, string> = {
@@ -302,10 +325,9 @@ const categoryDisplayNames: Record<string, string> = {
   Banks: "Bank",
   Recreational: "Recreational",
   "Lifestyle & Social": "Lifestyle & Social",
-  Connectivity: "Connectivity",
+  Transport: "Transport",
   Hospitals: "Hospital",
   "Commercial Hubspots": "Commercial Hubspot",
-  "Upcoming Infrastructure": "Upcoming Infrastructure",
 };
 
 function parseLocationName(title: string, name: string) {
@@ -439,7 +461,7 @@ export default function LocationExplorer({
       if (!allLayers) return;
 
       // Helper to safely set paint/layout property
-      const setPaint = (layerId: string, property: string, value: any) => {
+      const setPaint = (layerId: string, property: any, value: any) => {
         try {
           if (map.getLayer(layerId)) {
             map.setPaintProperty(layerId, property, value);
@@ -449,7 +471,7 @@ export default function LocationExplorer({
         }
       };
 
-      const setLayout = (layerId: string, property: string, value: any) => {
+      const setLayout = (layerId: string, property: any, value: any) => {
         try {
           if (map.getLayer(layerId)) {
             map.setLayoutProperty(layerId, property, value);
@@ -1094,9 +1116,8 @@ export default function LocationExplorer({
 
     if (!category) return;
 
-    const catData =
-      infrastructure.current.find((item) => item.title === category) ||
-      infrastructure.upcoming.find((item) => item.title === category);
+     const catData =
+      infrastructure.current.find((item) => item.title === category);
     if (!catData) return;
 
     const iconMap: Record<string, string> = {
@@ -1104,10 +1125,9 @@ export default function LocationExplorer({
       Banks: `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #ffffff;"><line x1="3" y1="22" x2="21" y2="22" /><line x1="6" y1="18" x2="6" y2="11" /><line x1="10" y1="18" x2="10" y2="11" /><line x1="14" y1="18" x2="14" y2="11" /><line x1="18" y1="18" x2="18" y2="11" /><polygon points="12 2 20 7 4 7" /></svg>`,
       Recreational: `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #ffffff;"><path d="M10 22v-5" /><path d="M10 17a4 4 0 0 1-4-4c0-2 2-3 2-3s0-1 1-2 2-1 2-1 1 0 2 1 1 2 1 2 2 1 2 3a4 4 0 0 1-4 4z" /><path d="M14 22v-4" /><path d="M14 18a3 3 0 0 0 3-3c0-1.5-1.5-2.25-1.5-2.25s0-.75-.75-1.5-1.5-.75-1.5-.75-.75 0-1.5.75-.75 1.5-.75 1.5-1.5.75-1.5 2.25a3 3 0 0 0 3 3z" /></svg>`,
       "Lifestyle & Social": `<img src="/icons/lifestyle.svg" class="w-[22px] h-[22px] object-contain" alt="Lifestyle" />`,
-      Connectivity: `<img src="/icons/connectivity.svg" class="w-[22px] h-[22px] object-contain" alt="Connectivity" />`,
+      Transport: `<img src="/icons/connectivity.svg" class="w-[22px] h-[22px] object-contain" alt="Transport" />`,
       Hospitals: `<img src="/icons/hospital.svg" class="w-[22px] h-[22px] object-contain" alt="Hospitals" />`,
       "Commercial Hubspots": `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #ffffff;"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /><rect width="20" height="14" x="2" y="6" rx="2" /></svg>`,
-      "Upcoming Infrastructure": `<img src="/icons/connectivity.svg" class="w-[22px] h-[22px] object-contain" alt="Upcoming Infrastructure" />`,
     };
 
     catData.locations.forEach((loc) => {
@@ -1300,7 +1320,7 @@ export default function LocationExplorer({
 
     let profile = "driving";
     const titleLower = destName.toLowerCase();
-    const isBikeRoute = titleLower.includes("pagoda") || titleLower.includes("beach");
+    const isBikeRoute = titleLower.includes("pagoda") || titleLower.includes("beach") || titleLower.includes("water kingdom");
     
     if (isBikeRoute) {
       profile = "walking";
@@ -1315,7 +1335,7 @@ export default function LocationExplorer({
     if (isBikeRoute) {
       if (titleLower.includes("pagoda")) {
         coordinatePath = `${originCoords.lng},${originCoords.lat};72.81695,19.237171;72.808,19.233;${effectiveDestCoords.lng},${effectiveDestCoords.lat}`;
-      } else if (titleLower.includes("beach")) {
+      } else if (titleLower.includes("beach") || titleLower.includes("water kingdom")) {
         coordinatePath = `${originCoords.lng},${originCoords.lat};72.81695,19.237171;${effectiveDestCoords.lng},${effectiveDestCoords.lat}`;
       }
     }
@@ -1619,23 +1639,10 @@ export default function LocationExplorer({
           }}
           sections={createSidebarSections([
             {
-              id: "current-infrastructure",
-              title: "Current Infrastructure",
+              id: "infrastructure-categories",
+              title: "Nearby Infrastructure",
               items: createSidebarItems(
                 infrastructure.current.map((item) => ({
-                  id: item.title,
-                  label: item.title,
-                  icon: item.icon,
-                  onClick: () => handleCategoryChange(item.title),
-                  isActive: selectedCategory === item.title,
-                })),
-              ),
-            },
-            {
-              id: "upcoming-infrastructure",
-              title: "Upcoming Infrastructure",
-              items: createSidebarItems(
-                infrastructure.upcoming.map((item) => ({
                   id: item.title,
                   label: item.title,
                   icon: item.icon,
