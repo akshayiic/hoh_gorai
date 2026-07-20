@@ -330,10 +330,16 @@ const categoryDisplayNames: Record<string, string> = {
   "Commercial Hubspots": "Commercial Hubspot",
 };
 
+function toTitleCase(str: string): string {
+  return str.replace(/\w\S*/g, (word) =>
+    word.charAt(0).toUpperCase() + word.slice(1)
+  );
+}
+
 function parseLocationName(title: string, name: string) {
   const index = name.indexOf(" - ");
   if (index === -1) {
-    return { title, distance: "", duration: "" };
+    return { title: toTitleCase(title), distance: "", duration: "" };
   }
   const mainTitle = name.substring(0, index).trim();
   const info = name.substring(index + 3).trim();
@@ -345,7 +351,7 @@ function parseLocationName(title: string, name: string) {
     duration = infoParts[1].replace(")", "").trim();
   }
   return {
-    title: mainTitle || title,
+    title: toTitleCase(mainTitle || title),
     distance: distance ? `${distance}` : "",
     duration: duration ? `${duration}` : "",
   };
@@ -766,7 +772,7 @@ export default function LocationExplorer({
         "TopLeft",
       ];
 
-      const lineLengths = [20, 40, 60, 80, 100, 120];
+      const lineLengths = [30, 55, 80, 110, 145, 180, 220];
 
       const getLabelCenter = (x: number, y: number, offsetX: number, offsetY: number, pos: string, W_lbl: number, H_lbl: number) => {
         let cx = x + offsetX;
@@ -884,66 +890,85 @@ export default function LocationExplorer({
 
               const { cx, cy } = getLabelCenter(info.x, info.y, offsetX, offsetY, pos, W_lbl, H_lbl);
               const candidateRect = getLabelRect(cx, cy, W_lbl, H_lbl);
+              const candidateCircleX = info.x + offsetX;
+              const candidateCircleY = info.y + offsetY;
               let hasCollision = false;
 
-              // Check label overlap with Home Marker
+              // 1. Check label overlap with Home Marker
               const distToHome = Math.sqrt(
                 (cx - homeScreenPos.x) * (cx - homeScreenPos.x) +
                 (cy - homeScreenPos.y) * (cy - homeScreenPos.y)
               );
-              if (distToHome < homeR + W_lbl + 4) {
+              if (distToHome < homeR + W_lbl + 8) {
                 hasCollision = true;
               }
 
-              // Check label overlap with other labels
+              // 2. Check label overlap with other resolved labels
               if (!hasCollision) {
                 for (let k = 0; k < resolvedLabels.length; k++) {
                   if (resolvedLabels[k].hidden) continue;
-                  if (checkOverlap(candidateRect, resolvedLabels[k].rect)) {
+                  if (checkOverlap(candidateRect, resolvedLabels[k].rect, 8)) {
                     hasCollision = true;
                     break;
                   }
                 }
               }
 
-              // Check label overlap with any POI marker coordinates (circle at coordinate)
+              // 3. Check label overlap with any POI dot (original coordinate positions)
               if (!hasCollision) {
                 for (let k = 0; k < markerInfos.length; k++) {
                   if (markerInfos[k].title === info.title) continue;
-
-                  if (checkCircleRectOverlap(markerInfos[k].x, markerInfos[k].y, R, candidateRect)) {
+                  if (checkCircleRectOverlap(markerInfos[k].x, markerInfos[k].y, R + 4, candidateRect)) {
                     hasCollision = true;
                     break;
                   }
                 }
               }
 
-              // Check circle marker overlap with other circle markers
+              // 4. Check label overlap with resolved OFFSET circles (critical: prevents text overlapping other markers' circles)
               if (!hasCollision) {
-                const candidateCircleX = info.x + offsetX;
-                const candidateCircleY = info.y + offsetY;
+                for (let k = 0; k < resolvedLabels.length; k++) {
+                  if (resolvedLabels[k].hidden) continue;
+                  if (checkCircleRectOverlap(resolvedLabels[k].circleX, resolvedLabels[k].circleY, R + 6, candidateRect)) {
+                    hasCollision = true;
+                    break;
+                  }
+                }
+              }
+
+              // 5. Check candidate circle overlap with other resolved circles
+              if (!hasCollision) {
                 for (let k = 0; k < resolvedLabels.length; k++) {
                   if (resolvedLabels[k].hidden) continue;
                   const dx = candidateCircleX - resolvedLabels[k].circleX;
                   const dy = candidateCircleY - resolvedLabels[k].circleY;
                   const distCircles = Math.sqrt(dx * dx + dy * dy);
-                  if (distCircles < 2 * R + 8) {
+                  if (distCircles < 2 * R + 14) {
                     hasCollision = true;
                     break;
                   }
                 }
               }
 
-              // Check circle marker overlap with Home Marker
+              // 6. Check candidate circle overlap with Home Marker
               if (!hasCollision) {
-                const candidateCircleX = info.x + offsetX;
-                const candidateCircleY = info.y + offsetY;
                 const distCircleToHome = Math.sqrt(
                   (candidateCircleX - homeScreenPos.x) * (candidateCircleX - homeScreenPos.x) +
                   (candidateCircleY - homeScreenPos.y) * (candidateCircleY - homeScreenPos.y)
                 );
-                if (distCircleToHome < homeR + R + 4) {
+                if (distCircleToHome < homeR + R + 8) {
                   hasCollision = true;
+                }
+              }
+
+              // 7. Check candidate circle overlap with resolved label rects (prevents circle sitting on top of other text)
+              if (!hasCollision) {
+                for (let k = 0; k < resolvedLabels.length; k++) {
+                  if (resolvedLabels[k].hidden) continue;
+                  if (checkCircleRectOverlap(candidateCircleX, candidateCircleY, R + 4, resolvedLabels[k].rect)) {
+                    hasCollision = true;
+                    break;
+                  }
                 }
               }
 
@@ -1004,8 +1029,8 @@ export default function LocationExplorer({
           pathEl.style.stroke = isSelected ? "#C79A59" : "#5B4A3D";
           pathEl.style.strokeWidth = isSelected ? "2px" : "1.5px";
 
-          const cx_svg = 150;
-          const cy_svg = 150;
+          const cx_svg = 250;
+          const cy_svg = 250;
           const dotRadius = 5; // 5px radius for 10px diameter dot
           
           let startX = 0;
@@ -1081,7 +1106,7 @@ export default function LocationExplorer({
             }
           }
 
-          // Adjust to SVG coordinates (centered at 150, 150)
+          // Adjust to SVG coordinates (centered at 250, 250)
           const sX = cx_svg + startX;
           const sY = cy_svg + startY;
           const eX = cx_svg + endX;
@@ -1090,7 +1115,7 @@ export default function LocationExplorer({
           let dAttr = "";
           if (hasCorner) {
             const cX = cx_svg + cornerX;
-            const cY = cx_svg + cornerY;
+            const cY = cy_svg + cornerY;
             dAttr = `M ${sX},${sY} L ${cX},${cY} L ${eX},${eY}`;
           } else {
             dAttr = `M ${sX},${sY} L ${eX},${eY}`;
@@ -1141,15 +1166,15 @@ export default function LocationExplorer({
       // 1. Create pinpoint ring (hollow brown circle dot)
       const dotEl = document.createElement("div");
       dotEl.className = "luxury-dot";
-      dotEl.style.cssText = "position: absolute; width: 10px; height: 10px; border: 2px solid #5B4A3D; background-color: transparent; border-radius: 50%; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); transform: translate(-50%, -50%); z-index: 4; transition: transform 250ms ease;";
+      dotEl.style.cssText = "position: absolute; width: 10px; height: 10px; border: 2px solid #5B4A3D; background-color: transparent; border-radius: 50%; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); transform: translate(-50%, -50%); z-index: 50; transition: transform 250ms ease;";
       markerEl.appendChild(dotEl);
 
       // 2. Create SVG and path programmatically (namespace-safe)
       const svgEl = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       svgEl.setAttribute("class", "luxury-leader-svg");
-      svgEl.setAttribute("width", "300");
-      svgEl.setAttribute("height", "300");
-      svgEl.style.cssText = "position: absolute; top: -150px; left: -150px; width: 300px; height: 300px; pointer-events: none; overflow: visible; z-index: 2;";
+      svgEl.setAttribute("width", "500");
+      svgEl.setAttribute("height", "500");
+      svgEl.style.cssText = "position: absolute; top: -250px; left: -250px; width: 500px; height: 500px; pointer-events: none; overflow: visible; z-index: 1;";
 
       const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
       pathEl.setAttribute("class", "luxury-leader-path");
@@ -1165,9 +1190,9 @@ export default function LocationExplorer({
       circleEl.className = "luxury-marker-circle";
       circleEl.innerHTML = `
         <div class="luxury-marker-icon">${iconMap[category] || ""}</div>
-        <div class="luxury-label-text-wrapper">
-          <span class="luxury-label-text">${parsed.title}</span>
-        </div>
+          <div class="luxury-label-text-wrapper">
+            <span class="luxury-label-text">${toTitleCase(parsed.title)}</span>
+          </div>
       `;
       markerEl.appendChild(circleEl);
 
@@ -1275,8 +1300,9 @@ export default function LocationExplorer({
   }, [selectedLocation?.title]);
 
   const handleCategoryChange = (category: string) => {
-    const isClosing = selectedCategory === category;
-    setSelectedCategory(isClosing ? "" : category);
+    // If the same category is clicked again, keep it active (don't toggle off)
+    if (selectedCategory === category) return;
+    setSelectedCategory(category);
     setSelectedLocation(null);
     clearRouteLayer();
   };
@@ -1335,6 +1361,10 @@ export default function LocationExplorer({
     if (isBikeRoute) {
       if (titleLower.includes("pagoda")) {
         coordinatePath = `${originCoords.lng},${originCoords.lat};72.81695,19.237171;72.808,19.233;${effectiveDestCoords.lng},${effectiveDestCoords.lat}`;
+      } else if (titleLower.includes("uttan")) {
+        // Uttan Beach: same bike route but go via Gorai Beach first
+        const goraiBch = { lng: 72.7808269, lat: 19.2419548 };
+        coordinatePath = `${originCoords.lng},${originCoords.lat};72.81695,19.237171;${goraiBch.lng},${goraiBch.lat};${effectiveDestCoords.lng},${effectiveDestCoords.lat}`;
       } else if (titleLower.includes("beach") || titleLower.includes("water kingdom")) {
         coordinatePath = `${originCoords.lng},${originCoords.lat};72.81695,19.237171;${effectiveDestCoords.lng},${effectiveDestCoords.lat}`;
       }
@@ -1806,6 +1836,11 @@ export default function LocationExplorer({
           z-index: 9999 !important;
         }
 
+        /* Collapse stacking context so ALL circles render above ALL leader lines across markers */
+        .mapboxgl-marker:has(.luxury-annotation-container) {
+          z-index: auto !important;
+        }
+
         .luxury-annotation-container {
           position: absolute;
           width: 0;
@@ -1823,7 +1858,7 @@ export default function LocationExplorer({
           border-radius: 50%;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
           transform: translate(-50%, -50%);
-          z-index: 4;
+          z-index: 50;
           transition: transform 250ms ease, box-shadow 250ms ease;
         }
 
@@ -1850,7 +1885,7 @@ export default function LocationExplorer({
           pointer-events: auto; /* enable click */
           cursor: pointer;
           transition: transform 250ms cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 250ms ease;
-          z-index: 5;
+          z-index: 100;
         }
 
         .luxury-marker-icon {
@@ -1881,13 +1916,13 @@ export default function LocationExplorer({
         /* Leader Line SVG */
         .luxury-leader-svg {
           position: absolute;
-          top: -150px;
-          left: -150px;
-          width: 300px;
-          height: 300px;
+          top: -250px;
+          left: -250px;
+          width: 500px;
+          height: 500px;
           pointer-events: none;
           overflow: visible;
-          z-index: 2;
+          z-index: 1;
         }
 
         /* Leader Line stroke is brown (#5B4A3D) instead of black (Feedback 3) */
