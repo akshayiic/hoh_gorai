@@ -126,7 +126,7 @@ export default function DirectionsMap({
     coordinates: [number, number][],
   ) => {
     let currentIndex = 0;
-    const animationSpeed = 2;
+    const animationSpeed = 0.8;
 
     const polyline = new google.maps.Polyline({
       map,

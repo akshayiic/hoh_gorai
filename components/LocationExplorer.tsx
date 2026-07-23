@@ -220,6 +220,11 @@ const infrastructure: {
           coordinates: { lat: 19.231312, lng: 72.840864 },
         },
         {
+          title: "Mumbai Metro Line 9 & 7A",
+          name: "Mumbai Metro Line 9 & 7A - 8.9km (23 Mins)",
+          coordinates: { lat: 19.2712538, lng: 72.8808657 },
+        },
+        {
           title: "New link road",
           name: "New link road - 5.9km (20 Mins)",
           coordinates: { lat: 19.1898948, lng: 72.8354623 },
@@ -1140,10 +1145,11 @@ export default function LocationExplorer({
           bounds.extend(loc.coordinates);
         }
       });
+
       fitBoundsWithMaxZoom(
         map,
         bounds,
-        { top: 120, bottom: 120, left: 340, right: 120 },
+        { top: 80, bottom: 80, left: 340, right: 120 },
         13,
       );
     }
@@ -1260,15 +1266,14 @@ export default function LocationExplorer({
       ? "TWO_WHEELER"
       : google.maps.TravelMode.DRIVING;
 
-    fetchGoogleRoute(
-      originCoords,
-      destCoordinates,
-      travelMode,
-    )
+    fetchGoogleRoute(originCoords, destCoordinates, travelMode)
       .then(({ path, distanceMeters, durationSeconds, actualTravelMode }) => {
         const distanceKm = (distanceMeters / 1000).toFixed(1);
         let durationMin = Math.round(durationSeconds / 60);
-        if (isFerryRoute && actualTravelMode === google.maps.TravelMode.WALKING) {
+        if (
+          isFerryRoute &&
+          actualTravelMode === google.maps.TravelMode.WALKING
+        ) {
           // Walking-mode duration fallback: approximates the two-wheeler ferry
           // crossing: roughly 2.5x faster than the ~5km/h walking pace.
           durationMin = Math.max(1, Math.round(durationMin / 2.5));
@@ -1306,7 +1311,7 @@ export default function LocationExplorer({
     coordinates: [number, number][],
   ) {
     let currentIndex = 0;
-    const animationSpeed = 3;
+    const animationSpeed = 0.8;
 
     const glowPolyline = new google.maps.Polyline({
       map,

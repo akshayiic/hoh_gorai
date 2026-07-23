@@ -131,12 +131,14 @@ export function fitBoundsWithMaxZoom(
   padding: number | google.maps.Padding,
   maxZoom: number,
 ) {
+  // Temporarily set map's maxZoom option to prevent fitBounds from zooming in too far
+  map.setOptions({ maxZoom });
+
   map.fitBounds(bounds, padding);
+
+  // Restore default maxZoom once the animation is complete and the map is idle
   google.maps.event.addListenerOnce(map, "idle", () => {
-    const zoom = map.getZoom();
-    if (zoom !== undefined && zoom > maxZoom) {
-      map.setZoom(maxZoom);
-    }
+    map.setOptions({ maxZoom: undefined });
   });
 }
 
