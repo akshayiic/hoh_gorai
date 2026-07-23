@@ -2,9 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Navigation, X, MapPin } from "lucide-react";
-import mapboxgl from "mapbox-gl";
-
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
+import { loadGoogleMaps, createMap, fetchGoogleRoute } from "@/lib/googleMaps";
 
 interface DirectionsMapProps {
   origin: { lat: number; lng: number };
@@ -13,13 +11,20 @@ interface DirectionsMapProps {
   onClose: () => void;
 }
 
-export default function DirectionsMap({ origin, destination, destinationName, onClose }: DirectionsMapProps) {
+export default function DirectionsMap({
+  origin,
+  destination,
+  destinationName,
+  onClose,
+}: DirectionsMapProps) {
   const [isClient, setIsClient] = useState(false);
   const [distance, setDistance] = useState<string>("");
   const [duration, setDuration] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const polylineRef = useRef<google.maps.Polyline | null>(null);
+  const headMarkerRef = useRef<google.maps.Marker | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -28,178 +33,136 @@ export default function DirectionsMap({ origin, destination, destinationName, on
 
   useEffect(() => {
     if (!isClient || !mapContainerRef.current) return;
+    let cancelled = false;
 
     setIsLoading(true);
 
-    // Initialize Mapbox GL
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: "mapbox://styles/mapbox/streets-v12",
-      center: [origin.lng, origin.lat],
-      zoom: 12,
-    });
+    loadGoogleMaps().then(() => {
+      if (cancelled || !mapContainerRef.current) return;
 
-    mapRef.current = map;
-
-    // Add navigation controls
-    map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
-
-    // Wait for map to load
-    map.on('load', () => {
-      map.resize();
-      console.log('Map loaded successfully');
-
-      // Hide all default symbol/label layers to keep it clean
-      map.getStyle().layers?.forEach((layer) => {
-        if (layer.type === 'symbol') {
-          map.setLayoutProperty(layer.id, 'visibility', 'none');
-        }
+      const map = createMap(mapContainerRef.current, {
+        center: origin,
+        zoom: 12,
       });
+      mapRef.current = map;
 
-      // Fetch route from OSRM
-      fetch(`https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${destination.lng},${destination.lat}?overview=full&geometries=geojson`)
-        .then(response => response.json())
-        .then(data => {
-          console.log('Route data received:', data);
-          if (data.routes && data.routes[0]) {
-            const route = data.routes[0];
-            const coordinates = route.geometry.coordinates;
+      fetchGoogleRoute(origin, destination, google.maps.TravelMode.DRIVING)
+        .then(({ path, distanceMeters, durationSeconds }) => {
+          if (cancelled) return;
 
-            // Set distance and duration
-            const distanceKm = (route.distance / 1000).toFixed(1);
-            const durationMin = Math.round(route.duration / 60);
-            setDistance(`${distanceKm} km`);
-            setDuration(`${durationMin} min`);
+          const distanceKm = (distanceMeters / 1000).toFixed(1);
+          const durationMin = Math.round(durationSeconds / 60);
+          setDistance(`${distanceKm} km`);
+          setDuration(`${durationMin} min`);
 
-            // Add origin marker
-            new mapboxgl.Marker({ color: '#4CAF50' })
-              .setLngLat([origin.lng, origin.lat])
-              .setPopup(new mapboxgl.Popup({ offset: 25 }).setText('Gorai Bayview (Start)'))
-              .addTo(map);
+          new google.maps.Marker({
+            map,
+            position: origin,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 8,
+              fillColor: "#4CAF50",
+              fillOpacity: 1,
+              strokeColor: "#ffffff",
+              strokeWeight: 2,
+            },
+          }).addListener("click", function (this: google.maps.Marker) {
+            new google.maps.InfoWindow({
+              content: "Gorai Bayview (Start)",
+            }).open(map, this);
+          });
 
-            // Add destination marker
-            new mapboxgl.Marker({ color: '#f44336' })
-              .setLngLat([destination.lng, destination.lat])
-              .setPopup(new mapboxgl.Popup({ offset: 25 }).setText(destinationName))
-              .addTo(map);
+          new google.maps.Marker({
+            map,
+            position: destination,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 8,
+              fillColor: "#f44336",
+              fillOpacity: 1,
+              strokeColor: "#ffffff",
+              strokeWeight: 2,
+            },
+          }).addListener("click", function (this: google.maps.Marker) {
+            new google.maps.InfoWindow({ content: destinationName }).open(
+              map,
+              this,
+            );
+          });
 
-            // Calculate bounds
-            const bounds = coordinates.reduce((acc: mapboxgl.LngLatBounds, coord: number[]) => {
-              return acc.extend([coord[0], coord[1]] as [number, number]);
-            }, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+          const bounds = new google.maps.LatLngBounds();
+          path.forEach(([lng, lat]) => bounds.extend({ lat, lng }));
+          map.fitBounds(bounds, 100);
 
-            map.fitBounds(bounds, { padding: 100 });
-
-            // Animate route drawing
-            animateRouteDrawing(map, coordinates);
-            setIsLoading(false);
-          }
+          animateRouteDrawing(map, path);
+          setIsLoading(false);
         })
-        .catch(error => {
-          console.error('Error fetching route:', error);
+        .catch((error) => {
+          console.error("Error fetching route:", error);
           setIsLoading(false);
         });
     });
 
-    map.on('error', (e) => {
-      console.error('Map error:', e);
-      setIsLoading(false);
-    });
-
     return () => {
+      cancelled = true;
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      if (polylineRef.current) {
+        polylineRef.current.setMap(null);
+      }
+      if (headMarkerRef.current) {
+        headMarkerRef.current.setMap(null);
+      }
       if (mapRef.current) {
-        mapRef.current.remove();
+        google.maps.event.clearInstanceListeners(mapRef.current);
+        mapRef.current = null;
       }
     };
   }, [isClient, origin, destination, destinationName]);
 
-  const animateRouteDrawing = (map: mapboxgl.Map, coordinates: number[][]) => {
+  const animateRouteDrawing = (
+    map: google.maps.Map,
+    coordinates: [number, number][],
+  ) => {
     let currentIndex = 0;
-    const animationSpeed = 2; // Number of coordinates to add per frame
+    const animationSpeed = 2;
 
-    // Add source and layer for the route
-    map.addSource('route', {
-      type: 'geojson',
-      data: {
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'LineString',
-          coordinates: []
-        }
-      }
+    const polyline = new google.maps.Polyline({
+      map,
+      path: [],
+      strokeColor: "#3b82f6",
+      strokeWeight: 5,
+      strokeOpacity: 0.8,
     });
+    polylineRef.current = polyline;
 
-    map.addLayer({
-      id: 'route',
-      type: 'line',
-      source: 'route',
-      layout: {
-        'line-join': 'round',
-        'line-cap': 'round'
+    const headMarker = new google.maps.Marker({
+      map,
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 8,
+        fillColor: "#ffffff",
+        fillOpacity: 1,
+        strokeColor: "#3b82f6",
+        strokeWeight: 3,
       },
-      paint: {
-        'line-color': '#3b82f6',
-        'line-width': 5,
-        'line-opacity': 0.8
-      }
     });
+    headMarkerRef.current = headMarker;
 
-    // Animate the route
     const animate = () => {
-      const nextIndex = Math.min(currentIndex + animationSpeed, coordinates.length);
-      const segmentCoordinates = coordinates.slice(0, nextIndex);
+      const nextIndex = Math.min(
+        currentIndex + animationSpeed,
+        coordinates.length,
+      );
+      const segment = coordinates
+        .slice(0, nextIndex)
+        .map(([lng, lat]) => ({ lat, lng }));
 
-      // Update the route data
-      const source = map.getSource('route') as mapboxgl.GeoJSONSource;
-      source.setData({
-        type: 'Feature',
-        properties: {},
-        geometry: {
-          type: 'LineString',
-          coordinates: segmentCoordinates
-        }
-      });
+      polyline.setPath(segment);
 
-      // Add animated marker at the front
-      if (segmentCoordinates.length > 0) {
-        const lastCoord = segmentCoordinates[segmentCoordinates.length - 1];
-
-        // Remove existing animated marker if any
-        if (map.getLayer('animated-marker')) {
-          map.removeLayer('animated-marker');
-        }
-        if (map.getSource('animated-marker')) {
-          map.removeSource('animated-marker');
-        }
-
-        // Add animated marker
-        map.addSource('animated-marker', {
-          type: 'geojson',
-          data: {
-            type: 'Feature',
-            properties: {},
-            geometry: {
-              type: 'Point',
-              coordinates: lastCoord
-            }
-          }
-        });
-
-        map.addLayer({
-          id: 'animated-marker',
-          type: 'circle',
-          source: 'animated-marker',
-          paint: {
-            'circle-radius': 8,
-            'circle-color': '#ffffff',
-            'circle-stroke-width': 3,
-            'circle-stroke-color': '#3b82f6'
-          }
-        });
+      if (segment.length > 0) {
+        headMarker.setPosition(segment[segment.length - 1]);
       }
 
       currentIndex = nextIndex;
@@ -216,7 +179,11 @@ export default function DirectionsMap({ origin, destination, destinationName, on
 
   return (
     <div className="absolute inset-0 z-30">
-      <div ref={mapContainerRef} className="w-full h-full" style={{ zIndex: 10, background: '#f0f0f0' }} />
+      <div
+        ref={mapContainerRef}
+        className="w-full h-full"
+        style={{ zIndex: 10, background: "#f0f0f0" }}
+      />
 
       {/* Loading overlay */}
       {isLoading && (
@@ -242,7 +209,9 @@ export default function DirectionsMap({ origin, destination, destinationName, on
       <div className="absolute bottom-24 left-6 z-40 bg-black/80 backdrop-blur text-white px-4 py-3 rounded-lg">
         <div className="flex items-center gap-2 mb-2">
           <Navigation size={16} className="text-green-400" />
-          <span className="font-semibold">Route from Gorai Bayview to {destinationName}</span>
+          <span className="font-semibold">
+            Route from Gorai Bayview to {destinationName}
+          </span>
         </div>
         {(distance || duration) && (
           <div className="flex items-center gap-4 text-sm">

@@ -20,7 +20,17 @@
       "Bash(vercel:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "mcp__claude_ai_Google_Drive__read_file_content",
+      "WebFetch(domain:docs.google.com)",
+      "WebFetch(domain:doc-0c-as-sheets.googleusercontent.com)",
+      "Bash(curl -sIL -A \"Mozilla/5.0\" \"https://maps.app.goo.gl/7jrurhhssc6TfAkWA\")",
+      "Bash(mkdir -p /tmp/claude-1000/-home-akshupdf-Documents-hoh-gorai/d4cf285b-4e3e-494d-99cf-a8bba4255adc/scratchpad)",
+      "Bash(curl -sIL -A \"Mozilla/5.0\" --max-redirs 5 \"https://maps.app.goo.gl/Bb2CbJfB3n2ReWev8\")",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(curl -sI http://localhost:3000)",
+      "Bash(echo \"grep exit: $?\")",
+      "Bash(echo \"tsc exit: $?\")"
     ]
   }
 }

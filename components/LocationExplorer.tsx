@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Map as MapIcon, Plus, Minus, Landmark, Briefcase, Trees, Eye, EyeOff } from "lucide-react";
+import {
+  Map as MapIcon,
+  Plus,
+  Minus,
+  Landmark,
+  Briefcase,
+  Trees,
+  Eye,
+  EyeOff,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import BottomNavbar from "@/components/BottomNavbar";
@@ -10,14 +19,31 @@ import Sidebar, {
   createSidebarSections,
   createSidebarItems,
 } from "@/components/Sidebar";
-import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
-
-mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN || "";
+import {
+  loadGoogleMaps,
+  createMap,
+  createDomOverlay,
+  fitBoundsWithMaxZoom,
+  fetchGoogleRoute,
+  DomOverlayHandle,
+} from "@/lib/googleMaps";
 
 const GoraiBayviewLocation = { lat: 19.2341126, lng: 72.8291472 }; // Gorai Bayview Site
 
-const infrastructure = {
+interface LocationItem {
+  title: string;
+  name: string;
+  coordinates: { lat: number; lng: number };
+  routeCoordinates?: { lat: number; lng: number };
+}
+
+const infrastructure: {
+  current: {
+    title: string;
+    icon: any;
+    locations: LocationItem[];
+  }[];
+} = {
   current: [
     {
       title: "Education Institutes",
@@ -40,7 +66,7 @@ const infrastructure = {
         },
         {
           title: "Swami Vivekanandand International school",
-          name: "Swami Vivekanandand International school - 5.8km (19 Mins)",
+          name: "Swami Vivekanandand International school  - 5.8km (19 Mins)",
           coordinates: { lat: 19.2096745, lng: 72.8472554 },
         },
       ],
@@ -51,7 +77,7 @@ const infrastructure = {
       locations: [
         {
           title: "HDFC",
-          name: "HDFC - 3km (10 Mins)",
+          name: "HDFC  - 3km (10 Mins)",
           coordinates: { lat: 19.230887, lng: 72.8512622 },
         },
         {
@@ -60,13 +86,8 @@ const infrastructure = {
           coordinates: { lat: 19.2263277, lng: 72.8531056 },
         },
         {
-          title: "NKGSB Bank",
-          name: "NKGSB Bank - 450m (6 Mins)",
-          coordinates: { lat: 19.2323957, lng: 72.8296357 },
-        },
-        {
           title: "Axis Bank",
-          name: "Axis Bank - 6.2km (20 Mins)",
+          name: "Axis Bank  - 6.2km (20 Mins)",
           coordinates: { lat: 19.2285996, lng: 72.8636277 },
         },
         {
@@ -81,12 +102,12 @@ const infrastructure = {
         },
         {
           title: "Union Bank of India",
-          name: "Union Bank of India - 3.7km (11 Mins)",
+          name: "Union Bank of India  - 3.7km (11 Mins)",
           coordinates: { lat: 19.2464863, lng: 72.8495949 },
         },
         {
           title: "bank of maharashtra",
-          name: "bank of maharashtra - 2.8km (10 Mins)",
+          name: "bank of maharashtra  - 2.8km (10 Mins)",
           coordinates: { lat: 19.2127887, lng: 72.8283273 },
         },
         {
@@ -104,6 +125,7 @@ const infrastructure = {
           title: "Vipasana pagoda",
           name: "Vipasana pagoda - 4.2km (31 Mins)",
           coordinates: { lat: 19.2282034, lng: 72.8058891 },
+          routeCoordinates: { lat: 19.228763, lng: 72.804391 },
         },
         {
           title: "gorai beach",
@@ -118,11 +140,11 @@ const infrastructure = {
         {
           title: "uttan beach",
           name: "uttan beach - 10.9km (48 Mins)",
-          coordinates: { lat: 19.2819076, lng: 72.7835253 },
+          coordinates: { lat: 19.281841, lng: 72.784661 },
         },
         {
           title: "Madh island",
-          name: "Madh island - 14.4km (38 Mins)",
+          name: "Madh island  - 14.4km (38 Mins)",
           coordinates: { lat: 19.1484913, lng: 72.7891606 },
         },
         {
@@ -143,7 +165,7 @@ const infrastructure = {
         },
         {
           title: "inorbit mall",
-          name: "inorbit mall - 9km (31 Mins)",
+          name: "inorbit mall  - 9km (31 Mins)",
           coordinates: { lat: 19.1729281, lng: 72.8359056 },
         },
         {
@@ -157,8 +179,8 @@ const infrastructure = {
           coordinates: { lat: 19.1820887, lng: 72.8355377 },
         },
         {
-          title: "Oberoi mall",
-          name: "Oberoi mall - 12.4km (39 Mins)",
+          title: "Oberoi  mall",
+          name: "Oberoi  mall - 12.4km (39 Mins)",
           coordinates: { lat: 19.1741983, lng: 72.8604101 },
         },
         {
@@ -188,16 +210,6 @@ const infrastructure = {
       icon: "/icons/connectivity.svg",
       locations: [
         {
-          title: "Coastal Road",
-          name: "Coastal Road - upcoming - 4km (13 Mins)",
-          coordinates: { lat: 19.214745, lng: 72.8117535 },
-        },
-        {
-          title: "Borivali Thane twin Tunnel",
-          name: "Borivali Thane twin Tunnel - upcoming - 5.8km (22 Mins)",
-          coordinates: { lat: 19.2217681, lng: 72.8691741 },
-        },
-        {
           title: "western express highway",
           name: "western express highway - 11.9km (36 Mins)",
           coordinates: { lat: 19.1663509, lng: 72.8586328 },
@@ -206,11 +218,6 @@ const infrastructure = {
           title: "borivali Metro",
           name: "borivali Metro - 1.7km (5 Mins)",
           coordinates: { lat: 19.231312, lng: 72.840864 },
-        },
-        {
-          title: "Mumbai Metro Line 9 & 7A",
-          name: "Mumbai Metro Line 9 & 7A - 9km (26 Mins)",
-          coordinates: { lat: 19.2712538, lng: 72.8808657 },
         },
         {
           title: "New link road",
@@ -239,7 +246,7 @@ const infrastructure = {
           coordinates: { lat: 19.1951084, lng: 72.8340496 },
         },
         {
-          title: "Phoenix hospital",
+          title: "Pheonix hospital",
           name: "Pheonix hospital - 4.8km (13 Mins)",
           coordinates: { lat: 19.2522023, lng: 72.8509017 },
         },
@@ -254,8 +261,8 @@ const infrastructure = {
           coordinates: { lat: 19.2189271, lng: 72.8523851 },
         },
         {
-          title: "Karuna Hospital",
-          name: "Karuna Hospital - 4.7km (14 Mins)",
+          title: "Karuna Hospital- 4.7km (14 Mins)",
+          name: "Karuna Hospital- 4.7km (14 Mins)",
           coordinates: { lat: 19.2412571, lng: 72.8529326 },
         },
       ],
@@ -271,7 +278,7 @@ const infrastructure = {
         },
         {
           title: "Worli",
-          name: "Worli - 34.3km (1hr 25 Mins)",
+          name: "Worli  - 34.3km (1hr 25 Mins)",
           coordinates: { lat: 18.9986406, lng: 72.8173599 },
         },
         {
@@ -316,8 +323,23 @@ const infrastructure = {
         },
       ],
     },
+    {
+      title: "Upcoming Infrastructure",
+      icon: "/icons/connectivity.svg",
+      locations: [
+        {
+          title: "Coastal Road",
+          name: "Coastal Road - upcoming - 4km (13 Mins)",
+          coordinates: { lat: 19.214745, lng: 72.8117535 },
+        },
+        {
+          title: "Borivali Thane twin Tunnel",
+          name: "Borivali Thane twin Tunnel - upcoming - 5.8km (22 Mins)",
+          coordinates: { lat: 19.2217681, lng: 72.8691741 },
+        },
+      ],
+    },
   ],
-  upcoming: [],
 };
 
 const categoryDisplayNames: Record<string, string> = {
@@ -331,8 +353,9 @@ const categoryDisplayNames: Record<string, string> = {
 };
 
 function toTitleCase(str: string): string {
-  return str.replace(/\w\S*/g, (word) =>
-    word.charAt(0).toUpperCase() + word.slice(1)
+  return str.replace(
+    /\w\S*/g,
+    (word) => word.charAt(0).toUpperCase() + word.slice(1),
   );
 }
 
@@ -374,17 +397,6 @@ function formatDistanceForCard(dist: string) {
   return `${clean} away`;
 }
 
-interface LocationItem {
-  title: string;
-  name: string;
-  coordinates: { lat: number; lng: number };
-}
-
-interface CustomMarker extends mapboxgl.Marker {
-  locTitle?: string;
-  elementRef?: HTMLDivElement;
-}
-
 interface LocationExplorerProps {
   onNavigate?: (
     view: "location" | "balcony" | "apartments" | "amenities",
@@ -416,12 +428,14 @@ export default function LocationExplorer({
   const [isRouteLoading, setIsRouteLoading] = useState(false);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<mapboxgl.Marker[]>([]);
-  const labelMarkersRef = useRef<mapboxgl.Marker[]>([]);
-  const homeMarkerRef = useRef<mapboxgl.Marker | null>(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
+  const markersRef = useRef<DomOverlayHandle[]>([]);
+  const labelMarkersRef = useRef<DomOverlayHandle[]>([]);
+  const homeMarkerRef = useRef<DomOverlayHandle | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const hoverPopupRef = useRef<mapboxgl.Popup | null>(null);
+  const routePolylineRef = useRef<google.maps.Polyline | null>(null);
+  const routeGlowPolylineRef = useRef<google.maps.Polyline | null>(null);
+  const routeHeadMarkerRef = useRef<DomOverlayHandle | null>(null);
 
   const collisionTimeoutRef = useRef<number | null>(null);
   const selectedLocationRef = useRef<LocationItem | null>(null);
@@ -434,265 +448,72 @@ export default function LocationExplorer({
   // Initialize Map
   useEffect(() => {
     if (!mapContainerRef.current) return;
+    let cancelled = false;
 
-  
+    loadGoogleMaps().then(() => {
+      if (cancelled || !mapContainerRef.current) return;
 
-    const map = new mapboxgl.Map({
-      container: mapContainerRef.current,
-      style: "mapbox://styles/mapbox/light-v11",
-      center: [GoraiBayviewLocation.lng, GoraiBayviewLocation.lat],
-      zoom: 13,
-    });
-
-    mapRef.current = map;
-
-    // Initialize hover popup once
-    const hoverPopup = new mapboxgl.Popup({
-      closeButton: false,
-      closeOnClick: false,
-      className: "luxury-hover-popup",
-      anchor: "bottom",
-      offset: 15,
-    });
-    hoverPopupRef.current = hoverPopup;
-
-    map.on("load", () => {
-      map.resize();
-
-      // ============================================
-      // PREMIUM REAL ESTATE BROCHURE MAP STYLING
-      // ============================================
-
-      const allLayers = map.getStyle().layers;
-      if (!allLayers) return;
-
-      // Helper to safely set paint/layout property
-      const setPaint = (layerId: string, property: any, value: any) => {
-        try {
-          if (map.getLayer(layerId)) {
-            map.setPaintProperty(layerId, property, value);
-          }
-        } catch (e) {
-          // Layer might not exist in this style
-        }
-      };
-
-      const setLayout = (layerId: string, property: any, value: any) => {
-        try {
-          if (map.getLayer(layerId)) {
-            map.setLayoutProperty(layerId, property, value);
-          }
-        } catch (e) {
-          // Layer might not exist in this style
-        }
-      };
-
-      // Process all layers with pattern matching for comprehensive coverage
-      allLayers.forEach((layer: any) => {
-        const id = layer.id;
-        const type = layer.type;
-
-        // === 1. BACKGROUND - Warm cream ===
-        if (id === "background") {
-          setPaint(id, "background-color", "#E5D8C8");
-          return;
-        }
-
-        // === 2. WATER - Soft blue pastel ===
-        if (id.includes("water") || id.includes("waterway")) {
-          setPaint(id, "fill-color", "#A0C8D8");
-          setPaint(id, "line-color", "#A0C8D8");
-          setPaint(id, "fill-opacity", 0.95);
-          return;
-        }
-
-        // === 3. LAND & LANDUSE - Warm sand ===
-        if (id.includes("land") || id.includes("landuse") || id.includes("landcover")) {
-          setPaint(id, "fill-color", "#E5D8C8");
-          setPaint(id, "background-color", "#E5D8C8");
-          return;
-        }
-
-        // === 4. PARKS & GREEN SPACES - Muted sage green ===
-        if (id.includes("park") || id.includes("garden") ||
-            id.includes("forest") || id.includes("wood") ||
-            id.includes("grass") || id.includes("green") ||
-            id.includes("golf") || id.includes("nature") ||
-            id.includes("cemetery")) {
-          setPaint(id, "fill-color", "#A8B898");
-          setPaint(id, "fill-opacity", 0.9);
-          return;
-        }
-
-        // === 5. BUILDINGS - Hide all ===
-        if (id.includes("building") || id.includes("structure")) {
-          setLayout(id, "visibility", "none");
-          return;
-        }
-
-        // === 6. BOUNDARIES - Hide all ===
-        if (id.includes("admin") || id.includes("boundary") ||
-            id.includes("border") || id.includes("disputed")) {
-          setLayout(id, "visibility", "none");
-          return;
-        }
-
-        // === 9. POI & ICONS - Hide all ===
-        if (id.includes("poi") || id.includes("point") ||
-            id.includes("icon") || id.includes("marina")) {
-          try {
-            if (map.getLayer(id)) {
-              map.setLayoutProperty(id, "visibility", "none");
-            }
-          } catch (e) {}
-          return;
-        }
-
-        // === 10. TRANSIT - Hide all ===
-        if (id.includes("transit") || id.includes("bus") ||
-            id.includes("metro") || id.includes("subway") ||
-            id.includes("rail") || id.includes("train") ||
-            id.includes("tram") || id.includes("station")) {
-          try {
-            if (map.getLayer(id)) {
-              map.setLayoutProperty(id, "visibility", "none");
-            }
-          } catch (e) {}
-          return;
-        }
-
-        // === 11. ROAD SHIELDS & NUMBERS - Hide ===
-        if (id.includes("shield") || id.includes("ref") ||
-            id.includes("number") || id.includes("junction")) {
-          try {
-            if (map.getLayer(id)) {
-              map.setLayoutProperty(id, "visibility", "none");
-            }
-          } catch (e) {}
-          return;
-        }
-
-        // === 12. SYMBOLS & LABELS - Hide ALL text labels ===
-        if (type === "symbol") {
-          // Hide all labels - no text on map
-          try {
-            if (map.getLayer(id)) {
-              map.setLayoutProperty(id, "visibility", "none");
-            }
-          } catch (e) {}
-          return;
-        }
-
-        // === 13. AERIAL WAY, BRIDGES, TUNNELS ===
-        if (id.includes("aerial") || id.includes("tunnel") || id.includes("bridge")) {
-          setPaint(id, "line-opacity", 0.2);
-          setPaint(id, "line-color", "#C89D73");
-          return;
-        }
-
-        // === 14. MAN-MADE STRUCTURES ===
-        if (id.includes("pier") || id.includes("breakwater") ||
-            id.includes("dam") || id.includes("aerodrome")) {
-          setPaint(id, "line-color", "#C89D73");
-          setPaint(id, "fill-color", "#D8C1A0");
-          setPaint(id, "fill-opacity", 0.5);
-          return;
-        }
-
-        // === 15. AIRPORTS ===
-        if (id.includes("airport") || id.includes("runway") ||
-            id.includes("aeroway")) {
-          setPaint(id, "fill-color", "#E8DCC8");
-          setPaint(id, "line-color", "#C89D73");
-          setPaint(id, "line-opacity", 0.4);
-          return;
-        }
-
-        // === 16. CONSTRUCTION & PROJECTED ===
-        if (id.includes("construction") || id.includes("projected")) {
-          setPaint(id, "line-color", "#C89D73");
-          setPaint(id, "line-opacity", 0.3);
-          return;
-        }
+      const map = createMap(mapContainerRef.current, {
+        center: GoraiBayviewLocation,
+        zoom: 13,
       });
+      mapRef.current = map;
 
-      // Road styling
-      const darkBrown = "#8B5A3C";
-      const lightBrown = "#E8D5C0";
+      google.maps.event.addListenerOnce(map, "idle", () => {
+        // Add a distinct pulse marker for Gorai Bayview
+        const el = document.createElement("div");
+        el.className = "luxury-home-marker flex items-center justify-center";
+        el.style.width = "48px";
+        el.style.height = "48px";
+        el.style.cursor = "pointer";
+        el.style.zIndex = "9999";
+        el.style.transform = "translate(-50%, -50%)";
 
-      allLayers.forEach((layer: any) => {
-        if (layer.type !== "line") return;
-
-        const id = layer.id.toLowerCase();
-
-        // Skip if not a road layer
-        if (!id.includes("road") && !id.includes("street") &&
-            !id.includes("highway") && !id.includes("motorway")) {
-          return;
-        }
-
-        try {
-          if (map.getLayer(layer.id)) {
-            // Main roads (highways, motorways, trunk, primary) - dark brown
-            if (id.includes("motorway") || id.includes("trunk") ||
-                id.includes("highway") || id.includes("primary")) {
-              map.setPaintProperty(layer.id, "line-color", darkBrown);
-            }
-            // Other roads - ultra light brown
-            else if (id.includes("secondary") || id.includes("tertiary") ||
-                     id.includes("street") || id.includes("road")) {
-              map.setPaintProperty(layer.id, "line-color", lightBrown);
-            }
-          }
-        } catch (e) {}
-      });
-
-      // END BROCHURE MAP STYLING
-      // ============================================
-
-      // Add a distinct pulse marker for Gorai Bayview
-      const el = document.createElement("div");
-      el.className = "luxury-home-marker flex items-center justify-center";
-      el.style.width = "48px";
-      el.style.height = "48px";
-      el.style.cursor = "pointer";
-      el.style.zIndex = "9999";
-
-      el.innerHTML = `
-        <div class="luxury-home-pulse-ring"></div>
-        <div class="luxury-home-inner">
-          <img src="/icons/hoh.svg" class="w-12 h-12 object-contain animate-gentle-bounce" alt="Hiranandani Site" />
-        </div>
-      `;
-
-      const homeMarker = new mapboxgl.Marker({ element: el })
-        .setLngLat([GoraiBayviewLocation.lng, GoraiBayviewLocation.lat])
-        .setPopup(
-          new mapboxgl.Popup({
-            offset: 25,
-            closeButton: false,
-            className: "luxury-hover-popup",
-          }).setHTML(
-            `<div class="luxury-mini-card" style="padding: 2px;">
+        el.innerHTML = `
+          <div class="luxury-home-pulse-ring"></div>
+          <div class="luxury-home-inner">
+            <img src="/icons/hoh.svg" class="w-12 h-12 object-contain animate-gentle-bounce" alt="Hiranandani Site" />
+          </div>
+          <div class="luxury-hover-popup luxury-home-popup" style="display: none;">
+            <div class="luxury-mini-card" style="padding: 2px;">
                 <div class="category">Hiranandani Project</div>
                 <div class="title" style="margin-bottom: 0; font-family: sans-serif; font-size: 14px; font-weight: 600;">Gorai Bayview</div>
-              </div>`,
-          ),
-        )
-        .addTo(map);
+              </div>
+          </div>
+        `;
 
-      homeMarkerRef.current = homeMarker;
-      setMapLoaded(true);
+        const popupEl = el.querySelector(
+          ".luxury-home-popup",
+        ) as HTMLDivElement;
+        el.addEventListener("click", (e) => {
+          e.stopPropagation();
+          if (popupEl) {
+            popupEl.style.display =
+              popupEl.style.display === "none" ? "block" : "none";
+          }
+        });
+
+        const homeMarker = createDomOverlay(GoraiBayviewLocation, el);
+        homeMarker.setMap(map);
+
+        homeMarkerRef.current = homeMarker;
+        setMapLoaded(true);
+      });
     });
 
     return () => {
+      cancelled = true;
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
       }
-      if (hoverPopupRef.current) {
-        hoverPopupRef.current.remove();
+      if (homeMarkerRef.current) {
+        homeMarkerRef.current.setMap(null);
+        homeMarkerRef.current = null;
       }
-      map.remove();
+      if (mapRef.current) {
+        google.maps.event.clearInstanceListeners(mapRef.current);
+        mapRef.current = null;
+      }
     };
   }, []);
 
@@ -713,8 +534,8 @@ export default function LocationExplorer({
       const gap = 10; // Gap between circle marker and label text
 
       // Screen position and collision box for Home Marker
-      const homeLngLat = new mapboxgl.LngLat(GoraiBayviewLocation.lng, GoraiBayviewLocation.lat);
-      const homeScreenPos = map.project(homeLngLat);
+      const homeScreenPos = homeMarkerRef.current?.getScreenPosition();
+      if (!homeScreenPos) return;
       const homeR = 26; // Radius around home monogram (48px / 2 + padding)
 
       interface ResolvedLabel {
@@ -727,39 +548,47 @@ export default function LocationExplorer({
       const resolvedLabels: ResolvedLabel[] = [];
 
       // Sort markers: active selected marker first
-      const markerInfos = labelMarkers.map((marker) => {
-        const el = marker.getElement();
-        const locTitle = (marker as CustomMarker).locTitle || "";
-        const isSelected = locTitle === selectedTitle;
-        const lngLat = marker.getLngLat();
-        const screenPos = map.project(lngLat);
+      const markerInfos = labelMarkers
+        .map((marker) => {
+          const el = marker.element;
+          const locTitle = marker.locTitle || "";
+          const isSelected = locTitle === selectedTitle;
+          const screenPos = marker.getScreenPosition();
+          if (!screenPos) return null;
 
-        const textEl = el.querySelector(".luxury-label-text-wrapper") as HTMLDivElement;
-        const textRect = textEl ? textEl.getBoundingClientRect() : { width: 0, height: 0 };
-        let width = textRect.width;
-        let height = textRect.height;
-        
-        // Fallback for first-render / hidden layout width
-        if (!width || width < 5) {
-          width = locTitle.length * 6.5 + 10;
-        }
-        if (!height || height < 5) {
-          height = 14;
-        }
+          const textEl = el.querySelector(
+            ".luxury-label-text-wrapper",
+          ) as HTMLDivElement;
+          const textRect = textEl
+            ? textEl.getBoundingClientRect()
+            : { width: 0, height: 0 };
+          let width = textRect.width;
+          let height = textRect.height;
 
-        return {
-          marker,
-          el,
-          title: locTitle,
-          isSelected,
-          x: screenPos.x,
-          y: screenPos.y,
-          width,
-          height,
-        };
-      });
+          // Fallback for first-render / hidden layout width
+          if (!width || width < 5) {
+            width = locTitle.length * 6.5 + 10;
+          }
+          if (!height || height < 5) {
+            height = 14;
+          }
 
-      markerInfos.sort((a, b) => (b.isSelected ? 1 : 0) - (a.isSelected ? 1 : 0));
+          return {
+            marker,
+            el,
+            title: locTitle,
+            isSelected,
+            x: screenPos.x,
+            y: screenPos.y,
+            width,
+            height,
+          };
+        })
+        .filter((info): info is NonNullable<typeof info> => info !== null);
+
+      markerInfos.sort(
+        (a, b) => (b.isSelected ? 1 : 0) - (a.isSelected ? 1 : 0),
+      );
 
       const positionsOrder = [
         "Top",
@@ -774,7 +603,15 @@ export default function LocationExplorer({
 
       const lineLengths = [30, 55, 80, 110, 145, 180, 220];
 
-      const getLabelCenter = (x: number, y: number, offsetX: number, offsetY: number, pos: string, W_lbl: number, H_lbl: number) => {
+      const getLabelCenter = (
+        x: number,
+        y: number,
+        offsetX: number,
+        offsetY: number,
+        pos: string,
+        W_lbl: number,
+        H_lbl: number,
+      ) => {
         let cx = x + offsetX;
         let cy = y + offsetY;
 
@@ -790,7 +627,12 @@ export default function LocationExplorer({
         return { cx, cy };
       };
 
-      const getLabelRect = (cx: number, cy: number, W_lbl: number, H_lbl: number) => {
+      const getLabelRect = (
+        cx: number,
+        cy: number,
+        W_lbl: number,
+        H_lbl: number,
+      ) => {
         return {
           left: cx - W_lbl,
           right: cx + W_lbl,
@@ -802,7 +644,7 @@ export default function LocationExplorer({
       const checkOverlap = (
         r1: { left: number; right: number; top: number; bottom: number },
         r2: { left: number; right: number; top: number; bottom: number },
-        padding = 6
+        padding = 6,
       ) => {
         return !(
           r1.right + padding < r2.left ||
@@ -816,7 +658,7 @@ export default function LocationExplorer({
         cx: number,
         cy: number,
         r: number,
-        rect: { left: number; right: number; top: number; bottom: number }
+        rect: { left: number; right: number; top: number; bottom: number },
       ) => {
         const closestX = Math.max(rect.left, Math.min(cx, rect.right));
         const closestY = Math.max(rect.top, Math.min(cy, rect.bottom));
@@ -888,7 +730,15 @@ export default function LocationExplorer({
                   break;
               }
 
-              const { cx, cy } = getLabelCenter(info.x, info.y, offsetX, offsetY, pos, W_lbl, H_lbl);
+              const { cx, cy } = getLabelCenter(
+                info.x,
+                info.y,
+                offsetX,
+                offsetY,
+                pos,
+                W_lbl,
+                H_lbl,
+              );
               const candidateRect = getLabelRect(cx, cy, W_lbl, H_lbl);
               const candidateCircleX = info.x + offsetX;
               const candidateCircleY = info.y + offsetY;
@@ -897,7 +747,7 @@ export default function LocationExplorer({
               // 1. Check label overlap with Home Marker
               const distToHome = Math.sqrt(
                 (cx - homeScreenPos.x) * (cx - homeScreenPos.x) +
-                (cy - homeScreenPos.y) * (cy - homeScreenPos.y)
+                  (cy - homeScreenPos.y) * (cy - homeScreenPos.y),
               );
               if (distToHome < homeR + W_lbl + 8) {
                 hasCollision = true;
@@ -918,7 +768,14 @@ export default function LocationExplorer({
               if (!hasCollision) {
                 for (let k = 0; k < markerInfos.length; k++) {
                   if (markerInfos[k].title === info.title) continue;
-                  if (checkCircleRectOverlap(markerInfos[k].x, markerInfos[k].y, R + 4, candidateRect)) {
+                  if (
+                    checkCircleRectOverlap(
+                      markerInfos[k].x,
+                      markerInfos[k].y,
+                      R + 4,
+                      candidateRect,
+                    )
+                  ) {
                     hasCollision = true;
                     break;
                   }
@@ -929,7 +786,14 @@ export default function LocationExplorer({
               if (!hasCollision) {
                 for (let k = 0; k < resolvedLabels.length; k++) {
                   if (resolvedLabels[k].hidden) continue;
-                  if (checkCircleRectOverlap(resolvedLabels[k].circleX, resolvedLabels[k].circleY, R + 6, candidateRect)) {
+                  if (
+                    checkCircleRectOverlap(
+                      resolvedLabels[k].circleX,
+                      resolvedLabels[k].circleY,
+                      R + 6,
+                      candidateRect,
+                    )
+                  ) {
                     hasCollision = true;
                     break;
                   }
@@ -953,8 +817,10 @@ export default function LocationExplorer({
               // 6. Check candidate circle overlap with Home Marker
               if (!hasCollision) {
                 const distCircleToHome = Math.sqrt(
-                  (candidateCircleX - homeScreenPos.x) * (candidateCircleX - homeScreenPos.x) +
-                  (candidateCircleY - homeScreenPos.y) * (candidateCircleY - homeScreenPos.y)
+                  (candidateCircleX - homeScreenPos.x) *
+                    (candidateCircleX - homeScreenPos.x) +
+                    (candidateCircleY - homeScreenPos.y) *
+                      (candidateCircleY - homeScreenPos.y),
                 );
                 if (distCircleToHome < homeR + R + 8) {
                   hasCollision = true;
@@ -965,7 +831,14 @@ export default function LocationExplorer({
               if (!hasCollision) {
                 for (let k = 0; k < resolvedLabels.length; k++) {
                   if (resolvedLabels[k].hidden) continue;
-                  if (checkCircleRectOverlap(candidateCircleX, candidateCircleY, R + 4, resolvedLabels[k].rect)) {
+                  if (
+                    checkCircleRectOverlap(
+                      candidateCircleX,
+                      candidateCircleY,
+                      R + 4,
+                      resolvedLabels[k].rect,
+                    )
+                  ) {
                     hasCollision = true;
                     break;
                   }
@@ -986,7 +859,15 @@ export default function LocationExplorer({
 
         // Hide label if no collision-free position was found
         const hidden = !found && !info.isSelected;
-        const { cx: finalCx, cy: finalCy } = getLabelCenter(info.x, info.y, bestOffsetX, bestOffsetY, bestPosition, W_lbl, H_lbl);
+        const { cx: finalCx, cy: finalCy } = getLabelCenter(
+          info.x,
+          info.y,
+          bestOffsetX,
+          bestOffsetY,
+          bestPosition,
+          W_lbl,
+          H_lbl,
+        );
         const finalRect = getLabelRect(finalCx, finalCy, W_lbl, H_lbl);
 
         resolvedLabels.push({
@@ -997,8 +878,12 @@ export default function LocationExplorer({
           hidden,
         });
 
-        const circleEl = info.el.querySelector(".luxury-marker-circle") as HTMLDivElement;
-        const pathEl = info.el.querySelector(".luxury-leader-path") as SVGPathElement;
+        const circleEl = info.el.querySelector(
+          ".luxury-marker-circle",
+        ) as HTMLDivElement;
+        const pathEl = info.el.querySelector(
+          ".luxury-leader-path",
+        ) as SVGPathElement;
 
         if (hidden) {
           info.el.classList.add("hidden-label");
@@ -1007,7 +892,9 @@ export default function LocationExplorer({
         }
 
         const posClass = `pos-${bestPosition.toLowerCase()}`;
-        positionsOrder.forEach(p => info.el.classList.remove(`pos-${p.toLowerCase()}`));
+        positionsOrder.forEach((p) =>
+          info.el.classList.remove(`pos-${p.toLowerCase()}`),
+        );
         info.el.classList.add(posClass);
 
         const isSelected = info.title === selectedTitle;
@@ -1032,7 +919,7 @@ export default function LocationExplorer({
           const cx_svg = 250;
           const cy_svg = 250;
           const dotRadius = 5; // 5px radius for 10px diameter dot
-          
+
           let startX = 0;
           let startY = 0;
           let endX = bestOffsetX;
@@ -1046,7 +933,9 @@ export default function LocationExplorer({
 
           if (absX < 5 || absY < 5) {
             // Purely vertical or horizontal straight line
-            const dist = Math.sqrt(bestOffsetX * bestOffsetX + bestOffsetY * bestOffsetY);
+            const dist = Math.sqrt(
+              bestOffsetX * bestOffsetX + bestOffsetY * bestOffsetY,
+            );
             if (dist > R + dotRadius) {
               startX = bestOffsetX * (dotRadius / dist);
               startY = bestOffsetY * (dotRadius / dist);
@@ -1055,7 +944,9 @@ export default function LocationExplorer({
             }
           } else if (Math.abs(absX - absY) < 5) {
             // Purely 45-degree straight line
-            const dist = Math.sqrt(bestOffsetX * bestOffsetX + bestOffsetY * bestOffsetY);
+            const dist = Math.sqrt(
+              bestOffsetX * bestOffsetX + bestOffsetY * bestOffsetY,
+            );
             if (dist > R + dotRadius) {
               startX = bestOffsetX * (dotRadius / dist);
               startY = bestOffsetY * (dotRadius / dist);
@@ -1128,21 +1019,22 @@ export default function LocationExplorer({
 
   // Update Category Markers when category changes (created once per category)
   const updateCategoryMarkers = (
-    map: mapboxgl.Map | null,
+    map: google.maps.Map | null,
     category: string,
   ) => {
     if (!map) return;
 
     // Clear old markers and labels
-    markersRef.current.forEach((m) => m.remove());
+    markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
-    labelMarkersRef.current.forEach((m) => m.remove());
+    labelMarkersRef.current.forEach((m) => m.setMap(null));
     labelMarkersRef.current = [];
 
     if (!category) return;
 
-     const catData =
-      infrastructure.current.find((item) => item.title === category);
+    const catData = infrastructure.current.find(
+      (item) => item.title === category,
+    );
     if (!catData) return;
 
     const iconMap: Record<string, string> = {
@@ -1166,17 +1058,25 @@ export default function LocationExplorer({
       // 1. Create pinpoint ring (hollow brown circle dot)
       const dotEl = document.createElement("div");
       dotEl.className = "luxury-dot";
-      dotEl.style.cssText = "position: absolute; width: 10px; height: 10px; border: 2px solid #5B4A3D; background-color: transparent; border-radius: 50%; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); transform: translate(-50%, -50%); z-index: 50; transition: transform 250ms ease;";
+      dotEl.style.cssText =
+        "position: absolute; width: 10px; height: 10px; border: 2px solid #5B4A3D; background-color: transparent; border-radius: 50%; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); transform: translate(-50%, -50%); z-index: 50; transition: transform 250ms ease;";
       markerEl.appendChild(dotEl);
 
       // 2. Create SVG and path programmatically (namespace-safe)
-      const svgEl = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      const svgEl = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "svg",
+      );
       svgEl.setAttribute("class", "luxury-leader-svg");
       svgEl.setAttribute("width", "500");
       svgEl.setAttribute("height", "500");
-      svgEl.style.cssText = "position: absolute; top: -250px; left: -250px; width: 500px; height: 500px; pointer-events: none; overflow: visible; z-index: 1;";
+      svgEl.style.cssText =
+        "position: absolute; top: -250px; left: -250px; width: 500px; height: 500px; pointer-events: none; overflow: visible; z-index: 1;";
 
-      const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      const pathEl = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "path",
+      );
       pathEl.setAttribute("class", "luxury-leader-path");
       pathEl.setAttribute("fill", "none");
       pathEl.setAttribute("stroke", "#5B4A3D");
@@ -1196,42 +1096,34 @@ export default function LocationExplorer({
       `;
       markerEl.appendChild(circleEl);
 
-      const labelMarker = new mapboxgl.Marker({
-        element: markerEl,
-        anchor: "center",
-        offset: [0, 0],
-      })
-        .setLngLat([loc.coordinates.lng, loc.coordinates.lat])
-        .addTo(map);
+      const labelMarker = createDomOverlay(loc.coordinates, markerEl);
+      labelMarker.setMap(map);
 
       // Click/Tap handler directly on circle wrapper
       circleEl.addEventListener("click", (e) => {
         e.stopPropagation();
 
-        const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
+        const isMobile =
+          typeof window !== "undefined" && window.innerWidth < 1024;
         const isActive = markerEl.classList.contains("active");
 
         if (isMobile) {
           if (isActive) {
-            handleShowRoute(loc.coordinates, loc.title);
+            handleShowRoute(loc.routeCoordinates || loc.coordinates, loc.title);
           } else {
             setSelectedLocation(loc);
             if (mapRef.current) {
-              mapRef.current.flyTo({
-                center: [loc.coordinates.lng, loc.coordinates.lat],
-                zoom: 14,
-                essential: true,
-              });
+              mapRef.current.panTo(loc.coordinates);
+              mapRef.current.setZoom(14);
             }
           }
         } else {
           setSelectedLocation(loc);
-          handleShowRoute(loc.coordinates, loc.title);
+          handleShowRoute(loc.routeCoordinates || loc.coordinates, loc.title);
         }
       });
 
-      (labelMarker as CustomMarker).locTitle = loc.title;
-      (labelMarker as CustomMarker).elementRef = markerEl;
+      labelMarker.locTitle = loc.title;
 
       labelMarkersRef.current.push(labelMarker);
       markersRef.current.push(labelMarker);
@@ -1239,18 +1131,19 @@ export default function LocationExplorer({
 
     // Auto-fit bounds to encompass all locations in the category plus the main site
     if (catData.locations.length > 0) {
-      const bounds = new mapboxgl.LngLatBounds();
-      bounds.extend([GoraiBayviewLocation.lng, GoraiBayviewLocation.lat]);
+      const bounds = new google.maps.LatLngBounds();
+      bounds.extend(GoraiBayviewLocation);
       catData.locations.forEach((loc) => {
         if (loc.title !== "Gorai Bayview Site") {
-          bounds.extend([loc.coordinates.lng, loc.coordinates.lat]);
+          bounds.extend(loc.coordinates);
         }
       });
-      map.fitBounds(bounds, {
-        padding: { top: 120, bottom: 120, left: 340, right: 120 },
-        maxZoom: 13,
-        essential: true,
-      });
+      fitBoundsWithMaxZoom(
+        map,
+        bounds,
+        { top: 120, bottom: 120, left: 340, right: 120 },
+        13,
+      );
     }
 
     // Solve collisions immediately
@@ -1264,7 +1157,6 @@ export default function LocationExplorer({
     }
   }, [selectedCategory, mapLoaded]);
 
-
   // Bind map event listeners for real-time collision recalculation
   useEffect(() => {
     const map = mapRef.current;
@@ -1274,23 +1166,30 @@ export default function LocationExplorer({
       resolveLabelCollisions();
     };
 
-    map.on("zoom", onZoomOrMove);
-    map.on("move", onZoomOrMove);
+    const zoomListener = map.addListener("zoom_changed", onZoomOrMove);
+    const boundsListener = map.addListener("bounds_changed", onZoomOrMove);
+    // "idle" fires once after pan/zoom/tiles fully settle. zoom_changed and
+    // bounds_changed can fire mid-animation (e.g. during fitBoundsWithMaxZoom's
+    // zoom clamp), so a resolve triggered by them can compute offsets against
+    // a projection that shifts again before the map actually comes to rest —
+    // leaving markers positioned a few px off from where collisions were
+    // last resolved. Re-resolving on "idle" guarantees a final, accurate pass.
+    const idleListener = map.addListener("idle", onZoomOrMove);
 
     return () => {
-      map.off("zoom", onZoomOrMove);
-      map.off("move", onZoomOrMove);
+      zoomListener.remove();
+      boundsListener.remove();
+      idleListener.remove();
     };
   }, [mapLoaded]);
 
   // Handle active marker styling changes in-place by adding/removing CSS classes
   useEffect(() => {
     markersRef.current.forEach((marker) => {
-      const locTitle = (marker as CustomMarker).locTitle;
-      const el = (marker as CustomMarker).elementRef as HTMLDivElement;
+      const el = marker.element;
       if (!el) return;
 
-      const isSelected = locTitle === selectedLocation?.title;
+      const isSelected = marker.locTitle === selectedLocation?.title;
       if (isSelected) {
         el.classList.add("active");
       } else {
@@ -1308,19 +1207,23 @@ export default function LocationExplorer({
   };
 
   function clearRouteLayer() {
-    const map = mapRef.current;
-    if (!map) return;
-
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
     }
 
-    if (map.getLayer("route")) map.removeLayer("route");
-    if (map.getLayer("route-glow")) map.removeLayer("route-glow");
-    if (map.getSource("route")) map.removeSource("route");
-    if (map.getLayer("animated-marker")) map.removeLayer("animated-marker");
-    if (map.getSource("animated-marker")) map.removeSource("animated-marker");
+    if (routePolylineRef.current) {
+      routePolylineRef.current.setMap(null);
+      routePolylineRef.current = null;
+    }
+    if (routeGlowPolylineRef.current) {
+      routeGlowPolylineRef.current.setMap(null);
+      routeGlowPolylineRef.current = null;
+    }
+    if (routeHeadMarkerRef.current) {
+      routeHeadMarkerRef.current.setMap(null);
+      routeHeadMarkerRef.current = null;
+    }
 
     setActiveRoute(null);
   }
@@ -1336,148 +1239,101 @@ export default function LocationExplorer({
       return;
     }
 
-    console.log("Showing route:", { originCoords, destCoordinates, destName });
-
-    // Ensure map dimensions are correctly computed before fits
-    map.resize();
-
     setIsRouteLoading(true);
     clearRouteLayer();
 
-    let profile = "driving";
+    // Vipassana Pagoda, Gorai Beach, Uttan Beach and Water Kingdom sit across
+    // the creek from Gorai — the only crossing is a passenger ferry, so
+    // DRIVING mode routes cars ~1hr the long way around via Uttan Rd.
+    // WALKING mode natively finds the ferry crossing (Google's own "best"
+    // route for these is a two-wheeler via that same ferry, which the
+    // classic Directions API doesn't expose as a mode).
     const titleLower = destName.toLowerCase();
-    const isBikeRoute = titleLower.includes("pagoda") || titleLower.includes("beach") || titleLower.includes("water kingdom");
-    
-    if (isBikeRoute) {
-      profile = "walking";
-    }
+    const isFerryRoute =
+      titleLower.includes("pagoda") ||
+      titleLower.includes("beach") ||
+      titleLower.includes("water kingdom");
 
-    let effectiveDestCoords = destCoordinates;
-    if (destName.toLowerCase().includes("national park")) {
-      effectiveDestCoords = { lat: 19.226937, lng: 72.864951 };
-    }
+    const travelMode = isFerryRoute
+      ? "TWO_WHEELER"
+      : google.maps.TravelMode.DRIVING;
 
-    let coordinatePath = `${originCoords.lng},${originCoords.lat};${effectiveDestCoords.lng},${effectiveDestCoords.lat}`;
-    if (isBikeRoute) {
-      if (titleLower.includes("pagoda")) {
-        coordinatePath = `${originCoords.lng},${originCoords.lat};72.81695,19.237171;72.808,19.233;${effectiveDestCoords.lng},${effectiveDestCoords.lat}`;
-      } else if (titleLower.includes("uttan")) {
-        // Uttan Beach: same bike route but go via Gorai Beach first
-        const goraiBch = { lng: 72.7808269, lat: 19.2419548 };
-        coordinatePath = `${originCoords.lng},${originCoords.lat};72.81695,19.237171;${goraiBch.lng},${goraiBch.lat};${effectiveDestCoords.lng},${effectiveDestCoords.lat}`;
-      } else if (titleLower.includes("beach") || titleLower.includes("water kingdom")) {
-        coordinatePath = `${originCoords.lng},${originCoords.lat};72.81695,19.237171;${effectiveDestCoords.lng},${effectiveDestCoords.lat}`;
-      }
-    }
-
-    const url = isBikeRoute
-      ? `https://api.mapbox.com/directions/v5/mapbox/${profile}/${coordinatePath}?overview=full&geometries=geojson&access_token=${mapboxgl.accessToken}`
-      : `https://router.project-osrm.org/route/v1/${profile}/${coordinatePath}?overview=full&geometries=geojson`;
-
-    fetch(url)
-      .then((r) => r.json())
-      .then((data) => {
-        console.log("Routing response:", data);
-        if (data.routes && data.routes[0]) {
-          const route = data.routes[0];
-          const coords = route.geometry.coordinates;
-
-          const distanceKm = (route.distance / 1000).toFixed(1);
-          let durationMin = Math.round(route.duration / 60);
-          if (profile === "walking") {
-            // Walking is ~5km/h, cycling/bike is ~12-15km/h, so divide duration by 2.5
-            durationMin = Math.max(1, Math.round(durationMin / 2.5));
-          }
-
-          setActiveRoute({
-            distance: `${distanceKm} km`,
-            duration: `${durationMin} min`,
-            destinationName: destName,
-          });
-
-          // Zoom to fit bounds
-          const bounds = coords.reduce(
-            (acc: mapboxgl.LngLatBounds, coord: number[]) => {
-              return acc.extend([coord[0], coord[1]] as [number, number]);
-            },
-            new mapboxgl.LngLatBounds(coords[0], coords[0]),
-          );
-
-          // Prevent negative viewport size / NaN zoom by choosing safe padding on narrow displays
-          const screenWidth =
-            typeof window !== "undefined" ? window.innerWidth : 1200;
-          const safePadding =
-            screenWidth < 1024
-              ? 40
-              : { top: 120, bottom: 120, left: 360, right: 120 };
-
-          map.fitBounds(bounds, {
-            padding: safePadding,
-            maxZoom: 15,
-            duration: 2000, // Smooth 2s camera transition
-            essential: true,
-          });
-
-          animateRouteDrawing(map, coords);
-        } else {
-          console.error("No routes found in OSRM response");
+    fetchGoogleRoute(
+      originCoords,
+      destCoordinates,
+      travelMode,
+    )
+      .then(({ path, distanceMeters, durationSeconds, actualTravelMode }) => {
+        const distanceKm = (distanceMeters / 1000).toFixed(1);
+        let durationMin = Math.round(durationSeconds / 60);
+        if (isFerryRoute && actualTravelMode === google.maps.TravelMode.WALKING) {
+          // Walking-mode duration fallback: approximates the two-wheeler ferry
+          // crossing: roughly 2.5x faster than the ~5km/h walking pace.
+          durationMin = Math.max(1, Math.round(durationMin / 2.5));
         }
+
+        setActiveRoute({
+          distance: `${distanceKm} km`,
+          duration: `${durationMin} min`,
+          destinationName: destName,
+        });
+
+        const bounds = new google.maps.LatLngBounds();
+        path.forEach(([lng, lat]) => bounds.extend({ lat, lng }));
+
+        const screenWidth =
+          typeof window !== "undefined" ? window.innerWidth : 1200;
+        const safePadding =
+          screenWidth < 1024
+            ? 40
+            : { top: 120, bottom: 120, left: 360, right: 120 };
+
+        fitBoundsWithMaxZoom(map, bounds, safePadding, 15);
+
+        animateRouteDrawing(map, path);
         setIsRouteLoading(false);
       })
       .catch((e) => {
-        console.error("OSRM Routing Error:", e);
+        console.error("Google Directions Error:", e);
         setIsRouteLoading(false);
       });
   }
 
-  function animateRouteDrawing(map: mapboxgl.Map, coordinates: number[][]) {
+  function animateRouteDrawing(
+    map: google.maps.Map,
+    coordinates: [number, number][],
+  ) {
     let currentIndex = 0;
     const animationSpeed = 3;
 
-    map.addSource("route", {
-      type: "geojson",
-      data: {
-        type: "Feature",
-        properties: {},
-        geometry: {
-          type: "LineString",
-          coordinates: [],
-        },
-      },
+    const glowPolyline = new google.maps.Polyline({
+      map,
+      path: [],
+      strokeColor: "#c79a59",
+      strokeOpacity: 0.4,
+      strokeWeight: 8,
     });
 
-    // Add route glow under-layer (reduced width for Feedback 6)
-    map.addLayer({
-      id: "route-glow",
-      type: "line",
-      source: "route",
-      layout: {
-        "line-join": "round",
-        "line-cap": "round",
-      },
-      paint: {
-        "line-color": "#c79a59",
-        "line-width": 8,
-        "line-opacity": 0.4,
-        "line-blur": 4,
-      },
+    const mainPolyline = new google.maps.Polyline({
+      map,
+      path: [],
+      strokeColor: "#E5C158",
+      strokeOpacity: 0.95,
+      strokeWeight: 3,
     });
 
-    // Add main route line layer (reduced width for Feedback 6)
-    map.addLayer({
-      id: "route",
-      type: "line",
-      source: "route",
-      layout: {
-        "line-join": "round",
-        "line-cap": "round",
-      },
-      paint: {
-        "line-color": "#E5C158",
-        "line-width": 3,
-        "line-opacity": 0.95,
-      },
-    });
+    routeGlowPolylineRef.current = glowPolyline;
+    routePolylineRef.current = mainPolyline;
+
+    const headEl = document.createElement("div");
+    headEl.style.cssText =
+      "width: 8px; height: 8px; border-radius: 50%; background: #ffffff; border: 2px solid #E5C158; transform: translate(-50%, -50%);";
+    const headMarker = createDomOverlay(
+      { lat: coordinates[0][1], lng: coordinates[0][0] },
+      headEl,
+    );
+    headMarker.setMap(map);
+    routeHeadMarkerRef.current = headMarker;
 
     const animate = () => {
       const nextIndex = Math.min(
@@ -1485,49 +1341,16 @@ export default function LocationExplorer({
         coordinates.length,
       );
       const segmentCoordinates = coordinates.slice(0, nextIndex);
+      const segmentLatLng = segmentCoordinates.map(([lng, lat]) => ({
+        lat,
+        lng,
+      }));
 
-      const source = map.getSource("route") as mapboxgl.GeoJSONSource;
-      if (source) {
-        source.setData({
-          type: "Feature",
-          properties: {},
-          geometry: {
-            type: "LineString",
-            coordinates: segmentCoordinates,
-          },
-        });
-      }
+      glowPolyline.setPath(segmentLatLng);
+      mainPolyline.setPath(segmentLatLng);
 
-      if (segmentCoordinates.length > 0) {
-        const lastCoord = segmentCoordinates[segmentCoordinates.length - 1];
-
-        if (map.getLayer("animated-marker")) map.removeLayer("animated-marker");
-        if (map.getSource("animated-marker"))
-          map.removeSource("animated-marker");
-
-        map.addSource("animated-marker", {
-          type: "geojson",
-          data: {
-            type: "Feature",
-            properties: {},
-            geometry: {
-              type: "Point",
-              coordinates: lastCoord,
-            },
-          },
-        });
-
-        map.addLayer({
-          id: "animated-marker",
-          type: "circle",
-          source: "animated-marker",
-          paint: {
-            "circle-radius": 4, // Smaller dot size for Feedback 8 & 6
-            "circle-color": "#ffffff",
-            "circle-stroke-width": 2,
-            "circle-stroke-color": "#E5C158",
-          },
-        });
+      if (segmentLatLng.length > 0) {
+        headMarker.setPosition(segmentLatLng[segmentLatLng.length - 1]);
       }
 
       currentIndex = nextIndex;
@@ -1535,9 +1358,11 @@ export default function LocationExplorer({
       if (currentIndex < coordinates.length) {
         animationFrameRef.current = requestAnimationFrame(animate);
       } else {
-        // Animation finished: remove the animating marker dot so it doesn't coincide/overlap with destination marker (Feedback 6)
-        if (map.getLayer("animated-marker")) map.removeLayer("animated-marker");
-        if (map.getSource("animated-marker")) map.removeSource("animated-marker");
+        // Animation finished: remove the animating marker dot so it doesn't coincide/overlap with destination marker
+        headMarker.setMap(null);
+        if (routeHeadMarkerRef.current === headMarker) {
+          routeHeadMarkerRef.current = null;
+        }
       }
     };
 
@@ -1587,18 +1412,18 @@ export default function LocationExplorer({
     setDestinationAddress("");
     setOriginAddress("Gorai Bayview, Borivali West, Mumbai");
     if (mapRef.current) {
-      mapRef.current.flyTo({
-        center: [GoraiBayviewLocation.lng, GoraiBayviewLocation.lat],
-        zoom: 13,
-        essential: true,
-      });
+      mapRef.current.panTo(GoraiBayviewLocation);
+      mapRef.current.setZoom(13);
     }
   };
 
   return (
     <section className="relative h-screen w-full overflow-hidden bg-black">
       {/* MAP CONTAINER */}
-      <div className="absolute inset-0 h-full w-full premium-map-container" style={{ zIndex: 10 }}>
+      <div
+        className="absolute inset-0 h-full w-full premium-map-container"
+        style={{ zIndex: 10 }}
+      >
         <div ref={mapContainerRef} className="w-full h-full" />
         {/* Animated Moving Clouds Overlay */}
         <div className="luxury-clouds-overlay pointer-events-none" />
@@ -1631,7 +1456,8 @@ export default function LocationExplorer({
         <div className="flex flex-col gap-2 luxury-zoom-control">
           <button
             onClick={() => {
-              if (mapRef.current) mapRef.current.zoomIn();
+              if (mapRef.current)
+                mapRef.current.setZoom((mapRef.current.getZoom() ?? 13) + 1);
             }}
             className="w-10 h-10 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer"
             title="Zoom In"
@@ -1640,7 +1466,8 @@ export default function LocationExplorer({
           </button>
           <button
             onClick={() => {
-              if (mapRef.current) mapRef.current.zoomOut();
+              if (mapRef.current)
+                mapRef.current.setZoom((mapRef.current.getZoom() ?? 13) - 1);
             }}
             className="w-10 h-10 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer"
             title="Zoom Out"
@@ -1717,7 +1544,9 @@ export default function LocationExplorer({
                   .distance)) && (
               <div className="flex flex-row items-center gap-4 w-full border-t border-[#40484B]/30 pt-3 shrink-0">
                 <div className="flex flex-col items-start min-w-0">
-                  <span className="text-white/40 text-[9px] uppercase tracking-widest font-medium">Duration</span>
+                  <span className="text-white/40 text-[9px] uppercase tracking-widest font-medium">
+                    Duration
+                  </span>
                   <p className="text-white text-xs sm:text-sm font-semibold tracking-wide mt-0.5">
                     {formatDurationForCard(
                       activeRoute
@@ -1731,7 +1560,9 @@ export default function LocationExplorer({
                 </div>
                 <div className="h-6 w-px bg-[#40484B]/50" />
                 <div className="flex flex-col items-start min-w-0">
-                  <span className="text-[#C79A59] text-[9px] uppercase tracking-widest font-medium">Distance</span>
+                  <span className="text-[#C79A59] text-[9px] uppercase tracking-widest font-medium">
+                    Distance
+                  </span>
                   <p className="text-white text-xs sm:text-sm font-semibold tracking-wide mt-0.5">
                     {formatDistanceForCard(
                       activeRoute
@@ -1779,15 +1610,6 @@ export default function LocationExplorer({
 
       {/* CUSTOM LUXURY STYLES */}
       <style>{`
-        /* Premium Brochure Map Container - clean, no filters */
-        .premium-map-container .mapboxgl-canvas-container {
-          filter: none;
-        }
-
-        .premium-map-container .mapboxgl-canvas {
-          background: #E5D8C8;
-        }
-
         /* Animated Moving Clouds Overlay (Feedback) */
         .luxury-clouds-overlay {
           position: absolute;
@@ -1829,16 +1651,6 @@ export default function LocationExplorer({
         @keyframes floatClouds2 {
           0% { transform: translateX(-25%); }
           100% { transform: translateX(-75%); }
-        }
-
-        /* Keep H monogram always on top of other markers (Feedback 7 & 9) */
-        .mapboxgl-marker:has(.luxury-home-marker) {
-          z-index: 9999 !important;
-        }
-
-        /* Collapse stacking context so ALL circles render above ALL leader lines across markers */
-        .mapboxgl-marker:has(.luxury-annotation-container) {
-          z-index: auto !important;
         }
 
         .luxury-annotation-container {
@@ -2083,19 +1895,25 @@ export default function LocationExplorer({
         }
 
         /* Hover popup card styles */
-        .luxury-hover-popup .mapboxgl-popup-content {
-          background: rgba(44, 52, 55, 0.65) !important;
-          backdrop-filter: blur(12px) !important;
-          -webkit-backdrop-filter: blur(12px) !important;
-          border: 1px solid rgba(64, 72, 75, 0.7) !important;
-          border-radius: 12px !important;
-          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5) !important;
-          padding: 10px 14px !important;
+        .luxury-hover-popup {
+          background: rgba(44, 52, 55, 0.65);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(64, 72, 75, 0.7);
+          border-radius: 12px;
+          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+          padding: 10px 14px;
           pointer-events: none;
         }
 
-        .luxury-hover-popup .mapboxgl-popup-tip {
-          display: none !important;
+        .luxury-home-popup {
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%);
+          margin-bottom: 10px;
+          white-space: nowrap;
+          z-index: 10000;
         }
 
         .luxury-mini-card {
