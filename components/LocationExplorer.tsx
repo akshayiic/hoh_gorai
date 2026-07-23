@@ -350,6 +350,7 @@ const categoryDisplayNames: Record<string, string> = {
   Transport: "Transport",
   Hospitals: "Hospital",
   "Commercial Hubspots": "Commercial Hubspot",
+  "Upcoming Infrastructure": "Upcoming Infrastructure",
 };
 
 function toTitleCase(str: string): string {
@@ -1045,6 +1046,7 @@ export default function LocationExplorer({
       Transport: `<img src="/icons/connectivity.svg" class="w-[22px] h-[22px] object-contain" alt="Transport" />`,
       Hospitals: `<img src="/icons/hospital.svg" class="w-[22px] h-[22px] object-contain" alt="Hospitals" />`,
       "Commercial Hubspots": `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #ffffff;"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /><rect width="20" height="14" x="2" y="6" rx="2" /></svg>`,
+      "Upcoming Infrastructure": `<img src="/icons/connectivity.svg" class="w-[22px] h-[22px] object-contain" alt="Upcoming Infrastructure" />`,
     };
 
     catData.locations.forEach((loc) => {
