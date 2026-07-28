@@ -550,7 +550,7 @@ export default function BalconyView() {
                           w-[calc(100%+1.5rem)]
                           -mx-3
                           px-3
-                          
+                          pl-6
                           py-[8px]
                           flex
                           items-center

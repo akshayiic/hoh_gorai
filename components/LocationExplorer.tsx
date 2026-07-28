@@ -266,7 +266,7 @@ const infrastructure: {
           coordinates: { lat: 19.2189271, lng: 72.8523851 },
         },
         {
-          title: "Karuna Hospital- 4.7km (14 Mins)",
+          title: "Karuna Hospital",
           name: "Karuna Hospital- 4.7km (14 Mins)",
           coordinates: { lat: 19.2412571, lng: 72.8529326 },
         },
@@ -413,7 +413,9 @@ export default function LocationExplorer({
   onNavigate,
 }: LocationExplorerProps) {
   const router = useRouter();
-  const [selectedCategory, setSelectedCategory] = useState("Hospitals");
+  const [selectedCategory, setSelectedCategory] = useState(
+    "Education Institutes",
+  );
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showRoutePanel, setShowRoutePanel] = useState(false);
   const [originAddress, setOriginAddress] = useState(
@@ -684,183 +686,188 @@ export default function LocationExplorer({
         let bestD = 24;
         let found = false;
 
-        if (info.isSelected) {
-          bestPosition = "Top";
-          bestOffsetX = 0;
-          bestOffsetY = -R - 24;
-          bestD = 24;
-          found = true;
-        } else {
-          for (let dIdx = 0; dIdx < lineLengths.length && !found; dIdx++) {
-            const D = lineLengths[dIdx];
+        const currentLineLengths = info.isSelected
+          ? [55, 80, 110, 145, 180, 220]
+          : lineLengths;
 
-            for (let pIdx = 0; pIdx < positionsOrder.length; pIdx++) {
-              const pos = positionsOrder[pIdx];
-              let offsetX = 0;
-              let offsetY = 0;
+        for (let dIdx = 0; dIdx < currentLineLengths.length && !found; dIdx++) {
+          const D = currentLineLengths[dIdx];
 
-              const diag = Math.round((R + D) * 0.707);
+          for (let pIdx = 0; pIdx < positionsOrder.length; pIdx++) {
+            const pos = positionsOrder[pIdx];
+            let offsetX = 0;
+            let offsetY = 0;
 
-              switch (pos) {
-                case "Top":
-                  offsetX = 0;
-                  offsetY = -R - D;
-                  break;
-                case "TopRight":
-                  offsetX = diag;
-                  offsetY = -diag;
-                  break;
-                case "Right":
-                  offsetX = R + D;
-                  offsetY = 0;
-                  break;
-                case "BottomRight":
-                  offsetX = diag;
-                  offsetY = diag;
-                  break;
-                case "Bottom":
-                  offsetX = 0;
-                  offsetY = R + D;
-                  break;
-                case "BottomLeft":
-                  offsetX = -diag;
-                  offsetY = diag;
-                  break;
-                case "Left":
-                  offsetX = -R - D;
-                  offsetY = 0;
-                  break;
-                case "TopLeft":
-                  offsetX = -diag;
-                  offsetY = -diag;
-                  break;
-              }
+            const diag = Math.round((R + D) * 0.707);
 
-              const { cx, cy } = getLabelCenter(
-                info.x,
-                info.y,
-                offsetX,
-                offsetY,
-                pos,
-                W_lbl,
-                H_lbl,
-              );
-              const candidateRect = getLabelRect(cx, cy, W_lbl, H_lbl);
-              const candidateCircleX = info.x + offsetX;
-              const candidateCircleY = info.y + offsetY;
-              let hasCollision = false;
-
-              // 1. Check label overlap with Home Marker
-              const distToHome = Math.sqrt(
-                (cx - homeScreenPos.x) * (cx - homeScreenPos.x) +
-                  (cy - homeScreenPos.y) * (cy - homeScreenPos.y),
-              );
-              if (distToHome < homeR + W_lbl + 8) {
-                hasCollision = true;
-              }
-
-              // 2. Check label overlap with other resolved labels
-              if (!hasCollision) {
-                for (let k = 0; k < resolvedLabels.length; k++) {
-                  if (resolvedLabels[k].hidden) continue;
-                  if (checkOverlap(candidateRect, resolvedLabels[k].rect, 8)) {
-                    hasCollision = true;
-                    break;
-                  }
-                }
-              }
-
-              // 3. Check label overlap with any POI dot (original coordinate positions)
-              if (!hasCollision) {
-                for (let k = 0; k < markerInfos.length; k++) {
-                  if (markerInfos[k].title === info.title) continue;
-                  if (
-                    checkCircleRectOverlap(
-                      markerInfos[k].x,
-                      markerInfos[k].y,
-                      R + 4,
-                      candidateRect,
-                    )
-                  ) {
-                    hasCollision = true;
-                    break;
-                  }
-                }
-              }
-
-              // 4. Check label overlap with resolved OFFSET circles (critical: prevents text overlapping other markers' circles)
-              if (!hasCollision) {
-                for (let k = 0; k < resolvedLabels.length; k++) {
-                  if (resolvedLabels[k].hidden) continue;
-                  if (
-                    checkCircleRectOverlap(
-                      resolvedLabels[k].circleX,
-                      resolvedLabels[k].circleY,
-                      R + 6,
-                      candidateRect,
-                    )
-                  ) {
-                    hasCollision = true;
-                    break;
-                  }
-                }
-              }
-
-              // 5. Check candidate circle overlap with other resolved circles
-              if (!hasCollision) {
-                for (let k = 0; k < resolvedLabels.length; k++) {
-                  if (resolvedLabels[k].hidden) continue;
-                  const dx = candidateCircleX - resolvedLabels[k].circleX;
-                  const dy = candidateCircleY - resolvedLabels[k].circleY;
-                  const distCircles = Math.sqrt(dx * dx + dy * dy);
-                  if (distCircles < 2 * R + 14) {
-                    hasCollision = true;
-                    break;
-                  }
-                }
-              }
-
-              // 6. Check candidate circle overlap with Home Marker
-              if (!hasCollision) {
-                const distCircleToHome = Math.sqrt(
-                  (candidateCircleX - homeScreenPos.x) *
-                    (candidateCircleX - homeScreenPos.x) +
-                    (candidateCircleY - homeScreenPos.y) *
-                      (candidateCircleY - homeScreenPos.y),
-                );
-                if (distCircleToHome < homeR + R + 8) {
-                  hasCollision = true;
-                }
-              }
-
-              // 7. Check candidate circle overlap with resolved label rects (prevents circle sitting on top of other text)
-              if (!hasCollision) {
-                for (let k = 0; k < resolvedLabels.length; k++) {
-                  if (resolvedLabels[k].hidden) continue;
-                  if (
-                    checkCircleRectOverlap(
-                      candidateCircleX,
-                      candidateCircleY,
-                      R + 4,
-                      resolvedLabels[k].rect,
-                    )
-                  ) {
-                    hasCollision = true;
-                    break;
-                  }
-                }
-              }
-
-              if (!hasCollision) {
-                bestPosition = pos;
-                bestOffsetX = offsetX;
-                bestOffsetY = offsetY;
-                bestD = D;
-                found = true;
+            switch (pos) {
+              case "Top":
+                offsetX = 0;
+                offsetY = -R - D;
                 break;
+              case "TopRight":
+                offsetX = diag;
+                offsetY = -diag;
+                break;
+              case "Right":
+                offsetX = R + D;
+                offsetY = 0;
+                break;
+              case "BottomRight":
+                offsetX = diag;
+                offsetY = diag;
+                break;
+              case "Bottom":
+                offsetX = 0;
+                offsetY = R + D;
+                break;
+              case "BottomLeft":
+                offsetX = -diag;
+                offsetY = diag;
+                break;
+              case "Left":
+                offsetX = -R - D;
+                offsetY = 0;
+                break;
+              case "TopLeft":
+                offsetX = -diag;
+                offsetY = -diag;
+                break;
+            }
+
+            const { cx, cy } = getLabelCenter(
+              info.x,
+              info.y,
+              offsetX,
+              offsetY,
+              pos,
+              W_lbl,
+              H_lbl,
+            );
+            const candidateRect = getLabelRect(cx, cy, W_lbl, H_lbl);
+            const candidateCircleX = info.x + offsetX;
+            const candidateCircleY = info.y + offsetY;
+            let hasCollision = false;
+
+            // 1. Check label overlap with Home Marker
+            const distToHome = Math.sqrt(
+              (cx - homeScreenPos.x) * (cx - homeScreenPos.x) +
+                (cy - homeScreenPos.y) * (cy - homeScreenPos.y),
+            );
+            if (distToHome < homeR + W_lbl + 8) {
+              hasCollision = true;
+            }
+
+            // 2. Check label overlap with other resolved labels
+            if (!hasCollision) {
+              for (let k = 0; k < resolvedLabels.length; k++) {
+                if (resolvedLabels[k].hidden) continue;
+                if (checkOverlap(candidateRect, resolvedLabels[k].rect, 8)) {
+                  hasCollision = true;
+                  break;
+                }
               }
             }
+
+            // 3. Check label overlap with any POI dot (original coordinate positions)
+            if (!hasCollision) {
+              for (let k = 0; k < markerInfos.length; k++) {
+                if (markerInfos[k].title === info.title) continue;
+                if (
+                  checkCircleRectOverlap(
+                    markerInfos[k].x,
+                    markerInfos[k].y,
+                    R + 4,
+                    candidateRect,
+                  )
+                ) {
+                  hasCollision = true;
+                  break;
+                }
+              }
+            }
+
+            // 4. Check label overlap with resolved OFFSET circles (critical: prevents text overlapping other markers' circles)
+            if (!hasCollision) {
+              for (let k = 0; k < resolvedLabels.length; k++) {
+                if (resolvedLabels[k].hidden) continue;
+                if (
+                  checkCircleRectOverlap(
+                    resolvedLabels[k].circleX,
+                    resolvedLabels[k].circleY,
+                    R + 6,
+                    candidateRect,
+                  )
+                ) {
+                  hasCollision = true;
+                  break;
+                }
+              }
+            }
+
+            // 5. Check candidate circle overlap with other resolved circles
+            if (!hasCollision) {
+              for (let k = 0; k < resolvedLabels.length; k++) {
+                if (resolvedLabels[k].hidden) continue;
+                const dx = candidateCircleX - resolvedLabels[k].circleX;
+                const dy = candidateCircleY - resolvedLabels[k].circleY;
+                const distCircles = Math.sqrt(dx * dx + dy * dy);
+                if (distCircles < 2 * R + 14) {
+                  hasCollision = true;
+                  break;
+                }
+              }
+            }
+
+            // 6. Check candidate circle overlap with Home Marker
+            if (!hasCollision) {
+              const distCircleToHome = Math.sqrt(
+                (candidateCircleX - homeScreenPos.x) *
+                  (candidateCircleX - homeScreenPos.x) +
+                  (candidateCircleY - homeScreenPos.y) *
+                    (candidateCircleY - homeScreenPos.y),
+              );
+              if (distCircleToHome < homeR + R + 8) {
+                hasCollision = true;
+              }
+            }
+
+            // 7. Check candidate circle overlap with resolved label rects (prevents circle sitting on top of other text)
+            if (!hasCollision) {
+              for (let k = 0; k < resolvedLabels.length; k++) {
+                if (resolvedLabels[k].hidden) continue;
+                if (
+                  checkCircleRectOverlap(
+                    candidateCircleX,
+                    candidateCircleY,
+                    R + 4,
+                    resolvedLabels[k].rect,
+                  )
+                ) {
+                  hasCollision = true;
+                  break;
+                }
+              }
+            }
+
+            if (!hasCollision) {
+              bestPosition = pos;
+              bestOffsetX = offsetX;
+              bestOffsetY = offsetY;
+              bestD = D;
+              found = true;
+              break;
+            }
           }
+        }
+
+        // Fallback for selected marker if no collision-free position was found
+        if (info.isSelected && !found) {
+          bestPosition = "Right";
+          bestD = 80;
+          bestOffsetX = R + 80;
+          bestOffsetY = 0;
+          found = true;
         }
 
         // Hide label if no collision-free position was found
@@ -1665,6 +1672,11 @@ export default function LocationExplorer({
           width: 0;
           height: 0;
           pointer-events: none;
+          z-index: 100;
+        }
+
+        .luxury-annotation-container.active {
+          z-index: 10005;
         }
 
         /* Coordinate Spot: Hollow Brown Circle Ring (Feedback 3) */
