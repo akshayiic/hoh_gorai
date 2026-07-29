@@ -1153,11 +1153,25 @@ export default function LocationExplorer({
         }
       });
 
+      const isMobile =
+        typeof window !== "undefined" && window.innerWidth < 1024;
+      const isTransport = category === "Transport";
+
+      const padding = isTransport
+        ? (isMobile
+            ? { top: 220, bottom: 80, left: 40, right: 40 }
+            : { top: 260, bottom: 120, left: 380, right: 140 })
+        : (isMobile
+            ? { top: 100, bottom: 60, left: 20, right: 20 }
+            : { top: 80, bottom: 80, left: 340, right: 120 });
+
+      const maxZoom = isTransport ? 11 : 13;
+
       fitBoundsWithMaxZoom(
         map,
         bounds,
-        { top: 80, bottom: 80, left: 340, right: 120 },
-        13,
+        padding,
+        maxZoom,
       );
     }
 
@@ -1297,12 +1311,18 @@ export default function LocationExplorer({
 
         const screenWidth =
           typeof window !== "undefined" ? window.innerWidth : 1200;
+        const isTransport = selectedCategory === "Transport";
         const safePadding =
           screenWidth < 1024
-            ? 40
-            : { top: 120, bottom: 120, left: 360, right: 120 };
+            ? (isTransport
+                ? { top: 220, bottom: 80, left: 40, right: 40 }
+                : 40)
+            : (isTransport
+                ? { top: 260, bottom: 140, left: 380, right: 140 }
+                : { top: 120, bottom: 120, left: 360, right: 120 });
 
-        fitBoundsWithMaxZoom(map, bounds, safePadding, 15);
+        const maxZoom = isTransport ? 11 : 15;
+        fitBoundsWithMaxZoom(map, bounds, safePadding, maxZoom);
 
         animateRouteDrawing(map, path);
         setIsRouteLoading(false);
