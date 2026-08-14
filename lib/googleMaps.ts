@@ -125,6 +125,28 @@ export function createDomOverlay(
   return new Ctor(position, element);
 }
 
+// Real vegetation/farmland/wetland/forest polygons for the Gorai-Borivali
+// area (sourced from OpenStreetMap via Overpass), rendered as a translucent
+// green overlay. Google's own landcover classification for this region
+// doesn't separate built-up land from fields, so styling `landscape.natural`
+// paints almost the entire non-water landmass green — this traced overlay
+// is the accurate alternative.
+export function loadGreenAreasOverlay(map: google.maps.Map): void {
+  fetch("/data/green-areas.geojson")
+    .then((res) => res.json())
+    .then((geojson) => {
+      const dataLayer = new google.maps.Data({ map });
+      dataLayer.addGeoJson(geojson);
+      dataLayer.setStyle({
+        fillColor: "#a4cd91",
+        fillOpacity: 0.55,
+        strokeWeight: 0,
+        clickable: false,
+      });
+    })
+    .catch((e) => console.error("Failed to load green areas overlay:", e));
+}
+
 export function fitBoundsWithMaxZoom(
   map: google.maps.Map,
   bounds: google.maps.LatLngBounds,
@@ -217,7 +239,7 @@ export async function fetchGoogleRoute(
   );
   const path: [number, number][] = decodedPath.map((p) => [p.lng(), p.lat()]);
   const distanceMeters = route.distanceMeters || 0;
-  const durationSeconds = parseInt(route.duration || "0", 10) || 0;
+  const durationSeconds = Number.parseInt(route.duration || "0", 10) || 0;
 
   return { path, distanceMeters, durationSeconds, actualTravelMode: travelMode };
 }

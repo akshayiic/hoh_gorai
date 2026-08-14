@@ -25,6 +25,7 @@ import {
   createDomOverlay,
   fitBoundsWithMaxZoom,
   fetchGoogleRoute,
+  loadGreenAreasOverlay,
   DomOverlayHandle,
 } from "@/lib/googleMaps";
 
@@ -466,6 +467,7 @@ export default function LocationExplorer({
         zoom: 13,
       });
       mapRef.current = map;
+      loadGreenAreasOverlay(map);
 
       google.maps.event.addListenerOnce(map, "idle", () => {
         // Add a distinct pulse marker for Gorai Bayview
@@ -478,9 +480,8 @@ export default function LocationExplorer({
         el.style.transform = "translate(-50%, -50%)";
 
         el.innerHTML = `
-          <div class="luxury-home-pulse-ring"></div>
           <div class="luxury-home-inner">
-            <img src="/icons/hoh.svg" class="w-12 h-12 object-contain animate-gentle-bounce" alt="Hiranandani Site" />
+            <img src="/icons/hoh.svg" class="w-12 h-12 object-contain" alt="Hiranandani Site" />
           </div>
           <div class="luxury-hover-popup luxury-home-popup" style="display: none;">
             <div class="luxury-mini-card" style="padding: 2px;">
@@ -1889,48 +1890,13 @@ export default function LocationExplorer({
           align-items: center;
           justify-content: center;
           z-index: 2;
-          transition: all 0.3s ease;
         }
 
         .luxury-home-inner img {
           width: 100%;
           height: 100%;
           object-fit: contain;
-          filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.5));
-          transition: all 0.3s ease;
-        }
-
-        .luxury-home-inner:hover {
-          transform: scale(1.15);
-        }
-
-        .luxury-home-inner:hover img {
-          filter: drop-shadow(0 8px 16px rgba(199, 154, 89, 0.7));
-        }
-
-        .luxury-home-pulse-ring {
-          position: absolute;
-          width: 72px;
-          height: 72px;
-          border: 1.5px solid rgba(212, 175, 55, 0.6);
-          border-radius: 50%;
-          z-index: 1;
-          animation: luxury-pulse 3s infinite cubic-bezier(0.215, 0.610, 0.355, 1.000);
-          pointer-events: none;
-        }
-
-        @keyframes luxury-pulse {
-          0% {
-            transform: scale(0.6);
-            opacity: 0;
-          }
-          20% {
-            opacity: 1;
-          }
-          100% {
-            transform: scale(1.5);
-            opacity: 0;
-          }
+          filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.35));
         }
 
         /* Hover popup card styles */

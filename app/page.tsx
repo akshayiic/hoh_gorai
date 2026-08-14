@@ -45,7 +45,12 @@ export default function WelcomeExperience() {
   return (
     <div className="h-screen w-screen bg-black overflow-hidden relative font-sans text-white">
       {/* Preload background image to cache it during the loading screen */}
-      <img src="/gallery/explore_bg.webp" className="hidden" aria-hidden="true" alt="" />
+      <img
+        src="/gallery/explore_bg.webp"
+        className="hidden"
+        aria-hidden="true"
+        alt=""
+      />
 
       <AnimatePresence mode="wait">
         {loading ? (
@@ -183,7 +188,7 @@ export default function WelcomeExperience() {
                 </span>
 
                 <span className="block mt-2 text-5xl md:text-7xl">
-                  House of Hiranandani
+                  The Westward Shift
                 </span>
               </h1>
 
