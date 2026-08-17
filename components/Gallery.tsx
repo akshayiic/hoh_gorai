@@ -143,31 +143,31 @@ export default function Gallery() {
 
       {/* Image Modal */}
       {selectedImage && (
-        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4 phone-landscape:p-2">
           {/* Close Button */}
           <button
             onClick={() => setSelectedImage(null)}
-            className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
+            className="absolute top-4 right-4 text-white hover:text-gray-300 z-10 phone-landscape:top-2 phone-landscape:right-2"
           >
-            <X size={32} />
+            <X size={32} className="phone-landscape:w-5 phone-landscape:h-5" />
           </button>
 
           {/* Navigation */}
           <button
             onClick={handlePrev}
-            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full"
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full phone-landscape:left-1 phone-landscape:p-1"
           >
-            <ChevronLeft size={32} />
+            <ChevronLeft size={32} className="phone-landscape:w-5 phone-landscape:h-5" />
           </button>
           <button
             onClick={handleNext}
-            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full"
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/10 hover:bg-white/20 text-white p-2 rounded-full phone-landscape:right-1 phone-landscape:p-1"
           >
-            <ChevronRight size={32} />
+            <ChevronRight size={32} className="phone-landscape:w-5 phone-landscape:h-5" />
           </button>
 
           {/* Image */}
-          <div className="max-w-5xl max-h-[90vh] w-full">
+          <div className="max-w-5xl max-h-[90vh] w-full phone-landscape:max-h-[75vh]">
             <div
               className="relative rounded-lg overflow-hidden bg-cover bg-center"
               style={{
@@ -175,15 +175,15 @@ export default function Gallery() {
                 aspectRatio: '16/9'
               }}
             />
-            <div className="mt-4 text-center">
-              <h2 className="text-white text-2xl font-bold">{selectedImage.title}</h2>
-              <p className="text-gray-300 mt-2">{selectedImage.description}</p>
-              <p className="text-gray-400 text-sm mt-1">{selectedImage.category}</p>
+            <div className="mt-4 text-center phone-landscape:mt-1.5">
+              <h2 className="text-white text-2xl font-bold phone-landscape:text-sm">{selectedImage.title}</h2>
+              <p className="text-gray-300 mt-2 phone-landscape:text-xs phone-landscape:mt-0.5">{selectedImage.description}</p>
+              <p className="text-gray-400 text-sm mt-1 phone-landscape:text-[10px]">{selectedImage.category}</p>
             </div>
           </div>
 
           {/* Image Counter */}
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm">
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white text-sm phone-landscape:bottom-1 phone-landscape:text-xs">
             {currentIndex + 1} / {filteredImages.length}
           </div>
         </div>

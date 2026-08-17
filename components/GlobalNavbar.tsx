@@ -55,39 +55,39 @@ export default function GlobalNavbar({
   return (
     <>
       {/* LOGO & TITLE BOX */}
-      <div className="absolute left-6 top-6 z-20 flex items-center gap-3">
+      <div className="absolute left-6 top-6 z-20 flex items-center gap-3 phone-landscape:left-3 phone-landscape:top-3 phone-landscape:gap-2">
         {/* Logo Box */}
-        <div className="flex items-center justify-center w-[58px] h-[58px] bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 rounded-[5px] shadow-lg">
+        <div className="flex items-center justify-center w-[58px] h-[58px] bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 rounded-[5px] shadow-lg phone-landscape:w-9 phone-landscape:h-9">
           <img
             src="/icons/hoh2.svg"
             alt="Logo"
-            className="h-8 w-8 object-contain"
+            className="h-8 w-8 object-contain phone-landscape:h-5 phone-landscape:w-5"
           />
         </div>
 
         {/* Project Name Box (Sidebar themed UI style) */}
-        <div className="flex flex-col justify-center h-[58px] px-4 bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 rounded-[5px] shadow-lg">
-          <h1 className="text-[22px] font-bold text-white leading-tight tracking-wide">
+        <div className="flex flex-col justify-center h-[58px] px-4 bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 rounded-[5px] shadow-lg phone-landscape:h-9 phone-landscape:px-2.5">
+          <h1 className="text-[22px] font-bold text-white leading-tight tracking-wide phone-landscape:text-[12px]">
             Hiranandani Bayview
           </h1>
-          <p className="text-[14px] font-medium text-[#BBBBBB] leading-none mt-1">
+          <p className="text-[14px] font-medium text-[#BBBBBB] leading-none mt-1 phone-landscape:text-[9px] phone-landscape:mt-0.5">
             Gorai, Mumbai
           </p>
         </div>
       </div>
 
       {/* TOP ACTIONS */}
-      <div className="absolute right-6 top-8 z-20 flex items-center gap-2">
+      <div className="absolute right-6 top-8 z-20 flex items-center gap-2 phone-landscape:right-3 phone-landscape:top-3 phone-landscape:gap-1.5">
         {/* Back Button (Visible if there is history and not on /location, or if on /location) */}
         {((history.length > 1 && currentPage !== "location") || currentPage === "location") && (
           <button
             onClick={handleGoBack}
-            className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 px-5 py-2.5 text-[14px] font-medium text-[#E2E2E2] backdrop-blur-md hover:bg-[#2C3437]/85 hover:text-white transition duration-200 cursor-pointer flex items-center gap-1.5 shadow-lg"
+            className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 px-5 py-2.5 text-[14px] font-medium text-[#E2E2E2] backdrop-blur-md hover:bg-[#2C3437]/85 hover:text-white transition duration-200 cursor-pointer flex items-center gap-1.5 shadow-lg phone-landscape:px-2.5 phone-landscape:py-1.5 phone-landscape:text-[10px] phone-landscape:rounded-[6px]"
           >
             <img
               src="/icons/back.svg"
               alt="Logo"
-              className="h-3 w-3 object-contain"
+              className="h-3 w-3 object-contain phone-landscape:h-2 phone-landscape:w-2"
             />
             {currentPage === "location" ? "Go Home" : "Go Back"}
           </button>
@@ -95,17 +95,17 @@ export default function GlobalNavbar({
         {showReset && onReset && (
           <button
             onClick={onReset}
-            className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 p-2.5 flex items-center justify-center text-[#E2E2E2] backdrop-blur-md hover:bg-[#2C3437]/85 hover:text-white transition duration-200 h-[42px] w-[42px] cursor-pointer shadow-lg"
+            className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 p-2.5 flex items-center justify-center text-[#E2E2E2] backdrop-blur-md hover:bg-[#2C3437]/85 hover:text-white transition duration-200 h-[42px] w-[42px] cursor-pointer shadow-lg phone-landscape:h-7 phone-landscape:w-7 phone-landscape:rounded-[6px]"
             title="Reset View"
           >
-            <RotateCcw size={18} />
+            <RotateCcw size={18} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />
           </button>
         )}
 
-        <div className="flex items-center justify-center p-2">
-        
+        <div className="flex items-center justify-center p-2 phone-landscape:p-0">
 
-              <button className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/85  px-5 py-2.5 text-[14px] font-medium text-white backdrop-blur-md transition duration-200 shadow-lg text-white">
+
+              <button className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/85  px-5 py-2.5 text-[14px] font-medium text-white backdrop-blur-md transition duration-200 shadow-lg text-white phone-landscape:px-2.5 phone-landscape:py-1.5 phone-landscape:text-[10px] phone-landscape:rounded-[6px]">
           RERA
         </button>
         </div>

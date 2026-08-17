@@ -24,6 +24,13 @@ export function loadGoogleMaps(): Promise<typeof google> {
 export const brochureMapStyle: google.maps.MapTypeStyle[] = [
   { elementType: "labels", stylers: [{ visibility: "off" }] },
   { featureType: "water", elementType: "geometry", stylers: [{ color: "#ade0ee" }] },
+  // Landscape (including `landscape.natural`/`.landcover`) is left cream,
+  // not greened via Google's style feature types: at this zoom level Google
+  // classifies most non-urban land around Gorai as "natural landcover"
+  // regardless of whether it's actually vegetated, so any green styler on
+  // that feature paints nearly the whole visible map green. Real greenery
+  // is instead drawn deliberately via `loadGreenAreasOverlay` below, which
+  // keeps it limited to actual traced vegetation.
   { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#ebe3cd" }] },
   { featureType: "landscape.man_made", stylers: [{ visibility: "off" }] },
   { featureType: "poi.park", elementType: "geometry", stylers: [{ color: "#a4cd91" }] },
@@ -127,10 +134,11 @@ export function createDomOverlay(
 
 // Real vegetation/farmland/wetland/forest polygons for the Gorai-Borivali
 // area (sourced from OpenStreetMap via Overpass), rendered as a translucent
-// green overlay. Google's own landcover classification for this region
-// doesn't separate built-up land from fields, so styling `landscape.natural`
-// paints almost the entire non-water landmass green — this traced overlay
-// is the accurate alternative.
+// green overlay. This is the only source of "natural" green on the map —
+// see the note above `brochureMapStyle` on why Google's own landcover
+// feature isn't used instead. Keeping it a deliberately-traced overlay is
+// what keeps the green limited to real vegetation rather than covering
+// the whole region.
 export function loadGreenAreasOverlay(map: google.maps.Map): void {
   fetch("/data/green-areas.geojson")
     .then((res) => res.json())

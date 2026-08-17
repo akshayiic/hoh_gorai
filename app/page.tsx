@@ -66,7 +66,7 @@ export default function WelcomeExperience() {
             transition={{ duration: 0.6, ease: "easeInOut" }}
             className="absolute inset-0   flex flex-col items-center justify-center z-50"
           >
-            <div className="relative flex items-center justify-center mb-8">
+            <div className="relative flex items-center justify-center mb-8 phone-landscape:mb-4 phone-landscape:scale-75">
               {/* Circular SVG Progress */}
               <svg className="w-36 h-36 transform -rotate-90">
                 {/* Background Ring */}
@@ -106,17 +106,17 @@ export default function WelcomeExperience() {
                 )}
               </svg>
               {/* Central Serif Percentage */}
-              <span className="absolute text-3xl font-serif italic font-normal tracking-wide text-white/90">
+              <span className="absolute text-3xl font-serif italic font-normal tracking-wide text-white/90 phone-landscape:text-xl">
                 {progress}%
               </span>
             </div>
 
             {/* Labels */}
             <div className="text-center space-y-1">
-              <h2 className="text-2xl uppercase tracking-[0.2em] font-medium text-white/80">
+              <h2 className="text-2xl uppercase tracking-[0.2em] font-medium text-white/80 phone-landscape:text-base phone-landscape:tracking-[0.12em]">
                 Loading Experience
               </h2>
-              <p className="text-[10px] uppercase tracking-[0.15em] mt-2 text-white/40">
+              <p className="text-[10px] uppercase tracking-[0.15em] mt-2 text-white/40 phone-landscape:text-[8px] phone-landscape:mt-1">
                 Please Wait
               </p>
             </div>
@@ -172,47 +172,47 @@ export default function WelcomeExperience() {
             {/* Content */}
             <div className="relative z-10 flex h-full flex-col items-center justify-center text-center px-6">
               {/* Logo */}
-              <div className="absolute top-4 left-1/2 -translate-x-1/2">
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 phone-landscape:top-2">
                 <img
                   src="/gallery/hoh-logo.png"
                   alt=""
-                  className="h-30 object-contain"
+                  className="h-30 object-contain phone-landscape:h-14"
                 />
               </div>
 
               {/* Heading */}
               <h1 className="text-white font-light leading-none">
-                <span className="block text-5xl md:text-7xl">
+                <span className="block text-5xl md:text-7xl phone-landscape:text-2xl">
                   Discover{" "}
                   <span className="font-serif italic font-normal">Life</span> at
                 </span>
 
-                <span className="block mt-2 text-5xl md:text-7xl">
+                <span className="block mt-2 text-5xl md:text-7xl phone-landscape:text-2xl phone-landscape:mt-1">
                   The Westward Shift
                 </span>
               </h1>
 
               {/* Description */}
-              <p className="text-white/80 text-lg md:text-2xl font-light mb-4 mt-6">
+              <p className="text-white/80 text-lg md:text-2xl font-light mb-4 mt-6 phone-landscape:text-xs phone-landscape:mt-2 phone-landscape:mb-2">
                 Journey to Iconic Skylines Shaped by Timeless Design
               </p>
 
               {/* CTA */}
               <button
                 onClick={() => router.push("/location")}
-                className="group text-white font-semibold text-2xl absolute bottom-[10rem] cursor-pointer"
+                className="group text-white font-semibold text-2xl absolute bottom-[10rem] cursor-pointer phone-landscape:text-sm phone-landscape:bottom-6"
               >
                 <span className="relative z-10">Explore Now</span>
 
                 {/* Decorative corners */}
                 <img
                   src="/icons/top.svg"
-                  className="absolute -right-4 -top-2 w-8 h-8 pointer-events-none transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1"
+                  className="absolute -right-4 -top-2 w-8 h-8 pointer-events-none transition-transform duration-300 group-hover:translate-x-1 group-hover:-translate-y-1 phone-landscape:w-5 phone-landscape:h-5 phone-landscape:-right-2 phone-landscape:-top-1.5"
                   alt=""
                 />
                 <img
                   src="/icons/left.svg"
-                  className="absolute -left-4 -bottom-3 w-8 h-8 pointer-events-none transition-transform duration-300 group-hover:-translate-x-1 group-hover:translate-y-1"
+                  className="absolute -left-4 -bottom-3 w-8 h-8 pointer-events-none transition-transform duration-300 group-hover:-translate-x-1 group-hover:translate-y-1 phone-landscape:w-5 phone-landscape:h-5 phone-landscape:-left-2 phone-landscape:-bottom-2"
                   alt=""
                 />
               </button>

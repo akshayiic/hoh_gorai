@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* Compact chrome (logo, sidebar, nav, labels) when a phone is in landscape mode */
+@custom-variant phone-landscape (@media (orientation: landscape) and (max-height: 500px));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -32,6 +35,35 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Phone-only landscape lock: show a rotate prompt when a phone is held in portrait */
+@media (orientation: portrait) and (max-width: 900px) {
+  .rotate-overlay {
+    display: flex;
+  }
+
+  body > *:not(.rotate-overlay) {
+    display: none;
+  }
+}
+
+@keyframes rotate-hint {
+  0%,
+  10% {
+    transform: rotate(0deg);
+  }
+  50%,
+  60% {
+    transform: rotate(-90deg);
+  }
+  100% {
+    transform: rotate(-90deg);
+  }
+}
+
+.rotate-overlay-icon {
+  animation: rotate-hint 2.2s ease-in-out infinite;
 }
 
 /* Smooth scrolling for the gallery */

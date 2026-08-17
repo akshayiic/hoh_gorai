@@ -1,9 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { Aperture, Maximize2, Minimize2 } from "lucide-react";
 import BottomNavbar from "@/components/BottomNavbar";
 import GlobalNavbar from "@/components/GlobalNavbar";
+import Sidebar, {
+  createSidebarSections,
+  createSidebarItems,
+} from "@/components/Sidebar";
 
 const allTowersFloors = {
   morning: {
@@ -164,7 +168,9 @@ export default function BalconyView() {
   const [isViewerReady, setIsViewerReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [hasRenderedOnce, setHasRenderedOnce] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+  const [isFullscreenActive, setIsFullscreenActive] = useState(
+    () => typeof document !== "undefined" && !!document.fullscreenElement,
+  );
   const viewerRef = useRef<any>(null);
   const panoRef = useRef<HTMLDivElement>(null);
   const marzipanoRef = useRef<any>(null);
@@ -417,6 +423,34 @@ export default function BalconyView() {
     setCurrentFloorIndex(0);
   };
 
+  // Fullscreens `document.documentElement`, not this page's own div — that's
+  // the one element that survives client-side navigation, so switching pages
+  // (BottomNavbar links, etc) no longer forces an exit from fullscreen.
+  const requestFullscreen = () => {
+    if (document.fullscreenElement) return;
+    const target = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => void };
+    if (target.requestFullscreen) target.requestFullscreen().catch(() => {});
+    else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen();
+  };
+
+  const exitFullscreen = () => {
+    if (!document.fullscreenElement) return;
+    const doc = document as Document & { webkitExitFullscreen?: () => void };
+    if (doc.exitFullscreen) doc.exitFullscreen().catch(() => {});
+    else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
+  };
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) exitFullscreen();
+    else requestFullscreen();
+  };
+
+  useEffect(() => {
+    const onFullscreenChange = () => setIsFullscreenActive(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
+
   return (
     <div className="h-screen w-screen bg-black">
       {/* Global Navbar */}
@@ -427,9 +461,18 @@ export default function BalconyView() {
         <div
           ref={panoRef}
           id="balcony-pano"
-          className="w-full h-full"
+          className="w-full h-full touch-none"
           style={{ width: "100%", height: "100%" }}
         />
+
+        {/* Fullscreen toggle */}
+        <button
+          onClick={toggleFullscreen}
+          className="absolute right-6 bottom-32 z-20 w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
+          title={isFullscreenActive ? "Exit Fullscreen" : "Enter Fullscreen"}
+        >
+          {isFullscreenActive ? <Minimize2 size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" /> : <Maximize2 size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />}
+        </button>
 
         {/* Full-screen splash only before anything has ever rendered — there's
             no prior frame to keep showing yet. */}
@@ -470,127 +513,45 @@ export default function BalconyView() {
         </div>
       </div>
 
-      {/* COLLAPSIBLE SIDEBAR */}
-      <aside className="absolute left-6 top-[6.5rem] z-20 hidden lg:block">
-        <div
-          className={`
-            w-[250px]
-            rounded-[10px]
-            overflow-hidden
-            bg-[rgba(32,38,42,0.72)]
-            border border-white/[0.08]
-            shadow-[0_12px_30px_rgba(0,0,0,0.18)]
-            transition-all duration-300
-            ${isSidebarCollapsed ? "h-[60px]" : "h-auto"}
-          `}
-        >
-          {/* Clickable Header - Always Visible */}
-          <div
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="px-6 py-4 cursor-pointer hover:bg-white/5 transition-colors"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-[13px] text-[#BBBBBB] leading-none font-medium">
-                  Balcony Views
-                </div>
-                <h2 className="text-[16px] leading-none font-semibold text-white mt-1 flex items-center gap-2">
-                  {selectedTower}
-                  {isSidebarCollapsed ? (
-                    <ChevronRight size={16} className="text-[#C79A59]" />
-                  ) : (
-                    <ChevronDown size={16} className="text-[#C79A59]" />
-                  )}
-                </h2>
-              </div>
-            </div>
-          </div>
-
-          {/* Expandable Content */}
-          <div
-            className={`
-              px-6 overflow-hidden transition-all duration-300
-              ${isSidebarCollapsed ? "max-h-0 opacity-0" : "max-h-[600px] opacity-100 pb-4"}
-            `}
-          >
-            <hr className="border-[#596164]/50 mb-2" />
-
-            {(["morning", "afternoon", "evening", "night"] as const).map((time) => (
-              <div key={time} className="mb-4 last:mb-0">
-                <button
-                  onClick={() => setExpandedTime(expandedTime === time ? "morning" : time)}
-                  className="w-full flex items-center justify-between text-[14px] font-semibold text-[#E2E2E2] mb-2 cursor-pointer hover:text-white transition-colors text-left"
-                >
-                  <span>{time.charAt(0).toUpperCase() + time.slice(1)}</span>
-                  <span
-                    className={`transform transition-transform duration-200 ${
-                      expandedTime === time ? "rotate-180" : ""
-                    }`}
-                  >
-                    <ChevronDown size={14} className="text-[#C7C7C7]" />
-                  </span>
-                </button>
-
-                <div
-                  className={`space-y-[2px] overflow-hidden transition-all duration-300 ${
-                    expandedTime !== time ? "max-h-0 opacity-0" : "max-h-[300px] opacity-100"
-                  }`}
-                >
-                  {allTowersFloors[time][selectedTower].map((floorData, index) => {
-                    const isActive = selectedTime === time && currentFloorIndex === index;
-
-                    return (
-                      <button
-                        key={`${time}_${floorData.id}`}
-                        onClick={() => {
-                          setSelectedTime(time);
-                          switchFloor(index);
-                        }}
-                        className={`
-                          w-[calc(100%+1.5rem)]
-                          -mx-3
-                          px-3
-                          pl-6
-                          py-[8px]
-                          flex
-                          items-center
-                          gap-3
-                          text-left
-                          transition-all
-                          duration-150
-                          rounded-[6px]
-                          cursor-pointer
-                          ${
-                            isActive
-                              ? "bg-black/35 text-white font-medium shadow-inner"
-                              : "text-[#D2D2D2] hover:bg-black/15 hover:text-white"
-                          }
-                        `}
-                      >
-                        <span className="text-[14px] font-normal">
-                          {getFloorLabel(floorData.floor)}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {time !== "night" && <hr className="border-[#596164]/50 mt-4" />}
-              </div>
-            ))}
-          </div>
-        </div>
-      </aside>
+      {/* SIDEBAR */}
+      <Sidebar
+        header={{
+          icon: Aperture,
+          subtitle: "Balcony Views",
+          title: selectedTower,
+        }}
+        sections={createSidebarSections(
+          (["morning", "afternoon", "evening", "night"] as const).map((time) => ({
+            id: time,
+            title: time.charAt(0).toUpperCase() + time.slice(1),
+            isCollapsible: true,
+            isExpanded: expandedTime === time,
+            onHeaderClick: () =>
+              setExpandedTime(expandedTime === time ? "morning" : time),
+            items: createSidebarItems(
+              allTowersFloors[time][selectedTower].map((floorData, index) => ({
+                id: `${time}_${floorData.id}`,
+                label: getFloorLabel(floorData.floor),
+                onClick: () => {
+                  setSelectedTime(time);
+                  switchFloor(index);
+                },
+                isActive: selectedTime === time && currentFloorIndex === index,
+              })),
+            ),
+          })),
+        )}
+      />
 
       {/* Tower Selection Buttons */}
-      <div className="absolute bottom-6 left-1/2 z-40 flex -translate-x-1/2 gap-2">
+      <div className="absolute bottom-6 left-1/2 z-40 flex -translate-x-1/2 gap-2 phone-landscape:bottom-3 phone-landscape:gap-1">
         {(
           Object.keys(allTowersFloors.morning) as Array<"Tower 1" | "Tower 2" | "Tower 3">
         ).map((tower) => (
           <button
             key={tower}
             onClick={() => handleTowerChange(tower)}
-            className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition cursor-pointer  duration-200 ${
+            className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition cursor-pointer  duration-200 phone-landscape:px-3 phone-landscape:h-6 phone-landscape:text-[9px] phone-landscape:rounded-md ${
               selectedTower === tower
                 ? "bg-white text-black border-transparent"
                 : "bg-black/40 text-white border-white/10 backdrop-blur-md hover:bg-black/60 hover:border-white/20"

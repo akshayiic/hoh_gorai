@@ -36,7 +36,26 @@
       "Bash(python3 -c ' *)",
       "Bash(curl -s -X POST -d @/tmp/claude-1000/-home-akshupdf-Documents-hoh-gorai/f66607d6-d3ba-46d2-86af-65f56f2cc00b/scratchpad/overpass_query.txt https://overpass-api.de/api/interpreter -o /tmp/claude-1000/-home-akshupdf-Documents-hoh-gorai/f66607d6-d3ba-46d2-86af-65f56f2cc00b/scratchpad/overpass_result.json)",
       "Bash(echo \"exit: $?\")",
-      "Bash(python3 -c \"import shapely; print\\(shapely.__version__\\)\")"
+      "Bash(python3 -c \"import shapely; print\\(shapely.__version__\\)\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/location)",
+      "Bash(curl -s -o /dev/null -w \"home:%{http_code} location:\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code} amenities:\" http://localhost:3000/location)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/amenities)",
+      "Bash(curl -s -o /dev/null -w \"location:%{http_code}\\\\n\" http://localhost:3000/location)",
+      "Bash(curl -s -o /dev/null -w \"apartments:%{http_code}\\\\n\" http://localhost:3000/apartments)",
+      "Bash(curl -s -o /dev/null -w \"balcony:%{http_code}\\\\n\" http://localhost:3000/balcony)",
+      "Bash(curl -s --max-time 15 \"https://pro.relata.io/gmaps/HOHMaitri/v0.22/?project=HouseOfHiranandani&type=HOHMaitri1\")",
+      "Bash(curl -s --max-time 15 \"https://pro.relata.io/gmaps/HOHMaitri/v0.22/script.js\" -o /tmp/relata_script.js)",
+      "Read(//tmp/**)",
+      "Bash(curl -s --max-time 15 \"https://pro.relata.io/gmaps/HOHMaitri/v0.22/HouseOfHiranandani/HOHMaitri1/mapConfig.js\" -o /tmp/mapConfig.js)",
+      "Bash(curl -s --max-time 15 \"https://pro.relata.io/gmaps/projects/HouseOfHiranandani/HOHMaitri1/mapConfig.js\" -o /tmp/mapConfig.js)",
+      "Bash(cat)",
+      "Bash(curl -s --max-time 60 -X POST -d @/tmp/sgnp_query.txt \"https://overpass-api.de/api/interpreter\" -o /tmp/sgnp_raw.json)",
+      "Bash(python3 *)",
+      "Bash(pip install *)",
+      "Bash(curl -s --max-time 90 -X POST -d @/tmp/uttan_query.txt \"https://overpass.kumi.systems/api/interpreter\" -o /tmp/uttan_raw.json)",
+      "Bash(curl -sv --max-time 90 -X POST -d @/tmp/uttan_query.txt \"https://overpass.kumi.systems/api/interpreter\" -o /tmp/uttan_raw.json)",
+      "Bash(curl -s -o /dev/null -w \"geojson:%{http_code}\\\\n\" http://localhost:3000/data/green-areas.geojson)"
     ]
   }
 }

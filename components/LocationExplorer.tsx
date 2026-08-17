@@ -10,6 +10,8 @@ import {
   Trees,
   Eye,
   EyeOff,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -424,6 +426,9 @@ export default function LocationExplorer({
   );
   const [destinationAddress, setDestinationAddress] = useState("");
   const [isCleanView, setIsCleanView] = useState(false);
+  const [isFullscreenActive, setIsFullscreenActive] = useState(
+    () => typeof document !== "undefined" && !!document.fullscreenElement,
+  );
 
   const [selectedLocation, setSelectedLocation] = useState<LocationItem | null>(
     null,
@@ -448,6 +453,11 @@ export default function LocationExplorer({
 
   const collisionTimeoutRef = useRef<number | null>(null);
   const selectedLocationRef = useRef<LocationItem | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(
+    null,
+  );
+  const twoFingerStartYRef = useRef<{ y: number; time: number } | null>(null);
 
   useEffect(() => {
     selectedLocationRef.current = selectedLocation;
@@ -523,6 +533,110 @@ export default function LocationExplorer({
         google.maps.event.clearInstanceListeners(mapRef.current);
         mapRef.current = null;
       }
+    };
+  }, []);
+
+  // Fullscreen helpers — usable from the explicit toggle button and from the
+  // phone-landscape gestures below. Fullscreen no longer forces Clean View:
+  // the navbar/sidebar/bottom-nav stay visible while fullscreen is active.
+  //
+  // Fullscreens `document.documentElement` (not this page's own section)
+  // because that's the one element that survives client-side navigation —
+  // fullscreening a per-page div means the browser auto-exits fullscreen the
+  // instant that div unmounts on route change (BottomNavbar links, etc).
+  const requestFullscreen = () => {
+    if (document.fullscreenElement) return;
+    const target = document.documentElement as HTMLElement & {
+      webkitRequestFullscreen?: () => void;
+    };
+    if (target.requestFullscreen) target.requestFullscreen().catch(() => {});
+    else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen();
+  };
+
+  const exitFullscreen = () => {
+    if (!document.fullscreenElement) return;
+    const doc = document as Document & {
+      webkitExitFullscreen?: () => void;
+    };
+    if (doc.exitFullscreen) doc.exitFullscreen().catch(() => {});
+    else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
+  };
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) exitFullscreen();
+    else requestFullscreen();
+  };
+
+  // Phone-landscape fullscreen gestures: double-tap or a two-finger swipe up
+  // requests fullscreen; exiting fullscreen (via the system back gesture,
+  // Esc, etc.) is picked up by the fullscreenchange listener below.
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+
+    const isPhoneLandscape = () =>
+      window.matchMedia("(orientation: landscape)").matches &&
+      window.matchMedia("(pointer: coarse)").matches &&
+      window.innerHeight <= 500;
+
+    const isFullscreen = () => !!document.fullscreenElement;
+
+    const onFullscreenChange = () => {
+      setIsFullscreenActive(isFullscreen());
+    };
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (!isPhoneLandscape()) return;
+      if (e.touches.length === 2) {
+        const avgY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        twoFingerStartYRef.current = { y: avgY, time: Date.now() };
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!twoFingerStartYRef.current || e.touches.length !== 2) return;
+      const avgY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const deltaY = twoFingerStartYRef.current.y - avgY;
+      const elapsed = Date.now() - twoFingerStartYRef.current.time;
+      if (deltaY > 60 && elapsed < 600) {
+        requestFullscreen();
+        twoFingerStartYRef.current = null;
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      twoFingerStartYRef.current = null;
+      if (!isPhoneLandscape()) return;
+      if (e.touches.length !== 0 || e.changedTouches.length !== 1) return;
+
+      const touch = e.changedTouches[0];
+      const now = Date.now();
+      const last = lastTapRef.current;
+
+      if (
+        last &&
+        now - last.time < 300 &&
+        Math.abs(touch.clientX - last.x) < 30 &&
+        Math.abs(touch.clientY - last.y) < 30
+      ) {
+        if (isFullscreen()) exitFullscreen();
+        else requestFullscreen();
+        lastTapRef.current = null;
+      } else {
+        lastTapRef.current = { time: now, x: touch.clientX, y: touch.clientY };
+      }
+    };
+
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: true });
+    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
     };
   }, []);
 
@@ -1120,21 +1234,13 @@ export default function LocationExplorer({
 
         const isMobile =
           typeof window !== "undefined" && window.innerWidth < 1024;
-        const isActive = markerEl.classList.contains("active");
 
-        if (isMobile) {
-          if (isActive) {
-            handleShowRoute(loc.routeCoordinates || loc.coordinates, loc.title);
-          } else {
-            setSelectedLocation(loc);
-            if (mapRef.current) {
-              mapRef.current.panTo(loc.coordinates);
-              mapRef.current.setZoom(14);
-            }
-          }
-        } else {
-          setSelectedLocation(loc);
-          handleShowRoute(loc.routeCoordinates || loc.coordinates, loc.title);
+        setSelectedLocation(loc);
+        handleShowRoute(loc.routeCoordinates || loc.coordinates, loc.title);
+
+        if (isMobile && mapRef.current) {
+          mapRef.current.panTo(loc.coordinates);
+          mapRef.current.setZoom(14);
         }
       });
 
@@ -1453,7 +1559,10 @@ export default function LocationExplorer({
   };
 
   return (
-    <section className="relative h-screen w-full overflow-hidden bg-black">
+    <section
+      ref={sectionRef}
+      className="relative h-screen w-full overflow-hidden bg-black"
+    >
       {/* MAP CONTAINER */}
       <div
         className="absolute inset-0 h-full w-full premium-map-container"
@@ -1471,43 +1580,52 @@ export default function LocationExplorer({
       {isRouteLoading && (
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
           <div className="text-white text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-            <p className="text-lg">Calculating Route...</p>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4 phone-landscape:h-8 phone-landscape:w-8 phone-landscape:mb-2"></div>
+            <p className="text-lg phone-landscape:text-sm">Calculating Route...</p>
           </div>
         </div>
       )}
 
       {/* MAP CONTROLS */}
-      <div className="absolute right-6 bottom-32 z-20 flex flex-col gap-2">
+      <div className="absolute right-6 bottom-32 z-20 flex flex-col gap-2 phone-landscape:right-3 phone-landscape:bottom-14 phone-landscape:gap-1.5">
         {/* Toggle UI clean view button (Feedback 13) */}
         <button
           onClick={() => setIsCleanView(!isCleanView)}
-          className="w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer"
+          className="w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
           title={isCleanView ? "Show UI Panels" : "Hide UI Panels (Clean View)"}
         >
-          {isCleanView ? <Eye size={20} /> : <EyeOff size={20} />}
+          {isCleanView ? <Eye size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" /> : <EyeOff size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />}
         </button>
 
-        <div className="flex flex-col gap-2 luxury-zoom-control">
+        {/* Fullscreen toggle */}
+        <button
+          onClick={toggleFullscreen}
+          className="w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
+          title={isFullscreenActive ? "Exit Fullscreen" : "Enter Fullscreen"}
+        >
+          {isFullscreenActive ? <Minimize2 size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" /> : <Maximize2 size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />}
+        </button>
+
+        <div className="flex flex-col gap-2 luxury-zoom-control phone-landscape:gap-1.5">
           <button
             onClick={() => {
               if (mapRef.current)
                 mapRef.current.setZoom((mapRef.current.getZoom() ?? 13) + 1);
             }}
-            className="w-10 h-10 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer"
+            className="w-10 h-10 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
             title="Zoom In"
           >
-            <Plus size={20} />
+            <Plus size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />
           </button>
           <button
             onClick={() => {
               if (mapRef.current)
                 mapRef.current.setZoom((mapRef.current.getZoom() ?? 13) - 1);
             }}
-            className="w-10 h-10 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer"
+            className="w-10 h-10 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
             title="Zoom Out"
           >
-            <Minus size={20} />
+            <Minus size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />
           </button>
         </div>
       </div>
@@ -1555,15 +1673,15 @@ export default function LocationExplorer({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="absolute z-30 w-fit lg:w-[250px] flex flex-col items-start gap-3 p-4 rounded-[10px] bg-[#2C3437]/75 backdrop-blur-md border border-[#40484B]/70 shadow-[0_12px_40px_rgba(0,0,0,0.4)] left-4 right-4 bottom-28 md:bottom-32 md:left-1/2 md:-translate-x-1/2 lg:bottom-auto lg:top-[6.5rem] lg:right-6 lg:left-auto lg:translate-x-0 lg:max-w-none"
+            className="absolute z-30 w-fit lg:w-[250px] flex flex-col items-start gap-3 p-4 rounded-[10px] bg-[#2C3437]/75 backdrop-blur-md border border-[#40484B]/70 shadow-[0_12px_40px_rgba(0,0,0,0.4)] left-4 right-4 bottom-28 md:bottom-32 md:left-1/2 md:-translate-x-1/2 lg:bottom-auto lg:top-[6.5rem] lg:right-6 lg:left-auto lg:translate-x-0 lg:max-w-none phone-landscape:w-[190px] phone-landscape:gap-1.5 phone-landscape:p-2.5 phone-landscape:rounded-[8px] phone-landscape:left-auto phone-landscape:right-3 phone-landscape:top-14 phone-landscape:bottom-auto phone-landscape:translate-x-0"
           >
-            <div className="w-full pr-8 min-w-0">
-              <p className="text-[#C79A59] text-[10px] sm:text-xs uppercase tracking-[0.2em] font-semibold">
+            <div className="w-full pr-8 min-w-0 phone-landscape:pr-5">
+              <p className="text-[#C79A59] text-[10px] sm:text-xs uppercase tracking-[0.2em] font-semibold phone-landscape:text-[8px] phone-landscape:tracking-wider">
                 {selectedLocation
                   ? categoryDisplayNames[selectedCategory] || selectedCategory
                   : ""}
               </p>
-              <h3 className="text-white text-base sm:text-lg font-light font-sans tracking-wide truncate mt-1">
+              <h3 className="text-white text-base sm:text-lg font-light font-sans tracking-wide truncate mt-1 phone-landscape:text-[12px] phone-landscape:mt-0.5">
                 {selectedLocation
                   ? parseLocationName(
                       selectedLocation.title,
@@ -1577,12 +1695,12 @@ export default function LocationExplorer({
               (selectedLocation &&
                 parseLocationName(selectedLocation.title, selectedLocation.name)
                   .distance)) && (
-              <div className="flex flex-row items-center gap-4 w-full border-t border-[#40484B]/30 pt-3 shrink-0">
+              <div className="flex flex-row items-center gap-4 w-full border-t border-[#40484B]/30 pt-3 shrink-0 phone-landscape:gap-3 phone-landscape:pt-1.5">
                 <div className="flex flex-col items-start min-w-0">
-                  <span className="text-white/40 text-[9px] uppercase tracking-widest font-medium">
+                  <span className="text-white/40 text-[9px] uppercase tracking-widest font-medium phone-landscape:text-[7px]">
                     Duration
                   </span>
-                  <p className="text-white text-xs sm:text-sm font-semibold tracking-wide mt-0.5">
+                  <p className="text-white text-xs sm:text-sm font-semibold tracking-wide mt-0.5 phone-landscape:text-[10px]">
                     {formatDurationForCard(
                       activeRoute
                         ? activeRoute.duration
@@ -1593,12 +1711,12 @@ export default function LocationExplorer({
                     )}
                   </p>
                 </div>
-                <div className="h-6 w-px bg-[#40484B]/50" />
+                <div className="h-6 w-px bg-[#40484B]/50 phone-landscape:h-4" />
                 <div className="flex flex-col items-start min-w-0">
-                  <span className="text-[#C79A59] text-[9px] uppercase tracking-widest font-medium">
+                  <span className="text-[#C79A59] text-[9px] uppercase tracking-widest font-medium phone-landscape:text-[7px]">
                     Distance
                   </span>
-                  <p className="text-white text-xs sm:text-sm font-semibold tracking-wide mt-0.5">
+                  <p className="text-white text-xs sm:text-sm font-semibold tracking-wide mt-0.5 phone-landscape:text-[10px]">
                     {formatDistanceForCard(
                       activeRoute
                         ? activeRoute.distance
@@ -1619,7 +1737,7 @@ export default function LocationExplorer({
                 setSelectedLocation(null);
                 clearRouteLayer();
               }}
-              className="absolute top-4 right-4 text-white/40 hover:text-white transition duration-200 cursor-pointer p-1"
+              className="absolute top-4 right-4 text-white/40 hover:text-white transition duration-200 cursor-pointer p-1 phone-landscape:top-2 phone-landscape:right-2 phone-landscape:p-0.5"
               aria-label="Close card"
             >
               <svg

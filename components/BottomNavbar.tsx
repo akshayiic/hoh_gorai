@@ -24,8 +24,8 @@ export default function BottomNavbar({ activeItem }: BottomNavbarProps) {
 
   return (
     <>
-      <div className="fixed bottom-6 left-7 z-40">
-        <nav className="flex overflow-hidden rounded-lg border border-white/10 bg-black/40 backdrop-blur-md shadow-2xl">
+      <div className="fixed bottom-6 left-7 z-40 phone-landscape:bottom-3 phone-landscape:left-3">
+        <nav className="flex overflow-hidden rounded-lg border border-white/10 bg-black/40 backdrop-blur-md shadow-2xl phone-landscape:rounded-md">
           {navItems.map((item, idx) => {
             const Icon = item.icon;
             const isActive = activeItem === item.id;
@@ -39,15 +39,15 @@ export default function BottomNavbar({ activeItem }: BottomNavbarProps) {
                 }}
                 className={`flex items-center justify-center transition-all duration-300 cursor-pointer ${
                   isActive
-                    ? "bg-white text-black px-6 h-8 text-xs font-bold uppercase tracking-wider gap-2"
-                    : `text-white/70 hover:bg-white/5 hover:text-white w-14 h-8 ${
+                    ? "bg-white text-black px-6 h-8 text-xs font-bold uppercase tracking-wider gap-2 phone-landscape:px-3 phone-landscape:h-6 phone-landscape:text-[9px] phone-landscape:gap-1"
+                    : `text-white/70 hover:bg-white/5 hover:text-white w-14 h-8 phone-landscape:w-9 phone-landscape:h-6 ${
                         idx !== 0 ? "border-l border-white/10" : ""
                       }`
                 }`}
               >
                 <Icon
                   size={18}
-                  className={isActive ? "text-black" : "text-white/70"}
+                  className={`phone-landscape:w-3.5 phone-landscape:h-3.5 ${isActive ? "text-black" : "text-white/70"}`}
                 />
                 {isActive && <span>{item.label}</span>}
               </button>
@@ -57,13 +57,13 @@ export default function BottomNavbar({ activeItem }: BottomNavbarProps) {
       </div>
 
       {/* RERA button in the right bottom corner */}
-      <div className="fixed bottom-6 right-7 z-40 ">
+      <div className="fixed bottom-6 right-7 z-40 phone-landscape:bottom-3 phone-landscape:right-3">
           <img
             src="/icons/powered.png"
             alt="Logo"
-            className="h-12 object-contain"
+            className="h-12 object-contain phone-landscape:h-7"
           />
-    
+
       </div>
     </>
   );
