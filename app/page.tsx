@@ -1,15 +1,128 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Maximize2, Minimize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+
+const isPhoneLandscape = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(orientation: landscape)").matches &&
+  window.matchMedia("(pointer: coarse)").matches &&
+  window.innerHeight <= 500;
 
 export default function WelcomeExperience() {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [isNavigating, setIsNavigating] = useState(false);
+  const [isFullscreenActive, setIsFullscreenActive] = useState(
+    () => typeof document !== "undefined" && !!document.fullscreenElement,
+  );
   const router = useRouter();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(
+    null,
+  );
+  const twoFingerStartYRef = useRef<{ y: number; time: number } | null>(null);
+
+  // Fullscreens `document.documentElement`, not this page's own div — that's
+  // the one element that survives client-side navigation, so switching pages
+  // no longer forces an exit from fullscreen.
+  const requestFullscreen = () => {
+    if (document.fullscreenElement) return;
+    const target = document.documentElement as HTMLElement & {
+      webkitRequestFullscreen?: () => void;
+    };
+    if (target.requestFullscreen) target.requestFullscreen().catch(() => {});
+    else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen();
+  };
+
+  const exitFullscreen = () => {
+    if (!document.fullscreenElement) return;
+    const doc = document as Document & { webkitExitFullscreen?: () => void };
+    if (doc.exitFullscreen) doc.exitFullscreen().catch(() => {});
+    else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
+  };
+
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) exitFullscreen();
+    else requestFullscreen();
+  };
+
+  // Phone-landscape fullscreen gestures: double-tap or a two-finger swipe up
+  // requests fullscreen; exiting fullscreen (via the system back gesture,
+  // Esc, etc.) is picked up by the fullscreenchange listener below.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const isFullscreen = () => !!document.fullscreenElement;
+
+    const onFullscreenChange = () => setIsFullscreenActive(isFullscreen());
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (!isPhoneLandscape()) return;
+      if (e.touches.length === 2) {
+        const avgY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        twoFingerStartYRef.current = { y: avgY, time: Date.now() };
+      }
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!twoFingerStartYRef.current || e.touches.length !== 2) return;
+      const avgY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const deltaY = twoFingerStartYRef.current.y - avgY;
+      const elapsed = Date.now() - twoFingerStartYRef.current.time;
+      if (deltaY > 60 && elapsed < 600) {
+        requestFullscreen();
+        twoFingerStartYRef.current = null;
+      }
+    };
+
+    const onTouchEnd = (e: TouchEvent) => {
+      twoFingerStartYRef.current = null;
+      if (!isPhoneLandscape()) return;
+      if (e.touches.length !== 0 || e.changedTouches.length !== 1) return;
+
+      const touch = e.changedTouches[0];
+      const now = Date.now();
+      const last = lastTapRef.current;
+
+      if (
+        last &&
+        now - last.time < 300 &&
+        Math.abs(touch.clientX - last.x) < 30 &&
+        Math.abs(touch.clientY - last.y) < 30
+      ) {
+        if (isFullscreen()) exitFullscreen();
+        else requestFullscreen();
+        lastTapRef.current = null;
+      } else {
+        lastTapRef.current = { time: now, x: touch.clientX, y: touch.clientY };
+      }
+    };
+
+    el.addEventListener("touchstart", onTouchStart, {
+      passive: true,
+      capture: true,
+    });
+    el.addEventListener("touchmove", onTouchMove, {
+      passive: true,
+      capture: true,
+    });
+    el.addEventListener("touchend", onTouchEnd, {
+      passive: true,
+      capture: true,
+    });
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+
+    return () => {
+      el.removeEventListener("touchstart", onTouchStart, { capture: true });
+      el.removeEventListener("touchmove", onTouchMove, { capture: true });
+      el.removeEventListener("touchend", onTouchEnd, { capture: true });
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
+    };
+  }, []);
 
   // Circular progress math
   const radius = 55;
@@ -44,7 +157,10 @@ export default function WelcomeExperience() {
   }, []);
 
   return (
-    <div className="h-screen w-screen bg-black overflow-hidden relative font-sans text-white">
+    <div
+      ref={containerRef}
+      className="h-screen w-screen bg-black overflow-hidden relative font-sans text-white"
+    >
       {/* Preload background image to cache it during the loading screen */}
       <img
         src="/gallery/explore_bg.webp"
@@ -227,6 +343,20 @@ export default function WelcomeExperience() {
                 />
               </button>
             </div>
+
+            {/* Fullscreen toggle */}
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              className="absolute top-6 right-6 z-20 w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md phone-landscape:top-2 phone-landscape:right-2"
+              title={isFullscreenActive ? "Exit Fullscreen" : "Enter Fullscreen"}
+            >
+              {isFullscreenActive ? (
+                <Minimize2 size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />
+              ) : (
+                <Maximize2 size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />
+              )}
+            </button>
 
             {/* Full-screen transition overlay while the location page loads */}
             <AnimatePresence>
