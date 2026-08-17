@@ -24,7 +24,7 @@ export default function BottomNavbar({ activeItem }: BottomNavbarProps) {
 
   return (
     <>
-      <div className="fixed bottom-6 left-7 z-40 phone-landscape:bottom-3 phone-landscape:left-3">
+      <div className="fixed bottom-6 left-7 z-40 phone-landscape:bottom-3 phone-landscape:left-4">
         <nav className="flex overflow-hidden rounded-lg border border-white/10 bg-black/40 backdrop-blur-md shadow-2xl phone-landscape:rounded-md">
           {navItems.map((item, idx) => {
             const Icon = item.icon;
@@ -57,7 +57,7 @@ export default function BottomNavbar({ activeItem }: BottomNavbarProps) {
       </div>
 
       {/* RERA button in the right bottom corner */}
-      <div className="fixed bottom-6 right-7 z-40 phone-landscape:bottom-3 phone-landscape:right-3">
+      <div className="fixed bottom-6 right-7 z-40 phone-landscape:bottom-3 phone-landscape:right-4">
           <img
             src="/icons/powered.png"
             alt="Logo"

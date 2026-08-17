@@ -515,6 +515,7 @@ export default function BalconyView() {
 
       {/* SIDEBAR */}
       <Sidebar
+        isFullscreenActive={isFullscreenActive}
         header={{
           icon: Aperture,
           subtitle: "Balcony Views",

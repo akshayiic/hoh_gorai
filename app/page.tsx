@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Building2, ArrowRight } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function WelcomeExperience() {
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [isNavigating, setIsNavigating] = useState(false);
   const router = useRouter();
 
   // Circular progress math
@@ -199,10 +200,19 @@ export default function WelcomeExperience() {
 
               {/* CTA */}
               <button
-                onClick={() => router.push("/location")}
-                className="group text-white font-semibold text-2xl absolute bottom-[10rem] cursor-pointer phone-landscape:text-sm phone-landscape:bottom-6"
+                onClick={() => {
+                  setIsNavigating(true);
+                  router.push("/location");
+                }}
+                disabled={isNavigating}
+                className="group text-white font-semibold text-2xl absolute bottom-[10rem] cursor-pointer phone-landscape:text-sm phone-landscape:bottom-6 disabled:cursor-wait"
               >
-                <span className="relative z-10">Explore Now</span>
+                <span className="relative z-10 inline-flex items-center gap-2">
+                  {isNavigating && (
+                    <Loader2 className="w-5 h-5 animate-spin phone-landscape:w-4 phone-landscape:h-4" />
+                  )}
+                  {isNavigating ? "Loading..." : "Explore Now"}
+                </span>
 
                 {/* Decorative corners */}
                 <img
@@ -217,6 +227,21 @@ export default function WelcomeExperience() {
                 />
               </button>
             </div>
+
+            {/* Full-screen transition overlay while the location page loads */}
+            <AnimatePresence>
+              {isNavigating && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+                >
+                  <Loader2 className="w-10 h-10 text-white animate-spin phone-landscape:w-7 phone-landscape:h-7" />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>

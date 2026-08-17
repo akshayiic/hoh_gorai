@@ -627,15 +627,26 @@ export default function LocationExplorer({
       }
     };
 
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: true });
-    el.addEventListener("touchend", onTouchEnd, { passive: true });
+    // Capture phase so this fires before Google Maps' own touch handling
+    // (attached directly on the map div) can swallow/stop the gesture.
+    el.addEventListener("touchstart", onTouchStart, {
+      passive: true,
+      capture: true,
+    });
+    el.addEventListener("touchmove", onTouchMove, {
+      passive: true,
+      capture: true,
+    });
+    el.addEventListener("touchend", onTouchEnd, {
+      passive: true,
+      capture: true,
+    });
     document.addEventListener("fullscreenchange", onFullscreenChange);
 
     return () => {
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-      el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("touchstart", onTouchStart, { capture: true });
+      el.removeEventListener("touchmove", onTouchMove, { capture: true });
+      el.removeEventListener("touchend", onTouchEnd, { capture: true });
       document.removeEventListener("fullscreenchange", onFullscreenChange);
     };
   }, []);
@@ -1587,7 +1598,7 @@ export default function LocationExplorer({
       )}
 
       {/* MAP CONTROLS */}
-      <div className="absolute right-6 bottom-32 z-20 flex flex-col gap-2 phone-landscape:right-3 phone-landscape:bottom-14 phone-landscape:gap-1.5">
+      <div className="absolute right-6 bottom-32 z-20 flex flex-col gap-2 phone-landscape:right-4 phone-landscape:bottom-14 phone-landscape:gap-1.5">
         {/* Toggle UI clean view button (Feedback 13) */}
         <button
           onClick={() => setIsCleanView(!isCleanView)}
@@ -1642,6 +1653,7 @@ export default function LocationExplorer({
       {/* SIDEBAR PANEL */}
       {!isCleanView && (
         <Sidebar
+          isFullscreenActive={isFullscreenActive}
           header={{
             icon: MapIcon,
             subtitle: "Click to Explore",
@@ -1673,7 +1685,7 @@ export default function LocationExplorer({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
             transition={{ duration: 0.3, ease: "easeOut" }}
-            className="absolute z-30 w-fit lg:w-[250px] flex flex-col items-start gap-3 p-4 rounded-[10px] bg-[#2C3437]/75 backdrop-blur-md border border-[#40484B]/70 shadow-[0_12px_40px_rgba(0,0,0,0.4)] left-4 right-4 bottom-28 md:bottom-32 md:left-1/2 md:-translate-x-1/2 lg:bottom-auto lg:top-[6.5rem] lg:right-6 lg:left-auto lg:translate-x-0 lg:max-w-none phone-landscape:w-[190px] phone-landscape:gap-1.5 phone-landscape:p-2.5 phone-landscape:rounded-[8px] phone-landscape:left-auto phone-landscape:right-3 phone-landscape:top-14 phone-landscape:bottom-auto phone-landscape:translate-x-0"
+            className="absolute z-30 w-fit lg:w-[250px] flex flex-col items-start gap-3 p-4 rounded-[10px] bg-[#2C3437]/75 backdrop-blur-md border border-[#40484B]/70 shadow-[0_12px_40px_rgba(0,0,0,0.4)] left-4 right-4 bottom-28 md:bottom-32 md:left-1/2 md:-translate-x-1/2 lg:bottom-auto lg:top-[6.5rem] lg:right-6 lg:left-auto lg:translate-x-0 lg:max-w-none phone-landscape:w-[190px] phone-landscape:gap-1.5 phone-landscape:p-2.5 phone-landscape:rounded-[8px] phone-landscape:left-auto phone-landscape:right-4 phone-landscape:top-14 phone-landscape:bottom-auto phone-landscape:translate-x-0"
           >
             <div className="w-full pr-8 min-w-0 phone-landscape:pr-5">
               <p className="text-[#C79A59] text-[10px] sm:text-xs uppercase tracking-[0.2em] font-semibold phone-landscape:text-[8px] phone-landscape:tracking-wider">

@@ -55,7 +55,7 @@ export default function GlobalNavbar({
   return (
     <>
       {/* LOGO & TITLE BOX */}
-      <div className="absolute left-6 top-6 z-20 flex items-center gap-3 phone-landscape:left-3 phone-landscape:top-3 phone-landscape:gap-2">
+      <div className="absolute left-6 top-6 z-20 flex items-center gap-3 phone-landscape:left-4 phone-landscape:top-3 phone-landscape:gap-2">
         {/* Logo Box */}
         <div className="flex items-center justify-center w-[58px] h-[58px] bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 rounded-[5px] shadow-lg phone-landscape:w-9 phone-landscape:h-9">
           <img
@@ -77,7 +77,7 @@ export default function GlobalNavbar({
       </div>
 
       {/* TOP ACTIONS */}
-      <div className="absolute right-6 top-8 z-20 flex items-center gap-2 phone-landscape:right-3 phone-landscape:top-3 phone-landscape:gap-1.5">
+      <div className="absolute right-6 top-8 z-20 flex items-center gap-2 phone-landscape:right-4 phone-landscape:top-3 phone-landscape:gap-1.5">
         {/* Back Button (Visible if there is history and not on /location, or if on /location) */}
         {((history.length > 1 && currentPage !== "location") || currentPage === "location") && (
           <button
@@ -95,10 +95,10 @@ export default function GlobalNavbar({
         {showReset && onReset && (
           <button
             onClick={onReset}
-            className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 p-2.5 flex items-center justify-center text-[#E2E2E2] backdrop-blur-md hover:bg-[#2C3437]/85 hover:text-white transition duration-200 h-[42px] w-[42px] cursor-pointer shadow-lg phone-landscape:h-7 phone-landscape:w-7 phone-landscape:rounded-[6px]"
+            className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 p-2.5 flex items-center justify-center text-[#E2E2E2] backdrop-blur-md hover:bg-[#2C3437]/85 hover:text-white transition duration-200 h-[42px] w-[42px] cursor-pointer shadow-lg phone-landscape:h-9 phone-landscape:w-9 phone-landscape:p-2 phone-landscape:rounded-[6px]"
             title="Reset View"
           >
-            <RotateCcw size={18} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />
+            <RotateCcw size={18} className="phone-landscape:w-4 phone-landscape:h-4" />
           </button>
         )}
 

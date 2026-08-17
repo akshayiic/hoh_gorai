@@ -293,6 +293,7 @@ export default function ApartmentsPage() {
 
       {/* Sidebar */}
       <Sidebar
+        isFullscreenActive={isFullscreenActive}
         header={{
           icon: Grid3X3,
           title: selectedTower,

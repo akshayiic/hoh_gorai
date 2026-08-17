@@ -80,6 +80,7 @@ interface SidebarProps {
   sections?: SidebarSection[];
   footer?: ReactNode;
   className?: string;
+  isFullscreenActive?: boolean;
 }
 
 export default function Sidebar({
@@ -87,6 +88,7 @@ export default function Sidebar({
   sections = [],
   footer,
   className = "",
+  isFullscreenActive = false,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const HeaderIcon = header?.icon;
@@ -98,7 +100,7 @@ export default function Sidebar({
         <button
           onClick={() => setIsCollapsed(false)}
           aria-label="Expand categories"
-          className={`absolute left-3 top-14 z-20 hidden ${
+          className={`absolute left-4 top-14 z-20 hidden ${
             isCollapsed ? "phone-landscape:flex" : ""
           } items-center justify-center w-9 h-9 rounded-full bg-[rgba(32,38,42,0.72)] border border-white/[0.08] shadow-[0_12px_30px_rgba(0,0,0,0.18)] text-[#E2E2E2] cursor-pointer`}
         >
@@ -109,7 +111,7 @@ export default function Sidebar({
       <aside
         className={`absolute left-10 top-[6.5rem] z-20 hidden lg:block ${
           isCollapsed ? "" : "phone-landscape:block"
-        } phone-landscape:left-3 phone-landscape:top-14 ${className}`}
+        } phone-landscape:left-4 phone-landscape:top-14 ${className}`}
       >
         <div
           className="
@@ -125,7 +127,13 @@ export default function Sidebar({
     phone-landscape:rounded-[8px]
   "
         >
-          <div className="px-6 py-4 phone-landscape:px-3 phone-landscape:py-2 phone-landscape:max-h-[60vh] phone-landscape:overflow-y-auto phone-landscape:scrollbar-hide">
+          <div
+            className={`px-6 py-4 phone-landscape:px-3 phone-landscape:py-2 phone-landscape:overflow-y-auto phone-landscape:scrollbar-hide ${
+              isFullscreenActive
+                ? "phone-landscape:max-h-[60vh]"
+                : "phone-landscape:max-h-[40vh]"
+            }`}
+          >
             {/* Header */}
             {header && (
               <>
@@ -243,7 +251,7 @@ export default function Sidebar({
                         duration-150
                         rounded-[6px]
                         cursor-pointer
-                        phone-landscape:pl-3
+                        phone-landscape:pl-5
                         phone-landscape:py-[5px]
                         phone-landscape:gap-2
                         ${

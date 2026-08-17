@@ -28,7 +28,7 @@ export default function CompactSidebar({
   onItemClick,
 }: CompactSidebarProps) {
   return (
-    <aside className={`absolute left-7 top-1/2 -translate-y-1/2 z-20 w-[280px] max-h-[80vh] rounded-lg border border-[#40484B]/70 bg-[#2C3437]/65 backdrop-blur-md flex flex-col phone-landscape:left-3 phone-landscape:w-[170px] phone-landscape:max-h-[85vh] phone-landscape:rounded-md ${className}`}>
+    <aside className={`absolute left-7 top-1/2 -translate-y-1/2 z-20 w-[280px] max-h-[80vh] rounded-lg border border-[#40484B]/70 bg-[#2C3437]/65 backdrop-blur-md flex flex-col phone-landscape:left-4 phone-landscape:w-[170px] phone-landscape:max-h-[85vh] phone-landscape:rounded-md ${className}`}>
       <div className="p-5 flex flex-col h-full phone-landscape:p-3">
         <div className="mb-6 flex items-center gap-3 shrink-0 phone-landscape:mb-3 phone-landscape:gap-2">
           {Icon && (
