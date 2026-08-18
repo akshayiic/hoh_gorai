@@ -55,7 +55,7 @@ export default function GlobalNavbar({
   return (
     <>
       {/* LOGO & TITLE BOX */}
-      <div className="absolute left-6 top-6 z-20 flex items-center gap-3 phone-landscape:left-4 phone-landscape:top-3 phone-landscape:gap-2">
+      <div className="main-logo-container absolute left-6 top-6 z-20 flex items-center gap-3 phone-landscape:left-4 phone-landscape:top-3 phone-landscape:gap-2">
         {/* Logo Box */}
         <div className="flex items-center justify-center w-[58px] h-[58px] bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 rounded-[5px] shadow-lg phone-landscape:w-9 phone-landscape:h-9">
           <img

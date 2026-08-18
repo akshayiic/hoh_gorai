@@ -672,6 +672,23 @@ export default function LocationExplorer({
       if (!homeScreenPos) return;
       const homeR = 26; // Radius around home monogram (48px / 2 + padding)
 
+      const homeEl = homeMarkerRef.current?.element;
+      const homeRect = homeEl?.getBoundingClientRect();
+      const clientToOverlayX = homeRect ? homeScreenPos.x - homeRect.left : 0;
+      const clientToOverlayY = homeRect ? homeScreenPos.y - homeRect.top : 0;
+
+      const logoEl = document.querySelector(".main-logo-container");
+      let logoOverlayRect: { left: number; right: number; top: number; bottom: number } | null = null;
+      if (logoEl && homeRect) {
+        const r = logoEl.getBoundingClientRect();
+        logoOverlayRect = {
+          left: r.left + clientToOverlayX,
+          right: r.right + clientToOverlayX,
+          top: r.top + clientToOverlayY,
+          bottom: r.bottom + clientToOverlayY,
+        };
+      }
+
       interface ResolvedLabel {
         title: string;
         rect: { left: number; right: number; top: number; bottom: number };
@@ -693,18 +710,31 @@ export default function LocationExplorer({
           const textEl = el.querySelector(
             ".luxury-label-text-wrapper",
           ) as HTMLDivElement;
+
+          // Temporarily remove hidden-label to get correct size if it is currently hidden
+          const isHidden = el.classList.contains("hidden-label");
+          if (isHidden) {
+            el.classList.remove("hidden-label");
+          }
           const textRect = textEl
             ? textEl.getBoundingClientRect()
             : { width: 0, height: 0 };
+          if (isHidden) {
+            el.classList.add("hidden-label");
+          }
+
           let width = textRect.width;
           let height = textRect.height;
 
           // Fallback for first-render / hidden layout width
           if (!width || width < 5) {
-            width = locTitle.length * 6.5 + 10;
-          }
-          if (!height || height < 5) {
-            height = 14;
+            // Respect the CSS max-width: 90px
+            const estimatedWidth = locTitle.length * 6.5 + 10;
+            width = Math.min(estimatedWidth, 90);
+            
+            // Respect the height wrapping: if estimated width is larger than max-width, it wraps
+            const lines = Math.ceil(estimatedWidth / 90);
+            height = lines * 14;
           }
 
           return {
@@ -884,6 +914,13 @@ export default function LocationExplorer({
               hasCollision = true;
             }
 
+            // 1b. Check label overlap with Main Logo Box (GlobalNavbar)
+            if (!hasCollision && logoOverlayRect) {
+              if (checkOverlap(candidateRect, logoOverlayRect, 10)) {
+                hasCollision = true;
+              }
+            }
+
             // 2. Check label overlap with other resolved labels
             if (!hasCollision) {
               for (let k = 0; k < resolvedLabels.length; k++) {
@@ -916,7 +953,6 @@ export default function LocationExplorer({
             // 4. Check label overlap with resolved OFFSET circles (critical: prevents text overlapping other markers' circles)
             if (!hasCollision) {
               for (let k = 0; k < resolvedLabels.length; k++) {
-                if (resolvedLabels[k].hidden) continue;
                 if (
                   checkCircleRectOverlap(
                     resolvedLabels[k].circleX,
@@ -934,7 +970,6 @@ export default function LocationExplorer({
             // 5. Check candidate circle overlap with other resolved circles
             if (!hasCollision) {
               for (let k = 0; k < resolvedLabels.length; k++) {
-                if (resolvedLabels[k].hidden) continue;
                 const dx = candidateCircleX - resolvedLabels[k].circleX;
                 const dy = candidateCircleY - resolvedLabels[k].circleY;
                 const distCircles = Math.sqrt(dx * dx + dy * dy);
@@ -955,6 +990,34 @@ export default function LocationExplorer({
               );
               if (distCircleToHome < homeR + R + 8) {
                 hasCollision = true;
+              }
+            }
+
+            // 6b. Check candidate circle overlap with Main Logo Box
+            if (!hasCollision && logoOverlayRect) {
+              if (
+                checkCircleRectOverlap(
+                  candidateCircleX,
+                  candidateCircleY,
+                  R + 4,
+                  logoOverlayRect,
+                )
+              ) {
+                hasCollision = true;
+              }
+            }
+
+            // 6c. Check candidate circle overlap with other POI pinpoint dots
+            if (!hasCollision) {
+              for (let k = 0; k < markerInfos.length; k++) {
+                if (markerInfos[k].title === info.title) continue;
+                const dx = candidateCircleX - markerInfos[k].x;
+                const dy = candidateCircleY - markerInfos[k].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < R + 5 + 10) { // R (15) + dot radius (5) + padding (10)
+                  hasCollision = true;
+                  break;
+                }
               }
             }
 
@@ -1343,6 +1406,7 @@ export default function LocationExplorer({
         el.classList.remove("active");
       }
     });
+    setTimeout(resolveLabelCollisions, 100);
   }, [selectedLocation?.title]);
 
   const handleCategoryChange = (category: string) => {
