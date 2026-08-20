@@ -695,6 +695,7 @@ export default function LocationExplorer({
         circleX: number;
         circleY: number;
         hidden: boolean;
+        segments: Array<{ x1: number; y1: number; x2: number; y2: number }>;
       }
       const resolvedLabels: ResolvedLabel[] = [];
 
@@ -830,6 +831,152 @@ export default function LocationExplorer({
         const distanceY = cy - closestY;
         const distanceSquared = distanceX * distanceX + distanceY * distanceY;
         return distanceSquared < (r + 4) * (r + 4);
+      };
+
+      // Computes the leader/connector line geometry (in coordinates local to
+      // the marker dot) for a given label offset. Mirrors the path shape used
+      // when actually drawing the SVG connector, so collision candidates are
+      // evaluated against the exact line that would be rendered.
+      const computeConnectorSegments = (
+        offsetX: number,
+        offsetY: number,
+      ): Array<{ x1: number; y1: number; x2: number; y2: number }> => {
+        const dotRadius = 5;
+        let startX = 0;
+        let startY = 0;
+        let endX = offsetX;
+        let endY = offsetY;
+        let cornerX = 0;
+        let cornerY = 0;
+        let hasCorner = false;
+
+        const absX = Math.abs(offsetX);
+        const absY = Math.abs(offsetY);
+
+        if (absX < 5 || absY < 5) {
+          const dist = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+          if (dist > R + dotRadius) {
+            startX = offsetX * (dotRadius / dist);
+            startY = offsetY * (dotRadius / dist);
+            endX = offsetX * ((dist - R) / dist);
+            endY = offsetY * ((dist - R) / dist);
+          }
+        } else if (Math.abs(absX - absY) < 5) {
+          const dist = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+          if (dist > R + dotRadius) {
+            startX = offsetX * (dotRadius / dist);
+            startY = offsetY * (dotRadius / dist);
+            endX = offsetX * ((dist - R) / dist);
+            endY = offsetY * ((dist - R) / dist);
+          }
+        } else {
+          hasCorner = true;
+          if (absY > absX) {
+            cornerX = offsetX;
+            cornerY = Math.sign(offsetY) * absX;
+          } else {
+            cornerX = Math.sign(offsetX) * absY;
+            cornerY = offsetY;
+          }
+
+          const lenA = Math.sqrt(cornerX * cornerX + cornerY * cornerY);
+          if (lenA > dotRadius) {
+            startX = cornerX * (dotRadius / lenA);
+            startY = cornerY * (dotRadius / lenA);
+          }
+
+          if (cornerX === offsetX) {
+            const lenB = Math.abs(offsetY - cornerY);
+            if (lenB > R) {
+              endX = offsetX;
+              endY = offsetY - Math.sign(offsetY - cornerY) * R;
+            } else {
+              endX = cornerX;
+              endY = cornerY;
+            }
+          } else {
+            const lenB = Math.abs(offsetX - cornerX);
+            if (lenB > R) {
+              endX = offsetX - Math.sign(offsetX - cornerX) * R;
+              endY = offsetY;
+            } else {
+              endX = cornerX;
+              endY = cornerY;
+            }
+          }
+        }
+
+        if (hasCorner) {
+          return [
+            { x1: startX, y1: startY, x2: cornerX, y2: cornerY },
+            { x1: cornerX, y1: cornerY, x2: endX, y2: endY },
+          ];
+        }
+        return [{ x1: startX, y1: startY, x2: endX, y2: endY }];
+      };
+
+      // Proper segment-segment intersection test (cross-product / orientation based).
+      const segmentsIntersect = (
+        ax: number,
+        ay: number,
+        bx: number,
+        by: number,
+        cx: number,
+        cy: number,
+        dx: number,
+        dy: number,
+      ) => {
+        const cross = (
+          ox: number,
+          oy: number,
+          px: number,
+          py: number,
+          qx: number,
+          qy: number,
+        ) => (qx - ox) * (py - oy) - (px - ox) * (qy - oy);
+        const d1 = cross(cx, cy, dx, dy, ax, ay);
+        const d2 = cross(cx, cy, dx, dy, bx, by);
+        const d3 = cross(ax, ay, bx, by, cx, cy);
+        const d4 = cross(ax, ay, bx, by, dx, dy);
+        return (
+          ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) &&
+          ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0))
+        );
+      };
+
+      // Whether a line segment crosses (or lies within) a padded rect.
+      const segmentIntersectsRect = (
+        x1: number,
+        y1: number,
+        x2: number,
+        y2: number,
+        rect: { left: number; right: number; top: number; bottom: number },
+        padding = 4,
+      ) => {
+        const rL = rect.left - padding;
+        const rR = rect.right + padding;
+        const rT = rect.top - padding;
+        const rB = rect.bottom + padding;
+
+        if (
+          Math.max(x1, x2) < rL ||
+          Math.min(x1, x2) > rR ||
+          Math.max(y1, y2) < rT ||
+          Math.min(y1, y2) > rB
+        ) {
+          return false;
+        }
+
+        const inside = (px: number, py: number) =>
+          px >= rL && px <= rR && py >= rT && py <= rB;
+        if (inside(x1, y1) || inside(x2, y2)) return true;
+
+        return (
+          segmentsIntersect(x1, y1, x2, y2, rL, rT, rR, rT) ||
+          segmentsIntersect(x1, y1, x2, y2, rR, rT, rR, rB) ||
+          segmentsIntersect(x1, y1, x2, y2, rR, rB, rL, rB) ||
+          segmentsIntersect(x1, y1, x2, y2, rL, rB, rL, rT)
+        );
       };
 
       markerInfos.forEach((info) => {
@@ -1039,6 +1186,64 @@ export default function LocationExplorer({
               }
             }
 
+            // 8. Check the candidate's connector line against other resolved
+            // labels' rects and against other resolved connector lines, so
+            // leader lines never cut through a label or cross one another.
+            if (!hasCollision) {
+              const candSegments = computeConnectorSegments(
+                offsetX,
+                offsetY,
+              ).map((s) => ({
+                x1: info.x + s.x1,
+                y1: info.y + s.y1,
+                x2: info.x + s.x2,
+                y2: info.y + s.y2,
+              }));
+
+              for (let k = 0; k < resolvedLabels.length && !hasCollision; k++) {
+                if (!resolvedLabels[k].hidden) {
+                  for (const seg of candSegments) {
+                    if (
+                      segmentIntersectsRect(
+                        seg.x1,
+                        seg.y1,
+                        seg.x2,
+                        seg.y2,
+                        resolvedLabels[k].rect,
+                        4,
+                      )
+                    ) {
+                      hasCollision = true;
+                      break;
+                    }
+                  }
+                }
+
+                if (!hasCollision) {
+                  for (const segA of candSegments) {
+                    for (const segB of resolvedLabels[k].segments) {
+                      if (
+                        segmentsIntersect(
+                          segA.x1,
+                          segA.y1,
+                          segA.x2,
+                          segA.y2,
+                          segB.x1,
+                          segB.y1,
+                          segB.x2,
+                          segB.y2,
+                        )
+                      ) {
+                        hasCollision = true;
+                        break;
+                      }
+                    }
+                    if (hasCollision) break;
+                  }
+                }
+              }
+            }
+
             if (!hasCollision) {
               bestPosition = pos;
               bestOffsetX = offsetX;
@@ -1072,12 +1277,24 @@ export default function LocationExplorer({
         );
         const finalRect = getLabelRect(finalCx, finalCy, W_lbl, H_lbl);
 
+        const finalLocalSegments = computeConnectorSegments(
+          bestOffsetX,
+          bestOffsetY,
+        );
+        const finalAbsSegments = finalLocalSegments.map((s) => ({
+          x1: info.x + s.x1,
+          y1: info.y + s.y1,
+          x2: info.x + s.x2,
+          y2: info.y + s.y2,
+        }));
+
         resolvedLabels.push({
           title: info.title,
           rect: finalRect,
           circleX: info.x + bestOffsetX,
           circleY: info.y + bestOffsetY,
           hidden,
+          segments: finalAbsSegments,
         });
 
         const circleEl = info.el.querySelector(
@@ -1120,99 +1337,17 @@ export default function LocationExplorer({
 
           const cx_svg = 250;
           const cy_svg = 250;
-          const dotRadius = 5; // 5px radius for 10px diameter dot
 
-          let startX = 0;
-          let startY = 0;
-          let endX = bestOffsetX;
-          let endY = bestOffsetY;
-          let cornerX = 0;
-          let cornerY = 0;
-          let hasCorner = false;
-
-          const absX = Math.abs(bestOffsetX);
-          const absY = Math.abs(bestOffsetY);
-
-          if (absX < 5 || absY < 5) {
-            // Purely vertical or horizontal straight line
-            const dist = Math.sqrt(
-              bestOffsetX * bestOffsetX + bestOffsetY * bestOffsetY,
-            );
-            if (dist > R + dotRadius) {
-              startX = bestOffsetX * (dotRadius / dist);
-              startY = bestOffsetY * (dotRadius / dist);
-              endX = bestOffsetX * ((dist - R) / dist);
-              endY = bestOffsetY * ((dist - R) / dist);
-            }
-          } else if (Math.abs(absX - absY) < 5) {
-            // Purely 45-degree straight line
-            const dist = Math.sqrt(
-              bestOffsetX * bestOffsetX + bestOffsetY * bestOffsetY,
-            );
-            if (dist > R + dotRadius) {
-              startX = bestOffsetX * (dotRadius / dist);
-              startY = bestOffsetY * (dotRadius / dist);
-              endX = bestOffsetX * ((dist - R) / dist);
-              endY = bestOffsetY * ((dist - R) / dist);
-            }
-          } else {
-            // 45-degree diagonal segment first, then horizontal/vertical segment
-            hasCorner = true;
-            if (absY > absX) {
-              // Vertical segment at the end
-              cornerX = bestOffsetX;
-              cornerY = Math.sign(bestOffsetY) * absX;
-            } else {
-              // Horizontal segment at the end
-              cornerX = Math.sign(bestOffsetX) * absY;
-              cornerY = bestOffsetY;
-            }
-
-            // Clip start of Segment A (from 0,0 to cornerX,cornerY)
-            const lenA = Math.sqrt(cornerX * cornerX + cornerY * cornerY);
-            if (lenA > dotRadius) {
-              startX = cornerX * (dotRadius / lenA);
-              startY = cornerY * (dotRadius / lenA);
-            }
-
-            // Clip end of Segment B (from cornerX,cornerY to bestOffsetX,bestOffsetY)
-            if (cornerX === bestOffsetX) {
-              // Vertical segment
-              const lenB = Math.abs(bestOffsetY - cornerY);
-              if (lenB > R) {
-                endX = bestOffsetX;
-                endY = bestOffsetY - Math.sign(bestOffsetY - cornerY) * R;
-              } else {
-                endX = cornerX;
-                endY = cornerY;
-              }
-            } else {
-              // Horizontal segment
-              const lenB = Math.abs(bestOffsetX - cornerX);
-              if (lenB > R) {
-                endX = bestOffsetX - Math.sign(bestOffsetX - cornerX) * R;
-                endY = bestOffsetY;
-              } else {
-                endX = cornerX;
-                endY = cornerY;
-              }
-            }
-          }
-
-          // Adjust to SVG coordinates (centered at 250, 250)
-          const sX = cx_svg + startX;
-          const sY = cy_svg + startY;
-          const eX = cx_svg + endX;
-          const eY = cx_svg + endY;
-
+          // Reuse the exact segments already validated against overlaps
+          // above, translated into SVG-local coordinates.
           let dAttr = "";
-          if (hasCorner) {
-            const cX = cx_svg + cornerX;
-            const cY = cy_svg + cornerY;
-            dAttr = `M ${sX},${sY} L ${cX},${cY} L ${eX},${eY}`;
-          } else {
-            dAttr = `M ${sX},${sY} L ${eX},${eY}`;
-          }
+          finalLocalSegments.forEach((seg, idx) => {
+            const x1 = cx_svg + seg.x1;
+            const y1 = cy_svg + seg.y1;
+            const x2 = cx_svg + seg.x2;
+            const y2 = cy_svg + seg.y2;
+            dAttr += idx === 0 ? `M ${x1},${y1} L ${x2},${y2}` : ` L ${x2},${y2}`;
+          });
           pathEl.setAttribute("d", dAttr);
         }
       });
