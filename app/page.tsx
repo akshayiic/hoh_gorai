@@ -299,11 +299,6 @@ export default function WelcomeExperience() {
 
               {/* Heading */}
               <h1 className="text-white font-light leading-none">
-                <span className="block text-5xl md:text-7xl phone-landscape:text-2xl">
-                  Discover{" "}
-                  <span className="font-serif italic font-normal">Life</span> at
-                </span>
-
                 <span className="block mt-2 text-5xl md:text-7xl phone-landscape:text-2xl phone-landscape:mt-1">
                   The Westward Shift
                 </span>
@@ -349,12 +344,20 @@ export default function WelcomeExperience() {
               type="button"
               onClick={toggleFullscreen}
               className="absolute top-6 right-6 z-20 w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md phone-landscape:top-2 phone-landscape:right-2"
-              title={isFullscreenActive ? "Exit Fullscreen" : "Enter Fullscreen"}
+              title={
+                isFullscreenActive ? "Exit Fullscreen" : "Enter Fullscreen"
+              }
             >
               {isFullscreenActive ? (
-                <Minimize2 size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />
+                <Minimize2
+                  size={20}
+                  className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+                />
               ) : (
-                <Maximize2 size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />
+                <Maximize2
+                  size={20}
+                  className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+                />
               )}
             </button>
 

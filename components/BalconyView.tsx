@@ -454,7 +454,7 @@ export default function BalconyView() {
   return (
     <div className="h-screen w-screen bg-black">
       {/* Global Navbar */}
-      <GlobalNavbar currentPage="balcony" showRERA={false} />
+      {!isFullscreenActive && <GlobalNavbar currentPage="balcony" showRERA={false} />}
 
       {/* Main Marzipano Viewer */}
       <div className="h-full w-full relative">
@@ -468,7 +468,9 @@ export default function BalconyView() {
         {/* Fullscreen toggle */}
         <button
           onClick={toggleFullscreen}
-          className="absolute right-6 bottom-32 z-20 w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
+          className={`absolute right-6 z-20 w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md ${
+            isFullscreenActive ? "bottom-6" : "bottom-32 phone-landscape:bottom-16"
+          }`}
           title={isFullscreenActive ? "Exit Fullscreen" : "Enter Fullscreen"}
         >
           {isFullscreenActive ? <Minimize2 size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" /> : <Maximize2 size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />}
@@ -514,57 +516,61 @@ export default function BalconyView() {
       </div>
 
       {/* SIDEBAR */}
-      <Sidebar
-        isFullscreenActive={isFullscreenActive}
-        header={{
-          icon: Aperture,
-          subtitle: "Balcony Views",
-          title: selectedTower,
-        }}
-        sections={createSidebarSections(
-          (["morning", "afternoon", "evening", "night"] as const).map((time) => ({
-            id: time,
-            title: time.charAt(0).toUpperCase() + time.slice(1),
-            isCollapsible: true,
-            isExpanded: expandedTime === time,
-            onHeaderClick: () =>
-              setExpandedTime(expandedTime === time ? "morning" : time),
-            items: createSidebarItems(
-              allTowersFloors[time][selectedTower].map((floorData, index) => ({
-                id: `${time}_${floorData.id}`,
-                label: getFloorLabel(floorData.floor),
-                onClick: () => {
-                  setSelectedTime(time);
-                  switchFloor(index);
-                },
-                isActive: selectedTime === time && currentFloorIndex === index,
-              })),
-            ),
-          })),
-        )}
-      />
+      {!isFullscreenActive && (
+        <Sidebar
+          isFullscreenActive={isFullscreenActive}
+          header={{
+            icon: Aperture,
+            subtitle: "Balcony Views",
+            title: selectedTower,
+          }}
+          sections={createSidebarSections(
+            (["morning", "afternoon", "evening", "night"] as const).map((time) => ({
+              id: time,
+              title: time.charAt(0).toUpperCase() + time.slice(1),
+              isCollapsible: true,
+              isExpanded: expandedTime === time,
+              onHeaderClick: () =>
+                setExpandedTime(expandedTime === time ? "morning" : time),
+              items: createSidebarItems(
+                allTowersFloors[time][selectedTower].map((floorData, index) => ({
+                  id: `${time}_${floorData.id}`,
+                  label: getFloorLabel(floorData.floor),
+                  onClick: () => {
+                    setSelectedTime(time);
+                    switchFloor(index);
+                  },
+                  isActive: selectedTime === time && currentFloorIndex === index,
+                })),
+              ),
+            })),
+          )}
+        />
+      )}
 
       {/* Tower Selection Buttons */}
-      <div className="absolute bottom-6 left-1/2 z-40 flex -translate-x-1/2 gap-2 phone-landscape:bottom-3 phone-landscape:gap-1">
-        {(
-          Object.keys(allTowersFloors.morning) as Array<"Tower 1" | "Tower 2" | "Tower 3">
-        ).map((tower) => (
-          <button
-            key={tower}
-            onClick={() => handleTowerChange(tower)}
-            className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition cursor-pointer  duration-200 phone-landscape:px-3 phone-landscape:h-6 phone-landscape:text-[9px] phone-landscape:rounded-md ${
-              selectedTower === tower
-                ? "bg-white text-black border-transparent"
-                : "bg-black/40 text-white border-white/10 backdrop-blur-md hover:bg-black/60 hover:border-white/20"
-            }`}
-          >
-            {tower}
-          </button>
-        ))}
-      </div>
+      {!isFullscreenActive && (
+        <div className="absolute bottom-6 left-1/2 z-40 flex -translate-x-1/2 gap-2 phone-landscape:bottom-3 phone-landscape:gap-1">
+          {(
+            Object.keys(allTowersFloors.morning) as Array<"Tower 1" | "Tower 2" | "Tower 3">
+          ).map((tower) => (
+            <button
+              key={tower}
+              onClick={() => handleTowerChange(tower)}
+              className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition cursor-pointer  duration-200 phone-landscape:px-3 phone-landscape:h-6 phone-landscape:text-[9px] phone-landscape:rounded-md ${
+                selectedTower === tower
+                  ? "bg-white text-black border-transparent"
+                  : "bg-black/40 text-white border-white/10 backdrop-blur-md hover:bg-black/60 hover:border-white/20"
+              }`}
+            >
+              {tower}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* BOTTOM NAV */}
-      <BottomNavbar activeItem="balcony" />
+      {!isFullscreenActive && <BottomNavbar activeItem="balcony" />}
     </div>
   );
 }

@@ -95,22 +95,22 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Collapsed pill (phone-landscape only) — tap to re-expand */}
+      {/* Collapsed pill — tap to re-expand */}
       {HeaderIcon && (
         <button
           onClick={() => setIsCollapsed(false)}
           aria-label="Expand categories"
-          className={`absolute left-4 top-14 z-20 hidden ${
-            isCollapsed ? "phone-landscape:flex" : ""
+          className={`absolute left-10 top-[6.5rem] phone-landscape:left-4 phone-landscape:top-14 z-20 ${
+            isCollapsed ? "flex" : "hidden"
           } items-center justify-center w-9 h-9 rounded-full bg-[rgba(32,38,42,0.72)] border border-white/[0.08] shadow-[0_12px_30px_rgba(0,0,0,0.18)] text-[#E2E2E2] cursor-pointer`}
         >
-          <HeaderIcon size={16} strokeWidth={1.8} />
+          <HeaderIcon size={18} strokeWidth={1.8} />
         </button>
       )}
 
       <aside
-        className={`absolute left-10 top-[6.5rem] z-20 hidden lg:block ${
-          isCollapsed ? "" : "phone-landscape:block"
+        className={`absolute left-10 top-[6.5rem] z-20 ${
+          isCollapsed ? "hidden" : "hidden lg:block phone-landscape:block"
         } phone-landscape:left-4 phone-landscape:top-14 ${className}`}
       >
         <div

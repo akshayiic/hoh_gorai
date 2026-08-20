@@ -115,8 +115,8 @@ const infrastructure: {
         },
         {
           title: "ICICI",
-          name: "ICICI - 300m (4 Mins)",
-          coordinates: { lat: 19.2322104, lng: 72.8287817 },
+          name: "ICICI - 400m (4 Mins)",
+          coordinates: { lat: 19.2312, lng: 72.8290 },
         },
       ],
     },
@@ -338,7 +338,8 @@ const infrastructure: {
         {
           title: "Coastal Road",
           name: "Coastal Road - upcoming - 4km (13 Mins)",
-          coordinates: { lat: 19.214745, lng: 72.8117535 },
+              coordinates: { lat: 19.214745, lng: 72.8117535 },
+          routeCoordinates: { lat: 19.214745, lng: 72.8117535 },
         },
         {
           title: "Borivali Thane twin Tunnel",
@@ -480,37 +481,19 @@ export default function LocationExplorer({
       loadGreenAreasOverlay(map);
 
       google.maps.event.addListenerOnce(map, "idle", () => {
-        // Add a distinct pulse marker for Gorai Bayview
+        // Main Logo on map for Gorai Bayview (No outer ring, clean full fit, same size of circle)
         const el = document.createElement("div");
         el.className = "luxury-home-marker flex items-center justify-center";
-        el.style.width = "48px";
-        el.style.height = "48px";
-        el.style.cursor = "pointer";
+        el.style.width = "44px";
+        el.style.height = "44px";
         el.style.zIndex = "9999";
         el.style.transform = "translate(-50%, -50%)";
 
         el.innerHTML = `
           <div class="luxury-home-inner">
-            <img src="/icons/hoh.svg" class="w-12 h-12 object-contain" alt="Hiranandani Site" />
-          </div>
-          <div class="luxury-hover-popup luxury-home-popup" style="display: none;">
-            <div class="luxury-mini-card" style="padding: 2px;">
-                <div class="category">Hiranandani Project</div>
-                <div class="title" style="margin-bottom: 0; font-family: sans-serif; font-size: 14px; font-weight: 600;">Gorai Bayview</div>
-              </div>
+            <img src="/icons/hoh2.svg" class="luxury-home-logo-img" alt="Hiranandani Bayview" />
           </div>
         `;
-
-        const popupEl = el.querySelector(
-          ".luxury-home-popup",
-        ) as HTMLDivElement;
-        el.addEventListener("click", (e) => {
-          e.stopPropagation();
-          if (popupEl) {
-            popupEl.style.display =
-              popupEl.style.display === "none" ? "block" : "none";
-          }
-        });
 
         const homeMarker = createDomOverlay(GoraiBayviewLocation, el);
         homeMarker.setMap(map);
@@ -664,13 +647,13 @@ export default function LocationExplorer({
       if (labelMarkers.length === 0) return;
 
       const selectedTitle = selectedLocationRef.current?.title;
-      const R = 15; // Marker radius (since diameter is 30px, R = 15)
-      const gap = 10; // Gap between circle marker and label text
+      const R = 15; // Small marker radius (30px diameter badge)
+      const gap = 6; // Compact gap between circle marker and label text
 
       // Screen position and collision box for Home Marker
       const homeScreenPos = homeMarkerRef.current?.getScreenPosition();
       if (!homeScreenPos) return;
-      const homeR = 26; // Radius around home monogram (48px / 2 + padding)
+      const homeR = 24; // Radius around 44px home marker + padding
 
       const homeEl = homeMarkerRef.current?.element;
       const homeRect = homeEl?.getBoundingClientRect();
@@ -678,7 +661,12 @@ export default function LocationExplorer({
       const clientToOverlayY = homeRect ? homeScreenPos.y - homeRect.top : 0;
 
       const logoEl = document.querySelector(".main-logo-container");
-      let logoOverlayRect: { left: number; right: number; top: number; bottom: number } | null = null;
+      let logoOverlayRect: {
+        left: number;
+        right: number;
+        top: number;
+        bottom: number;
+      } | null = null;
       if (logoEl && homeRect) {
         const r = logoEl.getBoundingClientRect();
         logoOverlayRect = {
@@ -688,6 +676,16 @@ export default function LocationExplorer({
           bottom: r.bottom + clientToOverlayY,
         };
       }
+
+      // Viewport boundaries
+      const isMobile =
+        typeof window !== "undefined" && window.innerWidth < 1024;
+      const screenW = typeof window !== "undefined" ? window.innerWidth : 1200;
+      const screenH = typeof window !== "undefined" ? window.innerHeight : 800;
+      const leftPad = isMobile ? 12 : 310;
+      const topPad = 65;
+      const rightPad = 20;
+      const bottomPad = isMobile ? 80 : 90;
 
       interface ResolvedLabel {
         title: string;
@@ -729,13 +727,10 @@ export default function LocationExplorer({
 
           // Fallback for first-render / hidden layout width
           if (!width || width < 5) {
-            // Respect the CSS max-width: 90px
-            const estimatedWidth = locTitle.length * 6.5 + 10;
-            width = Math.min(estimatedWidth, 90);
-            
-            // Respect the height wrapping: if estimated width is larger than max-width, it wraps
-            const lines = Math.ceil(estimatedWidth / 90);
-            height = lines * 14;
+            const estimatedWidth = locTitle.length * 6.5 + 14;
+            width = Math.min(estimatedWidth, 95);
+            const lines = Math.ceil(estimatedWidth / 95);
+            height = lines * 13 + 6;
           }
 
           return {
@@ -755,167 +750,16 @@ export default function LocationExplorer({
         (a, b) => (b.isSelected ? 1 : 0) - (a.isSelected ? 1 : 0),
       );
 
-      const positionsOrder = [
-        "Top",
-        "TopRight",
-        "Right",
-        "BottomRight",
-        "Bottom",
-        "BottomLeft",
-        "Left",
-        "TopLeft",
-      ];
+      // Geometry & Collision Helpers
+      const cross = (
+        ox: number,
+        oy: number,
+        px: number,
+        py: number,
+        qx: number,
+        qy: number,
+      ) => (qx - ox) * (py - oy) - (px - ox) * (qy - oy);
 
-      const lineLengths = [30, 55, 80, 110, 145, 180, 220];
-
-      const getLabelCenter = (
-        x: number,
-        y: number,
-        offsetX: number,
-        offsetY: number,
-        pos: string,
-        W_lbl: number,
-        H_lbl: number,
-      ) => {
-        let cx = x + offsetX;
-        let cy = y + offsetY;
-
-        if (pos === "Left") {
-          cx = x + offsetX - R - gap - W_lbl;
-        } else if (pos === "Right") {
-          cx = x + offsetX + R + gap + W_lbl;
-        } else if (pos.includes("Top")) {
-          cy = y + offsetY - R - gap - H_lbl;
-        } else if (pos.includes("Bottom")) {
-          cy = y + offsetY + R + gap + H_lbl;
-        }
-        return { cx, cy };
-      };
-
-      const getLabelRect = (
-        cx: number,
-        cy: number,
-        W_lbl: number,
-        H_lbl: number,
-      ) => {
-        return {
-          left: cx - W_lbl,
-          right: cx + W_lbl,
-          top: cy - H_lbl,
-          bottom: cy + H_lbl,
-        };
-      };
-
-      const checkOverlap = (
-        r1: { left: number; right: number; top: number; bottom: number },
-        r2: { left: number; right: number; top: number; bottom: number },
-        padding = 6,
-      ) => {
-        return !(
-          r1.right + padding < r2.left ||
-          r2.right + padding < r1.left ||
-          r1.bottom + padding < r2.top ||
-          r2.bottom + padding < r1.top
-        );
-      };
-
-      const checkCircleRectOverlap = (
-        cx: number,
-        cy: number,
-        r: number,
-        rect: { left: number; right: number; top: number; bottom: number },
-      ) => {
-        const closestX = Math.max(rect.left, Math.min(cx, rect.right));
-        const closestY = Math.max(rect.top, Math.min(cy, rect.bottom));
-        const distanceX = cx - closestX;
-        const distanceY = cy - closestY;
-        const distanceSquared = distanceX * distanceX + distanceY * distanceY;
-        return distanceSquared < (r + 4) * (r + 4);
-      };
-
-      // Computes the leader/connector line geometry (in coordinates local to
-      // the marker dot) for a given label offset. Mirrors the path shape used
-      // when actually drawing the SVG connector, so collision candidates are
-      // evaluated against the exact line that would be rendered.
-      const computeConnectorSegments = (
-        offsetX: number,
-        offsetY: number,
-      ): Array<{ x1: number; y1: number; x2: number; y2: number }> => {
-        const dotRadius = 5;
-        let startX = 0;
-        let startY = 0;
-        let endX = offsetX;
-        let endY = offsetY;
-        let cornerX = 0;
-        let cornerY = 0;
-        let hasCorner = false;
-
-        const absX = Math.abs(offsetX);
-        const absY = Math.abs(offsetY);
-
-        if (absX < 5 || absY < 5) {
-          const dist = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
-          if (dist > R + dotRadius) {
-            startX = offsetX * (dotRadius / dist);
-            startY = offsetY * (dotRadius / dist);
-            endX = offsetX * ((dist - R) / dist);
-            endY = offsetY * ((dist - R) / dist);
-          }
-        } else if (Math.abs(absX - absY) < 5) {
-          const dist = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
-          if (dist > R + dotRadius) {
-            startX = offsetX * (dotRadius / dist);
-            startY = offsetY * (dotRadius / dist);
-            endX = offsetX * ((dist - R) / dist);
-            endY = offsetY * ((dist - R) / dist);
-          }
-        } else {
-          hasCorner = true;
-          if (absY > absX) {
-            cornerX = offsetX;
-            cornerY = Math.sign(offsetY) * absX;
-          } else {
-            cornerX = Math.sign(offsetX) * absY;
-            cornerY = offsetY;
-          }
-
-          const lenA = Math.sqrt(cornerX * cornerX + cornerY * cornerY);
-          if (lenA > dotRadius) {
-            startX = cornerX * (dotRadius / lenA);
-            startY = cornerY * (dotRadius / lenA);
-          }
-
-          if (cornerX === offsetX) {
-            const lenB = Math.abs(offsetY - cornerY);
-            if (lenB > R) {
-              endX = offsetX;
-              endY = offsetY - Math.sign(offsetY - cornerY) * R;
-            } else {
-              endX = cornerX;
-              endY = cornerY;
-            }
-          } else {
-            const lenB = Math.abs(offsetX - cornerX);
-            if (lenB > R) {
-              endX = offsetX - Math.sign(offsetX - cornerX) * R;
-              endY = offsetY;
-            } else {
-              endX = cornerX;
-              endY = cornerY;
-            }
-          }
-        }
-
-        if (hasCorner) {
-          return [
-            { x1: startX, y1: startY, x2: cornerX, y2: cornerY },
-            { x1: cornerX, y1: cornerY, x2: endX, y2: endY },
-          ];
-        }
-        return [{ x1: startX, y1: startY, x2: endX, y2: endY }];
-      };
-
-      // Proper segment-segment intersection test (cross-product / orientation based).
       const segmentsIntersect = (
         ax: number,
         ay: number,
@@ -926,14 +770,6 @@ export default function LocationExplorer({
         dx: number,
         dy: number,
       ) => {
-        const cross = (
-          ox: number,
-          oy: number,
-          px: number,
-          py: number,
-          qx: number,
-          qy: number,
-        ) => (qx - ox) * (py - oy) - (px - ox) * (qy - oy);
         const d1 = cross(cx, cy, dx, dy, ax, ay);
         const d2 = cross(cx, cy, dx, dy, bx, by);
         const d3 = cross(ax, ay, bx, by, cx, cy);
@@ -944,14 +780,13 @@ export default function LocationExplorer({
         );
       };
 
-      // Whether a line segment crosses (or lies within) a padded rect.
       const segmentIntersectsRect = (
         x1: number,
         y1: number,
         x2: number,
         y2: number,
         rect: { left: number; right: number; top: number; bottom: number },
-        padding = 4,
+        padding = 3,
       ) => {
         const rL = rect.left - padding;
         const rR = rect.right + padding;
@@ -979,292 +814,703 @@ export default function LocationExplorer({
         );
       };
 
+      const segmentIntersectsCircle = (
+        x1: number,
+        y1: number,
+        x2: number,
+        y2: number,
+        cx: number,
+        cy: number,
+        r: number,
+      ) => {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const lenSq = dx * dx + dy * dy;
+        if (lenSq === 0) {
+          const distSq = (x1 - cx) * (x1 - cx) + (y1 - cy) * (y1 - cy);
+          return distSq <= r * r;
+        }
+        const t = Math.max(
+          0,
+          Math.min(1, ((cx - x1) * dx + (cy - y1) * dy) / lenSq),
+        );
+        const closestX = x1 + t * dx;
+        const closestY = y1 + t * dy;
+        const distSq =
+          (closestX - cx) * (closestX - cx) + (closestY - cy) * (closestY - cy);
+        return distSq <= r * r;
+      };
+
+      const checkOverlap = (
+        r1: { left: number; right: number; top: number; bottom: number },
+        r2: { left: number; right: number; top: number; bottom: number },
+        padding = 4,
+      ) => {
+        return !(
+          r1.right + padding < r2.left ||
+          r2.right + padding < r1.left ||
+          r1.bottom + padding < r2.top ||
+          r2.bottom + padding < r1.top
+        );
+      };
+
+      const checkCircleRectOverlap = (
+        cx: number,
+        cy: number,
+        r: number,
+        rect: { left: number; right: number; top: number; bottom: number },
+      ) => {
+        const closestX = Math.max(rect.left, Math.min(cx, rect.right));
+        const closestY = Math.max(rect.top, Math.min(cy, rect.bottom));
+        const distanceX = cx - closestX;
+        const distanceY = cy - closestY;
+        const distanceSquared = distanceX * distanceX + distanceY * distanceY;
+        return distanceSquared < (r + 3) * (r + 3);
+      };
+
+      const checkCirclesOverlap = (
+        c1X: number,
+        c1Y: number,
+        r1: number,
+        c2X: number,
+        c2Y: number,
+        r2: number,
+        padding = 4,
+      ) => {
+        const dx = c1X - c2X;
+        const dy = c1Y - c2Y;
+        const minD = r1 + r2 + padding;
+        return dx * dx + dy * dy < minD * minD;
+      };
+
+      // Deterministic pseudo-random number generator for stable organic line angles
+      const pseudoRandom = (seedStr: string) => {
+        let hash = 0;
+        for (let i = 0; i < seedStr.length; i++) {
+          hash = (hash * 31 + seedStr.charCodeAt(i)) | 0;
+        }
+        return (Math.abs(hash) % 10000) / 10000;
+      };
+
+      // Computes short, compact organic 2-segment angled/dogleg connector lines (matching attachment)
+      const computeConnectorSegments = (
+        offsetX: number,
+        offsetY: number,
+        styleIdx: number,
+        seedStr: string,
+      ): Array<{ x1: number; y1: number; x2: number; y2: number }> => {
+        const dotRadius = 3.5;
+        const circleGap = 1.5;
+        const R_stop = R + circleGap;
+
+        const totalDist = Math.sqrt(offsetX * offsetX + offsetY * offsetY);
+        if (totalDist < R_stop + dotRadius + 3) {
+          const dirX = offsetX / (totalDist || 1);
+          const dirY = offsetY / (totalDist || 1);
+          return [
+            {
+              x1: dirX * dotRadius,
+              y1: dirY * dotRadius,
+              x2: offsetX - dirX * R_stop,
+              y2: offsetY - dirY * R_stop,
+            },
+          ];
+        }
+
+        const randVal = pseudoRandom(seedStr);
+        const frac = 0.4 + randVal * 0.25; // 0.40 .. 0.65
+
+        let cornerX = 0;
+        let cornerY = 0;
+        const absX = Math.abs(offsetX);
+        const absY = Math.abs(offsetY);
+        const style = styleIdx % 4;
+
+        if (style === 0 && absX >= 8) {
+          // Style 0: Diagonal from dot then Horizontal into badge
+          const horizDist = Math.max(8, absX * frac);
+          cornerX = offsetX - Math.sign(offsetX) * horizDist;
+          cornerY = offsetY;
+        } else if (style === 1 && absY >= 8) {
+          // Style 1: Diagonal from dot then Vertical into badge
+          const vertDist = Math.max(8, absY * frac);
+          cornerX = offsetX;
+          cornerY = offsetY - Math.sign(offsetY) * vertDist;
+        } else if (style === 2 && absX >= 8) {
+          // Style 2: Horizontal from dot then Diagonal into badge
+          cornerX = Math.sign(offsetX) * Math.max(8, absX * (1 - frac));
+          cornerY = 0;
+        } else {
+          // Style 3: Angled Dogleg (Double Diagonal with angled break)
+          const directAngle = Math.atan2(offsetY, offsetX);
+          const angleShift = (randVal > 0.5 ? 1 : -1) * (0.3 + randVal * 0.2);
+          const midDist = totalDist * frac;
+          cornerX = midDist * Math.cos(directAngle + angleShift);
+          cornerY = midDist * Math.sin(directAngle + angleShift);
+        }
+
+        // Segment 1: from dot edge to corner
+        const dist1 = Math.sqrt(cornerX * cornerX + cornerY * cornerY);
+        let startX = 0;
+        let startY = 0;
+        if (dist1 > dotRadius) {
+          startX = (cornerX / dist1) * dotRadius;
+          startY = (cornerY / dist1) * dotRadius;
+        }
+
+        // Segment 2: from corner to badge perimeter
+        const dx2 = offsetX - cornerX;
+        const dy2 = offsetY - cornerY;
+        const dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+        let endX = offsetX;
+        let endY = offsetY;
+        if (dist2 > R_stop) {
+          endX = offsetX - (dx2 / dist2) * R_stop;
+          endY = offsetY - (dy2 / dist2) * R_stop;
+        } else {
+          endX = cornerX;
+          endY = cornerY;
+        }
+
+        return [
+          { x1: startX, y1: startY, x2: cornerX, y2: cornerY },
+          { x1: cornerX, y1: cornerY, x2: endX, y2: endY },
+        ];
+      };
+
+      const getLabelCenter = (
+        x: number,
+        y: number,
+        offsetX: number,
+        offsetY: number,
+        pos: string,
+        W_lbl: number,
+        H_lbl: number,
+      ) => {
+        const badgeCenterX = x + offsetX;
+        const badgeCenterY = y + offsetY;
+
+        let cx = badgeCenterX;
+        let cy = badgeCenterY;
+
+        if (pos === "Right") {
+          cx = badgeCenterX + R + gap + W_lbl;
+          cy = badgeCenterY;
+        } else if (pos === "Left") {
+          cx = badgeCenterX - R - gap - W_lbl;
+          cy = badgeCenterY;
+        } else if (pos === "Top") {
+          cx = badgeCenterX;
+          cy = badgeCenterY - R - gap - H_lbl;
+        } else if (pos === "Bottom") {
+          cx = badgeCenterX;
+          cy = badgeCenterY + R + gap + H_lbl;
+        } else if (pos === "TopRight") {
+          cx = badgeCenterX + R * 0.7 + gap + W_lbl;
+          cy = badgeCenterY - R * 0.7 - gap - H_lbl;
+        } else if (pos === "TopLeft") {
+          cx = badgeCenterX - R * 0.7 - gap - W_lbl;
+          cy = badgeCenterY - R * 0.7 - gap - H_lbl;
+        } else if (pos === "BottomRight") {
+          cx = badgeCenterX + R * 0.7 + gap + W_lbl;
+          cy = badgeCenterY + R * 0.7 + gap + H_lbl;
+        } else if (pos === "BottomLeft") {
+          cx = badgeCenterX - R * 0.7 - gap - W_lbl;
+          cy = badgeCenterY + R * 0.7 + gap + H_lbl;
+        }
+        return { cx, cy };
+      };
+
+      const getLabelRect = (
+        cx: number,
+        cy: number,
+        W_lbl: number,
+        H_lbl: number,
+      ) => {
+        return {
+          left: cx - W_lbl,
+          right: cx + W_lbl,
+          top: cy - H_lbl,
+          bottom: cy + H_lbl,
+        };
+      };
+
+      // Compact angle directions (in degrees) fanning around 360°
+      const candidateBaseAngles = [
+        -90, -70, -45, -20, 0, 20, 45, 70, 90, 110, 135, 160, 180, -160, -135,
+        -110,
+      ];
+      // Short, compact line lengths matching the attachment image (16px to 76px)
+      const lineLengths = [16, 24, 34, 46, 60, 76, 95];
+      const elbowStyles = [0, 1, 2, 3];
+
       markerInfos.forEach((info) => {
         const W_lbl = info.width / 2;
         const H_lbl = info.height / 2;
 
-        let bestPosition = "Top";
-        let bestOffsetX = 0;
-        let bestOffsetY = -R - 24;
-        let bestD = 24;
+        let bestPosition = "Right";
+        let bestOffsetX = R + 24;
+        let bestOffsetY = -18;
+        let bestLocalSegments = computeConnectorSegments(
+          bestOffsetX,
+          bestOffsetY,
+          0,
+          `${info.title}|default`,
+        );
         let found = false;
 
+        // First circle offset that clears home marker / navbar logo / other
+        // circles / other dots, even if no elbow style or label position
+        // panned out for it. Used as a fallback below so an unresolved
+        // marker's badge still lands somewhere collision-free instead of
+        // stacking on the hardcoded default offset.
+        let fallbackOffsetX: number | null = null;
+        let fallbackOffsetY: number | null = null;
+        let fallbackSegments: Array<{
+          x1: number;
+          y1: number;
+          x2: number;
+          y2: number;
+        }> | null = null;
+
         const currentLineLengths = info.isSelected
-          ? [55, 80, 110, 145, 180, 220]
+          ? [20, 30, 42, 56, 72, 90]
           : lineLengths;
 
         for (let dIdx = 0; dIdx < currentLineLengths.length && !found; dIdx++) {
           const D = currentLineLengths[dIdx];
 
-          for (let pIdx = 0; pIdx < positionsOrder.length; pIdx++) {
-            const pos = positionsOrder[pIdx];
-            let offsetX = 0;
-            let offsetY = 0;
+          for (
+            let aIdx = 0;
+            aIdx < candidateBaseAngles.length && !found;
+            aIdx++
+          ) {
+            const baseAngleDeg = candidateBaseAngles[aIdx];
+            const jitterDeg =
+              (pseudoRandom(`${info.title}|${aIdx}`) * 2 - 1) * 12;
+            const angleRad = ((baseAngleDeg + jitterDeg) * Math.PI) / 180;
+            const offsetX = Math.round((R + D) * Math.cos(angleRad));
+            const offsetY = Math.round((R + D) * Math.sin(angleRad));
 
-            const diag = Math.round((R + D) * 0.707);
-
-            switch (pos) {
-              case "Top":
-                offsetX = 0;
-                offsetY = -R - D;
-                break;
-              case "TopRight":
-                offsetX = diag;
-                offsetY = -diag;
-                break;
-              case "Right":
-                offsetX = R + D;
-                offsetY = 0;
-                break;
-              case "BottomRight":
-                offsetX = diag;
-                offsetY = diag;
-                break;
-              case "Bottom":
-                offsetX = 0;
-                offsetY = R + D;
-                break;
-              case "BottomLeft":
-                offsetX = -diag;
-                offsetY = diag;
-                break;
-              case "Left":
-                offsetX = -R - D;
-                offsetY = 0;
-                break;
-              case "TopLeft":
-                offsetX = -diag;
-                offsetY = -diag;
-                break;
-            }
-
-            const { cx, cy } = getLabelCenter(
-              info.x,
-              info.y,
-              offsetX,
-              offsetY,
-              pos,
-              W_lbl,
-              H_lbl,
-            );
-            const candidateRect = getLabelRect(cx, cy, W_lbl, H_lbl);
             const candidateCircleX = info.x + offsetX;
             const candidateCircleY = info.y + offsetY;
-            let hasCollision = false;
 
-            // 1. Check label overlap with Home Marker
-            const distToHome = Math.sqrt(
-              (cx - homeScreenPos.x) * (cx - homeScreenPos.x) +
-                (cy - homeScreenPos.y) * (cy - homeScreenPos.y),
-            );
-            if (distToHome < homeR + W_lbl + 8) {
-              hasCollision = true;
+            // 1. Quick circle viewport check
+            if (
+              candidateCircleX - R < leftPad ||
+              candidateCircleX + R > screenW - rightPad ||
+              candidateCircleY - R < topPad ||
+              candidateCircleY + R > screenH - bottomPad
+            ) {
+              continue;
             }
 
-            // 1b. Check label overlap with Main Logo Box (GlobalNavbar)
-            if (!hasCollision && logoOverlayRect) {
-              if (checkOverlap(candidateRect, logoOverlayRect, 10)) {
-                hasCollision = true;
-              }
+            // 2. Check candidate circle overlap with Home Marker
+            if (
+              checkCirclesOverlap(
+                candidateCircleX,
+                candidateCircleY,
+                R,
+                homeScreenPos.x,
+                homeScreenPos.y,
+                homeR,
+                6,
+              )
+            ) {
+              continue;
             }
 
-            // 2. Check label overlap with other resolved labels
-            if (!hasCollision) {
-              for (let k = 0; k < resolvedLabels.length; k++) {
-                if (resolvedLabels[k].hidden) continue;
-                if (checkOverlap(candidateRect, resolvedLabels[k].rect, 8)) {
-                  hasCollision = true;
-                  break;
-                }
-              }
+            // 3. Check candidate circle overlap with Main Navbar Logo Box
+            if (
+              logoOverlayRect &&
+              checkCircleRectOverlap(
+                candidateCircleX,
+                candidateCircleY,
+                R + 4,
+                logoOverlayRect,
+              )
+            ) {
+              continue;
             }
 
-            // 3. Check label overlap with any POI dot (original coordinate positions)
-            if (!hasCollision) {
-              for (let k = 0; k < markerInfos.length; k++) {
-                if (markerInfos[k].title === info.title) continue;
-                if (
-                  checkCircleRectOverlap(
-                    markerInfos[k].x,
-                    markerInfos[k].y,
-                    R + 4,
-                    candidateRect,
-                  )
-                ) {
-                  hasCollision = true;
-                  break;
-                }
-              }
-            }
-
-            // 4. Check label overlap with resolved OFFSET circles (critical: prevents text overlapping other markers' circles)
-            if (!hasCollision) {
-              for (let k = 0; k < resolvedLabels.length; k++) {
-                if (
-                  checkCircleRectOverlap(
-                    resolvedLabels[k].circleX,
-                    resolvedLabels[k].circleY,
-                    R + 6,
-                    candidateRect,
-                  )
-                ) {
-                  hasCollision = true;
-                  break;
-                }
-              }
-            }
-
-            // 5. Check candidate circle overlap with other resolved circles
-            if (!hasCollision) {
-              for (let k = 0; k < resolvedLabels.length; k++) {
-                const dx = candidateCircleX - resolvedLabels[k].circleX;
-                const dy = candidateCircleY - resolvedLabels[k].circleY;
-                const distCircles = Math.sqrt(dx * dx + dy * dy);
-                if (distCircles < 2 * R + 14) {
-                  hasCollision = true;
-                  break;
-                }
-              }
-            }
-
-            // 6. Check candidate circle overlap with Home Marker
-            if (!hasCollision) {
-              const distCircleToHome = Math.sqrt(
-                (candidateCircleX - homeScreenPos.x) *
-                  (candidateCircleX - homeScreenPos.x) +
-                  (candidateCircleY - homeScreenPos.y) *
-                    (candidateCircleY - homeScreenPos.y),
-              );
-              if (distCircleToHome < homeR + R + 8) {
-                hasCollision = true;
-              }
-            }
-
-            // 6b. Check candidate circle overlap with Main Logo Box
-            if (!hasCollision && logoOverlayRect) {
+            // 4. Check candidate circle overlap with other resolved circles
+            let circleOverlaps = false;
+            for (let k = 0; k < resolvedLabels.length; k++) {
               if (
-                checkCircleRectOverlap(
+                checkCirclesOverlap(
                   candidateCircleX,
                   candidateCircleY,
-                  R + 4,
-                  logoOverlayRect,
+                  R,
+                  resolvedLabels[k].circleX,
+                  resolvedLabels[k].circleY,
+                  R,
+                  8,
                 )
               ) {
-                hasCollision = true;
+                circleOverlaps = true;
+                break;
               }
             }
+            if (circleOverlaps) continue;
 
-            // 6c. Check candidate circle overlap with other POI pinpoint dots
-            if (!hasCollision) {
-              for (let k = 0; k < markerInfos.length; k++) {
-                if (markerInfos[k].title === info.title) continue;
-                const dx = candidateCircleX - markerInfos[k].x;
-                const dy = candidateCircleY - markerInfos[k].y;
-                const dist = Math.sqrt(dx * dx + dy * dy);
-                if (dist < R + 5 + 10) { // R (15) + dot radius (5) + padding (10)
-                  hasCollision = true;
-                  break;
-                }
+            // 5. Check candidate circle overlap with other POI pinpoint dots
+            let dotOverlaps = false;
+            for (let k = 0; k < markerInfos.length; k++) {
+              if (markerInfos[k].title === info.title) continue;
+              if (
+                checkCirclesOverlap(
+                  candidateCircleX,
+                  candidateCircleY,
+                  R,
+                  markerInfos[k].x,
+                  markerInfos[k].y,
+                  4,
+                  6,
+                )
+              ) {
+                dotOverlaps = true;
+                break;
               }
             }
+            if (dotOverlaps) continue;
 
-            // 7. Check candidate circle overlap with resolved label rects (prevents circle sitting on top of other text)
-            if (!hasCollision) {
-              for (let k = 0; k < resolvedLabels.length; k++) {
-                if (resolvedLabels[k].hidden) continue;
-                if (
-                  checkCircleRectOverlap(
-                    candidateCircleX,
-                    candidateCircleY,
-                    R + 4,
-                    resolvedLabels[k].rect,
-                  )
-                ) {
-                  hasCollision = true;
-                  break;
-                }
-              }
-            }
-
-            // 8. Check the candidate's connector line against other resolved
-            // labels' rects and against other resolved connector lines, so
-            // leader lines never cut through a label or cross one another.
-            if (!hasCollision) {
-              const candSegments = computeConnectorSegments(
+            if (fallbackOffsetX === null) {
+              fallbackOffsetX = offsetX;
+              fallbackOffsetY = offsetY;
+              fallbackSegments = computeConnectorSegments(
                 offsetX,
                 offsetY,
-              ).map((s) => ({
+                0,
+                `${info.title}|fallback`,
+              );
+            }
+
+            // Try elbow styles
+            for (let sIdx = 0; sIdx < elbowStyles.length && !found; sIdx++) {
+              const styleIdx = elbowStyles[sIdx];
+              const localSegments = computeConnectorSegments(
+                offsetX,
+                offsetY,
+                styleIdx,
+                `${info.title}|${aIdx}|${sIdx}`,
+              );
+              const absSegments = localSegments.map((s) => ({
                 x1: info.x + s.x1,
                 y1: info.y + s.y1,
                 x2: info.x + s.x2,
                 y2: info.y + s.y2,
               }));
 
-              for (let k = 0; k < resolvedLabels.length && !hasCollision; k++) {
-                if (!resolvedLabels[k].hidden) {
-                  for (const seg of candSegments) {
-                    if (
-                      segmentIntersectsRect(
-                        seg.x1,
-                        seg.y1,
-                        seg.x2,
-                        seg.y2,
-                        resolvedLabels[k].rect,
+              // Check connector line against Home Marker, Navbar Logo, and other POI dots
+              let lineCollides = false;
+              if (
+                absSegments.some((s) =>
+                  segmentIntersectsCircle(
+                    s.x1,
+                    s.y1,
+                    s.x2,
+                    s.y2,
+                    homeScreenPos.x,
+                    homeScreenPos.y,
+                    homeR + 2,
+                  ),
+                )
+              ) {
+                lineCollides = true;
+              }
+              if (
+                !lineCollides &&
+                logoOverlayRect &&
+                absSegments.some((s) =>
+                  segmentIntersectsRect(
+                    s.x1,
+                    s.y1,
+                    s.x2,
+                    s.y2,
+                    logoOverlayRect,
+                    4,
+                  ),
+                )
+              ) {
+                lineCollides = true;
+              }
+              if (!lineCollides) {
+                for (let k = 0; k < markerInfos.length; k++) {
+                  if (markerInfos[k].title === info.title) continue;
+                  if (
+                    absSegments.some((s) =>
+                      segmentIntersectsCircle(
+                        s.x1,
+                        s.y1,
+                        s.x2,
+                        s.y2,
+                        markerInfos[k].x,
+                        markerInfos[k].y,
                         4,
+                      ),
+                    )
+                  ) {
+                    lineCollides = true;
+                    break;
+                  }
+                }
+              }
+              if (!lineCollides) {
+                // Check connector line against previously resolved circles and lines
+                for (let k = 0; k < resolvedLabels.length; k++) {
+                  if (
+                    absSegments.some((s) =>
+                      segmentIntersectsCircle(
+                        s.x1,
+                        s.y1,
+                        s.x2,
+                        s.y2,
+                        resolvedLabels[k].circleX,
+                        resolvedLabels[k].circleY,
+                        R + 2,
+                      ),
+                    )
+                  ) {
+                    lineCollides = true;
+                    break;
+                  }
+                  if (
+                    absSegments.some((sA) =>
+                      resolvedLabels[k].segments.some((sB) =>
+                        segmentsIntersect(
+                          sA.x1,
+                          sA.y1,
+                          sA.x2,
+                          sA.y2,
+                          sB.x1,
+                          sB.y1,
+                          sB.x2,
+                          sB.y2,
+                        ),
+                      ),
+                    )
+                  ) {
+                    lineCollides = true;
+                    break;
+                  }
+                }
+              }
+              if (lineCollides) continue;
+
+              // Prioritize label positions relative to badge based on quadrant
+              const candidateLabelPositions =
+                offsetX >= 10
+                  ? [
+                      "Right",
+                      "Top",
+                      "Bottom",
+                      "TopRight",
+                      "BottomRight",
+                      "Left",
+                    ]
+                  : offsetX <= -10
+                    ? [
+                        "Left",
+                        "Top",
+                        "Bottom",
+                        "TopLeft",
+                        "BottomLeft",
+                        "Right",
+                      ]
+                    : offsetY < 0
+                      ? [
+                          "Top",
+                          "Right",
+                          "Left",
+                          "TopRight",
+                          "TopLeft",
+                          "Bottom",
+                        ]
+                      : [
+                          "Bottom",
+                          "Right",
+                          "Left",
+                          "BottomRight",
+                          "BottomLeft",
+                          "Top",
+                        ];
+
+              for (
+                let pIdx = 0;
+                pIdx < candidateLabelPositions.length;
+                pIdx++
+              ) {
+                const pos = candidateLabelPositions[pIdx];
+                const { cx, cy } = getLabelCenter(
+                  info.x,
+                  info.y,
+                  offsetX,
+                  offsetY,
+                  pos,
+                  W_lbl,
+                  H_lbl,
+                );
+                const candidateRect = getLabelRect(cx, cy, W_lbl, H_lbl);
+
+                // Check label viewport
+                if (
+                  candidateRect.left < leftPad ||
+                  candidateRect.right > screenW - rightPad ||
+                  candidateRect.top < topPad ||
+                  candidateRect.bottom > screenH - bottomPad
+                ) {
+                  continue;
+                }
+
+                // Check label vs Home Marker
+                if (
+                  checkCircleRectOverlap(
+                    homeScreenPos.x,
+                    homeScreenPos.y,
+                    homeR + 4,
+                    candidateRect,
+                  )
+                ) {
+                  continue;
+                }
+
+                // Check label vs Navbar Logo
+                if (
+                  logoOverlayRect &&
+                  checkOverlap(candidateRect, logoOverlayRect, 6)
+                ) {
+                  continue;
+                }
+
+                // Check label vs all POI dots
+                let labelHitsDot = false;
+                for (let k = 0; k < markerInfos.length; k++) {
+                  if (
+                    checkCircleRectOverlap(
+                      markerInfos[k].x,
+                      markerInfos[k].y,
+                      6,
+                      candidateRect,
+                    )
+                  ) {
+                    labelHitsDot = true;
+                    break;
+                  }
+                }
+                if (labelHitsDot) continue;
+
+                // Check label vs previously resolved badges & labels & lines
+                let labelCollides = false;
+                for (let k = 0; k < resolvedLabels.length; k++) {
+                  if (!resolvedLabels[k].hidden) {
+                    if (
+                      checkOverlap(candidateRect, resolvedLabels[k].rect, 4)
+                    ) {
+                      labelCollides = true;
+                      break;
+                    }
+                  }
+                  if (
+                    checkCircleRectOverlap(
+                      resolvedLabels[k].circleX,
+                      resolvedLabels[k].circleY,
+                      R + 4,
+                      candidateRect,
+                    )
+                  ) {
+                    labelCollides = true;
+                    break;
+                  }
+                  if (
+                    checkCircleRectOverlap(
+                      candidateCircleX,
+                      candidateCircleY,
+                      R + 4,
+                      resolvedLabels[k].rect,
+                    )
+                  ) {
+                    labelCollides = true;
+                    break;
+                  }
+                  if (
+                    resolvedLabels[k].segments.some((s) =>
+                      segmentIntersectsRect(
+                        s.x1,
+                        s.y1,
+                        s.x2,
+                        s.y2,
+                        candidateRect,
+                        3,
+                      ),
+                    )
+                  ) {
+                    labelCollides = true;
+                    break;
+                  }
+                  if (!resolvedLabels[k].hidden) {
+                    if (
+                      absSegments.some((s) =>
+                        segmentIntersectsRect(
+                          s.x1,
+                          s.y1,
+                          s.x2,
+                          s.y2,
+                          resolvedLabels[k].rect,
+                          3,
+                        ),
                       )
                     ) {
-                      hasCollision = true;
+                      labelCollides = true;
                       break;
                     }
                   }
                 }
+                if (labelCollides) continue;
 
-                if (!hasCollision) {
-                  for (const segA of candSegments) {
-                    for (const segB of resolvedLabels[k].segments) {
-                      if (
-                        segmentsIntersect(
-                          segA.x1,
-                          segA.y1,
-                          segA.x2,
-                          segA.y2,
-                          segB.x1,
-                          segB.y1,
-                          segB.x2,
-                          segB.y2,
-                        )
-                      ) {
-                        hasCollision = true;
-                        break;
-                      }
-                    }
-                    if (hasCollision) break;
-                  }
-                }
+                // Success! Found collision-free placement
+                bestPosition = pos;
+                bestOffsetX = offsetX;
+                bestOffsetY = offsetY;
+                bestLocalSegments = localSegments;
+                found = true;
+                break;
               }
-            }
-
-            if (!hasCollision) {
-              bestPosition = pos;
-              bestOffsetX = offsetX;
-              bestOffsetY = offsetY;
-              bestD = D;
-              found = true;
-              break;
             }
           }
         }
 
-        // Fallback for selected marker if no collision-free position was found
-        if (info.isSelected && !found) {
-          bestPosition = "Right";
-          bestD = 80;
-          bestOffsetX = R + 80;
-          bestOffsetY = 0;
-          found = true;
+        // No fully collision-free (circle + line + label) placement exists.
+        if (!found) {
+          if (info.isSelected) {
+            // Selected marker's label must always be visible — prefer a
+            // circle offset already known to clear other circles/dots.
+            if (fallbackOffsetX !== null && fallbackSegments) {
+              bestOffsetX = fallbackOffsetX;
+              bestOffsetY = fallbackOffsetY as number;
+              bestLocalSegments = fallbackSegments;
+            } else {
+              bestOffsetX = R + 45;
+              bestOffsetY = -18;
+              bestLocalSegments = computeConnectorSegments(
+                bestOffsetX,
+                bestOffsetY,
+                0,
+                `${info.title}|selected_fallback`,
+              );
+            }
+            bestPosition = "Right";
+            found = true;
+          } else if (fallbackOffsetX !== null && fallbackSegments) {
+            // Keep this marker's badge spaced away from every other circle
+            // even though its label has to stay hidden — otherwise it falls
+            // back to the same hardcoded offset as every other unresolved
+            // marker and badges stack on top of one another.
+            bestOffsetX = fallbackOffsetX;
+            bestOffsetY = fallbackOffsetY as number;
+            bestLocalSegments = fallbackSegments;
+          }
         }
 
-        // Hide label if no collision-free position was found
         const hidden = !found && !info.isSelected;
         const { cx: finalCx, cy: finalCy } = getLabelCenter(
           info.x,
@@ -1277,11 +1523,7 @@ export default function LocationExplorer({
         );
         const finalRect = getLabelRect(finalCx, finalCy, W_lbl, H_lbl);
 
-        const finalLocalSegments = computeConnectorSegments(
-          bestOffsetX,
-          bestOffsetY,
-        );
-        const finalAbsSegments = finalLocalSegments.map((s) => ({
+        const finalAbsSegments = bestLocalSegments.map((s) => ({
           x1: info.x + s.x1,
           y1: info.y + s.y1,
           x2: info.x + s.x2,
@@ -1311,9 +1553,16 @@ export default function LocationExplorer({
         }
 
         const posClass = `pos-${bestPosition.toLowerCase()}`;
-        positionsOrder.forEach((p) =>
-          info.el.classList.remove(`pos-${p.toLowerCase()}`),
-        );
+        [
+          "pos-top",
+          "pos-bottom",
+          "pos-left",
+          "pos-right",
+          "pos-topleft",
+          "pos-topright",
+          "pos-bottomleft",
+          "pos-bottomright",
+        ].forEach((p) => info.el.classList.remove(p));
         info.el.classList.add(posClass);
 
         const isSelected = info.title === selectedTitle;
@@ -1331,22 +1580,20 @@ export default function LocationExplorer({
         }
 
         if (pathEl) {
-          // Apply stroke & stroke-width inline (using brown (#5B4A3D) as baseline color)
-          pathEl.style.stroke = isSelected ? "#C79A59" : "#5B4A3D";
-          pathEl.style.strokeWidth = isSelected ? "2px" : "1.5px";
+          pathEl.style.stroke = isSelected ? "#C79A59" : "#9A9186";
+          pathEl.style.strokeWidth = isSelected ? "2.5px" : "2.2px";
 
-          const cx_svg = 250;
-          const cy_svg = 250;
+          const cx_svg = 350;
+          const cy_svg = 350;
 
-          // Reuse the exact segments already validated against overlaps
-          // above, translated into SVG-local coordinates.
           let dAttr = "";
-          finalLocalSegments.forEach((seg, idx) => {
+          bestLocalSegments.forEach((seg, idx) => {
             const x1 = cx_svg + seg.x1;
             const y1 = cy_svg + seg.y1;
             const x2 = cx_svg + seg.x2;
             const y2 = cy_svg + seg.y2;
-            dAttr += idx === 0 ? `M ${x1},${y1} L ${x2},${y2}` : ` L ${x2},${y2}`;
+            dAttr +=
+              idx === 0 ? `M ${x1},${y1} L ${x2},${y2}` : ` L ${x2},${y2}`;
           });
           pathEl.setAttribute("d", dAttr);
         }
@@ -1374,15 +1621,16 @@ export default function LocationExplorer({
     );
     if (!catData) return;
 
+    // Clean, minimalist SVG icons in light cream #E5DDD0 matching reference
     const iconMap: Record<string, string> = {
-      "Education Institutes": `<img src="/icons/education.svg" class="w-[22px] h-[22px] object-contain" alt="Education" />`,
-      Banks: `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #ffffff;"><line x1="3" y1="22" x2="21" y2="22" /><line x1="6" y1="18" x2="6" y2="11" /><line x1="10" y1="18" x2="10" y2="11" /><line x1="14" y1="18" x2="14" y2="11" /><line x1="18" y1="18" x2="18" y2="11" /><polygon points="12 2 20 7 4 7" /></svg>`,
-      Recreational: `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #ffffff;"><path d="M10 22v-5" /><path d="M10 17a4 4 0 0 1-4-4c0-2 2-3 2-3s0-1 1-2 2-1 2-1 1 0 2 1 1 2 1 2 2 1 2 3a4 4 0 0 1-4 4z" /><path d="M14 22v-4" /><path d="M14 18a3 3 0 0 0 3-3c0-1.5-1.5-2.25-1.5-2.25s0-.75-.75-1.5-1.5-.75-1.5-.75-.75 0-1.5.75-.75 1.5-.75 1.5-1.5.75-1.5 2.25a3 3 0 0 0 3 3z" /></svg>`,
-      "Lifestyle & Social": `<img src="/icons/lifestyle.svg" class="w-[22px] h-[22px] object-contain" alt="Lifestyle" />`,
-      Transport: `<img src="/icons/connectivity.svg" class="w-[22px] h-[22px] object-contain" alt="Transport" />`,
-      Hospitals: `<img src="/icons/hospital.svg" class="w-[22px] h-[22px] object-contain" alt="Hospitals" />`,
-      "Commercial Hubspots": `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #ffffff;"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /><rect width="20" height="14" x="2" y="6" rx="2" /></svg>`,
-      "Upcoming Infrastructure": `<img src="/icons/connectivity.svg" class="w-[22px] h-[22px] object-contain" alt="Upcoming Infrastructure" />`,
+      "Education Institutes": `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #E5DDD0;"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>`,
+      Banks: `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #E5DDD0;"><line x1="3" y1="22" x2="21" y2="22" /><line x1="6" y1="18" x2="6" y2="11" /><line x1="10" y1="18" x2="10" y2="11" /><line x1="14" y1="18" x2="14" y2="11" /><line x1="18" y1="18" x2="18" y2="11" /><polygon points="12 2 20 7 4 7" /></svg>`,
+      Recreational: `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #E5DDD0;"><path d="M10 22v-5" /><path d="M10 17a4 4 0 0 1-4-4c0-2 2-3 2-3s0-1 1-2 2-1 2-1 1 0 2 1 1 2 1 2 2 1 2 3a4 4 0 0 1-4 4z" /><path d="M14 22v-4" /><path d="M14 18a3 3 0 0 0 3-3c0-1.5-1.5-2.25-1.5-2.25s0-.75-.75-1.5-1.5-.75-1.5-.75-.75 0-1.5.75-.75 1.5-.75 1.5-1.5.75-1.5 2.25a3 3 0 0 0 3 3z" /></svg>`,
+      "Lifestyle & Social": `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #E5DDD0;"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>`,
+      Transport: `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #E5DDD0;"><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M8 15h.01"/><path d="M16 15h.01"/><path d="M6 19v2"/><path d="M18 19v2"/></svg>`,
+      Hospitals: `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #E5DDD0;"><path d="M12 6v12"/><path d="M6 12h12"/><rect width="18" height="18" x="3" y="3" rx="2"/></svg>`,
+      "Commercial Hubspots": `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #E5DDD0;"><path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /><rect width="20" height="14" x="2" y="6" rx="2" /></svg>`,
+      "Upcoming Infrastructure": `<svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" style="color: #E5DDD0;"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></svg>`,
     };
 
     catData.locations.forEach((loc) => {
@@ -1393,23 +1641,21 @@ export default function LocationExplorer({
       const markerEl = document.createElement("div");
       markerEl.className = "luxury-annotation-container";
 
-      // 1. Create pinpoint ring (hollow brown circle dot)
+      // 1. Create pinpoint dot (solid grey-brown dot)
       const dotEl = document.createElement("div");
       dotEl.className = "luxury-dot";
-      dotEl.style.cssText =
-        "position: absolute; width: 10px; height: 10px; border: 2px solid #5B4A3D; background-color: transparent; border-radius: 50%; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35); transform: translate(-50%, -50%); z-index: 50; transition: transform 250ms ease;";
       markerEl.appendChild(dotEl);
 
-      // 2. Create SVG and path programmatically (namespace-safe)
+      // 2. Create SVG and path programmatically (700x700 canvas)
       const svgEl = document.createElementNS(
         "http://www.w3.org/2000/svg",
         "svg",
       );
       svgEl.setAttribute("class", "luxury-leader-svg");
-      svgEl.setAttribute("width", "500");
-      svgEl.setAttribute("height", "500");
+      svgEl.setAttribute("width", "700");
+      svgEl.setAttribute("height", "700");
       svgEl.style.cssText =
-        "position: absolute; top: -250px; left: -250px; width: 500px; height: 500px; pointer-events: none; overflow: visible; z-index: 1;";
+        "position: absolute; top: -350px; left: -350px; width: 700px; height: 700px; pointer-events: none; overflow: visible; z-index: 1;";
 
       const pathEl = document.createElementNS(
         "http://www.w3.org/2000/svg",
@@ -1417,20 +1663,20 @@ export default function LocationExplorer({
       );
       pathEl.setAttribute("class", "luxury-leader-path");
       pathEl.setAttribute("fill", "none");
-      pathEl.setAttribute("stroke", "#5B4A3D");
-      pathEl.setAttribute("stroke-width", "1.5");
+      pathEl.setAttribute("stroke", "#9A9186");
+      pathEl.setAttribute("stroke-width", "2.2");
       pathEl.setAttribute("d", "");
       svgEl.appendChild(pathEl);
       markerEl.appendChild(svgEl);
 
-      // 3. Create Circle Marker
+      // 3. Create Circle Marker (Small 30px badge)
       const circleEl = document.createElement("div");
       circleEl.className = "luxury-marker-circle";
       circleEl.innerHTML = `
         <div class="luxury-marker-icon">${iconMap[category] || ""}</div>
-          <div class="luxury-label-text-wrapper">
-            <span class="luxury-label-text">${toTitleCase(parsed.title)}</span>
-          </div>
+        <div class="luxury-label-text-wrapper">
+          <span class="luxury-label-text">${toTitleCase(parsed.title)}</span>
+        </div>
       `;
       markerEl.appendChild(circleEl);
 
@@ -1441,16 +1687,8 @@ export default function LocationExplorer({
       circleEl.addEventListener("click", (e) => {
         e.stopPropagation();
 
-        const isMobile =
-          typeof window !== "undefined" && window.innerWidth < 1024;
-
         setSelectedLocation(loc);
         handleShowRoute(loc.routeCoordinates || loc.coordinates, loc.title);
-
-        if (isMobile && mapRef.current) {
-          mapRef.current.panTo(loc.coordinates);
-          mapRef.current.setZoom(14);
-        }
       });
 
       labelMarker.locTitle = loc.title;
@@ -1472,23 +1710,28 @@ export default function LocationExplorer({
       const isMobile =
         typeof window !== "undefined" && window.innerWidth < 1024;
       const isTransport = category === "Transport";
+      const isBanks = category === "Banks";
 
-      const padding = isTransport
-        ? (isMobile
-            ? { top: 220, bottom: 80, left: 40, right: 40 }
-            : { top: 260, bottom: 120, left: 380, right: 140 })
-        : (isMobile
-            ? { top: 100, bottom: 60, left: 20, right: 20 }
-            : { top: 80, bottom: 80, left: 340, right: 120 });
+      const padding = isMobile
+        ? { top: 100, bottom: 60, left: 20, right: 20 }
+        : { top: 80, bottom: 80, left: 340, right: 120 };
 
-      const maxZoom = isTransport ? 11 : 13;
-
-      fitBoundsWithMaxZoom(
-        map,
-        bounds,
-        padding,
-        maxZoom,
-      );
+      if (isBanks) {
+        // Banks are situated in the local Borivali/Gorai vicinity; zoom in closer to clearly show nearby banks
+        fitBoundsWithMaxZoom(map, bounds, padding, 15);
+        google.maps.event.addListenerOnce(map, "idle", () => {
+          if ((map.getZoom() ?? 13) < 14) {
+            map.setZoom(14);
+          }
+        });
+      } else if (isTransport) {
+        // Frame all transport connectivity hubs with clean padding and appropriate zoom
+        fitBoundsWithMaxZoom(map, bounds, padding, 14);
+      } else if (category === "Upcoming Infrastructure") {
+        fitBoundsWithMaxZoom(map, bounds, padding, 13);
+      } else {
+        fitBoundsWithMaxZoom(map, bounds, padding, 13);
+      }
     }
 
     // Solve collisions immediately
@@ -1628,18 +1871,12 @@ export default function LocationExplorer({
 
         const screenWidth =
           typeof window !== "undefined" ? window.innerWidth : 1200;
-        const isTransport = selectedCategory === "Transport";
         const safePadding =
           screenWidth < 1024
-            ? (isTransport
-                ? { top: 220, bottom: 80, left: 40, right: 40 }
-                : 40)
-            : (isTransport
-                ? { top: 260, bottom: 140, left: 380, right: 140 }
-                : { top: 120, bottom: 120, left: 360, right: 120 });
+            ? { top: 100, bottom: 80, left: 30, right: 30 }
+            : { top: 120, bottom: 120, left: 360, right: 120 };
 
-        const maxZoom = isTransport ? 11 : 15;
-        fitBoundsWithMaxZoom(map, bounds, safePadding, maxZoom);
+        fitBoundsWithMaxZoom(map, bounds, safePadding, 15);
 
         animateRouteDrawing(map, path);
         setIsRouteLoading(false);
@@ -1791,7 +2028,9 @@ export default function LocationExplorer({
         <div className="absolute inset-0 z-40 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm">
           <div className="text-white text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4 phone-landscape:h-8 phone-landscape:w-8 phone-landscape:mb-2"></div>
-            <p className="text-lg phone-landscape:text-sm">Calculating Route...</p>
+            <p className="text-lg phone-landscape:text-sm">
+              Calculating Route...
+            </p>
           </div>
         </div>
       )}
@@ -1804,7 +2043,17 @@ export default function LocationExplorer({
           className="w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
           title={isCleanView ? "Show UI Panels" : "Hide UI Panels (Clean View)"}
         >
-          {isCleanView ? <Eye size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" /> : <EyeOff size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />}
+          {isCleanView ? (
+            <Eye
+              size={20}
+              className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+            />
+          ) : (
+            <EyeOff
+              size={20}
+              className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+            />
+          )}
         </button>
 
         {/* Fullscreen toggle */}
@@ -1813,7 +2062,17 @@ export default function LocationExplorer({
           className="w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
           title={isFullscreenActive ? "Exit Fullscreen" : "Enter Fullscreen"}
         >
-          {isFullscreenActive ? <Minimize2 size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" /> : <Maximize2 size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />}
+          {isFullscreenActive ? (
+            <Minimize2
+              size={20}
+              className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+            />
+          ) : (
+            <Maximize2
+              size={20}
+              className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+            />
+          )}
         </button>
 
         <div className="flex flex-col gap-2 luxury-zoom-control phone-landscape:gap-1.5">
@@ -1825,7 +2084,10 @@ export default function LocationExplorer({
             className="w-10 h-10 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
             title="Zoom In"
           >
-            <Plus size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />
+            <Plus
+              size={20}
+              className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+            />
           </button>
           <button
             onClick={() => {
@@ -1835,7 +2097,10 @@ export default function LocationExplorer({
             className="w-10 h-10 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
             title="Zoom Out"
           >
-            <Minus size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />
+            <Minus
+              size={20}
+              className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+            />
           </button>
         </div>
       </div>
@@ -2029,37 +2294,37 @@ export default function LocationExplorer({
           z-index: 10005;
         }
 
-        /* Coordinate Spot: Hollow Brown Circle Ring (Feedback 3) */
+        /* Coordinate Spot: solid grey pinpoint dot matching Image #3 */
         .luxury-dot {
           position: absolute;
-          width: 10px;
-          height: 10px;
-          border: 2px solid #5B4A3D;
-          background-color: transparent;
+          width: 7px;
+          height: 7px;
+          background-color: #9A9186;
           border-radius: 50%;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
           transform: translate(-50%, -50%);
           z-index: 50;
-          transition: transform 250ms ease, box-shadow 250ms ease;
+          transition: transform 250ms ease, box-shadow 250ms ease, background-color 250ms ease;
         }
 
         .luxury-annotation-container.active .luxury-dot {
-          transform: translate(-50%, -50%) scale(1.25);
-          box-shadow: 0 0 8px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.3);
+          transform: translate(-50%, -50%) scale(1.3);
+          background-color: #C79A59 !important;
+          box-shadow: 0 0 8px rgba(199, 154, 89, 0.8), 0 1px 3px rgba(0, 0, 0, 0.4);
         }
 
-        /* Marker Container: solid brown background (#5B4A3D), size reduced to 30px (Feedback 3) */
+        /* Marker Container: small solid dark-brown circular badge matching reference */
         .luxury-marker-circle {
           position: absolute;
           width: 30px;
           height: 30px;
           top: 50%;
           left: 50%;
-          transform: translate(calc(-50% + var(--offset-x, 0px)), calc(-50% + var(--offset-y, -45px)));
+          transform: translate(calc(-50% + var(--offset-x, 0px)), calc(-50% + var(--offset-y, -30px)));
           background: #5B4A3D;
           border: none;
           border-radius: 50%;
-          box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -2073,72 +2338,77 @@ export default function LocationExplorer({
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 30px;
-          height: 30px;
-        }
-        .luxury-marker-icon img {
-          width: 100%;
-          height: 100%;
-          object-fit: contain;
+          width: 15px;
+          height: 15px;
+          background: transparent;
         }
         .luxury-marker-icon svg {
           width: 15px;
           height: 15px;
-          stroke: #ffffff !important;
-          color: #ffffff !important;
+          stroke: #E5DDD0 !important;
+          color: #E5DDD0 !important;
         }
 
         /* On selection: enlarge 1.15x with gold glow shadow */
         .luxury-annotation-container.active .luxury-marker-circle {
-          transform: translate(calc(-50% + var(--offset-x, 0px)), calc(-50% + var(--offset-y, -45px))) scale(1.15);
-          box-shadow: 0 0 15px rgba(199, 154, 89, 0.8), 0 4px 12px rgba(0, 0, 0, 0.45);
+          transform: translate(calc(-50% + var(--offset-x, 0px)), calc(-50% + var(--offset-y, -30px))) scale(1.15);
+          box-shadow: 0 0 12px rgba(199, 154, 89, 0.8), 0 2px 8px rgba(0, 0, 0, 0.4);
         }
 
         /* Leader Line SVG */
         .luxury-leader-svg {
           position: absolute;
-          top: -250px;
-          left: -250px;
-          width: 500px;
-          height: 500px;
+          top: -350px;
+          left: -350px;
+          width: 700px;
+          height: 700px;
           pointer-events: none;
           overflow: visible;
           z-index: 1;
         }
 
-        /* Leader Line stroke is brown (#5B4A3D) instead of black (Feedback 3) */
+        /* Leader Line: thick and light grey-tan line matching attachment */
         .luxury-leader-path {
-          stroke: #5B4A3D;
-          stroke-width: 1.5px;
+          stroke: #9A9186;
+          stroke-width: 2.2px;
           fill: none;
-          filter: drop-shadow(0px 1px 1px rgba(255, 255, 255, 0.75));
+          stroke-linecap: round;
+          stroke-linejoin: round;
           transition: stroke 200ms ease, stroke-width 200ms ease;
         }
         .luxury-annotation-container.active .luxury-leader-path {
-          stroke: #C79A59;
-          stroke-width: 2px;
-          filter: drop-shadow(0px 1px 2px rgba(255, 255, 255, 0.8));
+          stroke: #C79A59 !important;
+          stroke-width: 2.5px !important;
         }
 
-        /* Label Text: Dark brown text with subtle shadow for readability on warm map */
+        /* Label Text: sits directly on the map, no background pill — a
+           cream text-shadow halo keeps it legible over both light and dark
+           map tiles instead of masking the map underneath. */
         .luxury-label-text-wrapper {
           position: absolute;
           pointer-events: none;
           font-family: inherit;
-          font-size: 11px;
+          font-size: 10.5px;
           font-weight: 700;
           color: #5B4230;
-          text-shadow: 0 0 4px rgba(221, 208, 192, 0.9), 0 1px 2px rgba(221, 208, 192, 0.7);
-          line-height: 1.25;
+          text-shadow:
+            0 0 3px rgba(245, 240, 230, 0.9),
+            0 0 3px rgba(245, 240, 230, 0.9),
+            0 1px 2px rgba(245, 240, 230, 0.9);
+          line-height: 1.2;
           width: max-content;
-          max-width: 90px;
+          max-width: 95px;
           white-space: normal;
           z-index: 10;
+          text-align: center;
         }
 
-        /* Hide overlapping labels */
+        /* Hide overlapping labels. !important is required: this selector ties
+           in specificity with the later .pos-* rules that set display: flex
+           on the same element, and without it the tie-break (source order)
+           lets the pos-* rule win, silently un-hiding "hidden" labels. */
         .hidden-label .luxury-label-text-wrapper {
-          display: none;
+          display: none !important;
         }
 
         .hidden-label .luxury-marker-circle {
@@ -2152,30 +2422,29 @@ export default function LocationExplorer({
         .luxury-annotation-container.active .luxury-label-text-wrapper {
           color: #1A1510;
           font-weight: 800;
-          text-shadow: 0 0 6px rgba(221, 208, 192, 1), 0 1px 3px rgba(221, 208, 192, 0.8);
+          text-shadow:
+            0 0 3px rgba(245, 240, 230, 0.95),
+            0 0 3px rgba(245, 240, 230, 0.95),
+            0 1px 2px rgba(245, 240, 230, 0.95);
         }
 
         /* Position mapping of text label relative to circle marker */
-        /* Top, TopLeft, TopRight positions (label sits above the circle) */
-        .pos-top .luxury-label-text-wrapper,
-        .pos-topleft .luxury-label-text-wrapper,
-        .pos-topright .luxury-label-text-wrapper {
+        /* Top position (label sits above the circle) */
+        .pos-top .luxury-label-text-wrapper {
           bottom: 100%;
           left: 50%;
-          transform: translate(-50%, -10px);
+          transform: translate(-50%, -6px);
           text-align: center;
           display: flex;
           flex-direction: column;
           align-items: center;
         }
 
-        /* Bottom, BottomLeft, BottomRight positions (label sits below the circle) */
-        .pos-bottom .luxury-label-text-wrapper,
-        .pos-bottomleft .luxury-label-text-wrapper,
-        .pos-bottomright .luxury-label-text-wrapper {
+        /* Bottom position (label sits below the circle) */
+        .pos-bottom .luxury-label-text-wrapper {
           top: 100%;
           left: 50%;
-          transform: translate(-50%, 10px);
+          transform: translate(-50%, 6px);
           text-align: center;
           display: flex;
           flex-direction: column;
@@ -2186,7 +2455,7 @@ export default function LocationExplorer({
         .pos-left .luxury-label-text-wrapper {
           right: 100%;
           top: 50%;
-          transform: translate(-10px, -50%);
+          transform: translate(-6px, -50%);
           text-align: right;
           display: flex;
           flex-direction: column;
@@ -2197,94 +2466,89 @@ export default function LocationExplorer({
         .pos-right .luxury-label-text-wrapper {
           left: 100%;
           top: 50%;
-          transform: translate(10px, -50%);
+          transform: translate(6px, -50%);
           text-align: left;
           display: flex;
           flex-direction: column;
           align-items: flex-start;
         }
 
-        /* Luxury Main Home Marker Styles */
+        /* TopRight position (label sits above and right of circle) */
+        .pos-topright .luxury-label-text-wrapper {
+          bottom: 60%;
+          left: 60%;
+          transform: translate(6px, -6px);
+          text-align: left;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        /* TopLeft position (label sits above and left of circle) */
+        .pos-topleft .luxury-label-text-wrapper {
+          bottom: 60%;
+          right: 60%;
+          transform: translate(-6px, -6px);
+          text-align: right;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+        }
+
+        /* BottomRight position (label sits below and right of circle) */
+        .pos-bottomright .luxury-label-text-wrapper {
+          top: 60%;
+          left: 60%;
+          transform: translate(6px, 6px);
+          text-align: left;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        /* BottomLeft position (label sits below and left of circle) */
+        .pos-bottomleft .luxury-label-text-wrapper {
+          top: 60%;
+          right: 60%;
+          transform: translate(-6px, 6px);
+          text-align: right;
+          display: flex;
+          flex-direction: column;
+          align-items: flex-end;
+        }
+
+        /* Luxury Main Home Marker Styles (No outer ring, clean full fit, 44px circle) */
         .luxury-home-marker {
           position: relative;
           display: flex;
           align-items: center;
           justify-content: center;
+          width: 44px;
+          height: 44px;
+          cursor: pointer;
         }
 
         .luxury-home-inner {
-          width: 52px;
-          height: 52px;
+          width: 44px;
+          height: 44px;
           display: flex;
           align-items: center;
           justify-content: center;
+          border-radius: 50%;
+          background: #5B4A3D;
+          box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+          border: none;
+          outline: none;
+          overflow: hidden;
           z-index: 2;
         }
 
-        .luxury-home-inner img {
-          width: 100%;
-          height: 100%;
+        .luxury-home-inner img,
+        .luxury-home-logo-img {
+          width: 26px;
+          height: 26px;
           object-fit: contain;
-          filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.35));
-        }
-
-        /* Hover popup card styles */
-        .luxury-hover-popup {
-          background: rgba(44, 52, 55, 0.65);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border: 1px solid rgba(64, 72, 75, 0.7);
-          border-radius: 12px;
-          box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
-          padding: 10px 14px;
-          pointer-events: none;
-        }
-
-        .luxury-home-popup {
-          position: absolute;
-          bottom: 100%;
-          left: 50%;
-          transform: translateX(-50%);
-          margin-bottom: 10px;
-          white-space: nowrap;
-          z-index: 10000;
-        }
-
-        .luxury-mini-card {
-          color: white;
-          font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-          text-align: left;
-        }
-
-        .luxury-mini-card .category {
-          color: #c79a59;
-          font-size: 9px;
-          font-weight: 700;
-          text-transform: uppercase;
-          letter-spacing: 0.15em;
-          line-height: 1;
-          margin-bottom: 4px;
-        }
-
-        .luxury-mini-card .title {
-          font-size: 13px;
-          font-weight: 600;
-          color: #ffffff;
-          margin-bottom: 4px;
-          line-height: 1.2;
-        }
-
-        .luxury-mini-card .metrics {
-          display: flex;
-          align-items: center;
-          font-size: 11px;
-          color: rgba(255, 255, 255, 0.6);
-          font-weight: 400;
-        }
-
-        .luxury-mini-card .separator {
-          margin: 0 4px;
-          color: rgba(199, 154, 89, 0.4);
+          transform: none;
         }
       `}</style>
     </section>

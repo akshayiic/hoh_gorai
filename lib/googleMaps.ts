@@ -113,10 +113,16 @@ function getDomOverlayCtor() {
       }
 
       getScreenPosition(): { x: number; y: number } | null {
-        const projection = this.getProjection();
-        if (!projection) return null;
-        const point = projection.fromLatLngToDivPixel(this.position);
-        return point ? { x: point.x, y: point.y } : null;
+        // fromLatLngToDivPixel() returns coordinates relative to the map's
+        // internal overlay pane, which Google Maps shifts via its own CSS
+        // transform as the map pans — those numbers are NOT viewport/client
+        // pixels, even though the element itself renders at the correct
+        // on-screen spot (via that same pane transform). Reading the
+        // element's actual rendered rect instead gives real viewport
+        // coordinates, which is what callers (e.g. label-collision math
+        // comparing against window dimensions) need.
+        const rect = this.element.getBoundingClientRect();
+        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
       }
     }
     DomOverlayCtor = Impl;
