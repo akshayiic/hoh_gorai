@@ -163,7 +163,7 @@ export default function BalconyView() {
     "morning" | "afternoon" | "evening" | "night"
   >("morning");
   const [expandedTime, setExpandedTime] = useState<
-    "morning" | "afternoon" | "evening" | "night"
+    "morning" | "afternoon" | "evening" | "night" | null
   >("morning");
   const [isViewerReady, setIsViewerReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -531,7 +531,7 @@ export default function BalconyView() {
               isCollapsible: true,
               isExpanded: expandedTime === time,
               onHeaderClick: () =>
-                setExpandedTime(expandedTime === time ? "morning" : time),
+                setExpandedTime(expandedTime === time ? null : time),
               items: createSidebarItems(
                 allTowersFloors[time][selectedTower].map((floorData, index) => ({
                   id: `${time}_${floorData.id}`,

@@ -233,10 +233,7 @@ export default function Sidebar({
                     return (
                       <button
                         key={item.id}
-                        onClick={() => {
-                          item.onClick?.();
-                          setIsCollapsed(true);
-                        }}
+                        onClick={() => item.onClick?.()}
                         className={`
                         w-[calc(100%+1.5rem)]
                         -mx-3
