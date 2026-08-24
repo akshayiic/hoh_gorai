@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Aperture, Maximize2, Minimize2 } from "lucide-react";
+import { Aperture, Layers, Maximize2, Minimize2 } from "lucide-react";
 import BottomNavbar from "@/components/BottomNavbar";
 import GlobalNavbar from "@/components/GlobalNavbar";
 import Sidebar, {
@@ -161,9 +161,6 @@ export default function BalconyView() {
   const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
   const [selectedTime, setSelectedTime] = useState<
     "morning" | "afternoon" | "evening" | "night"
-  >("morning");
-  const [expandedTime, setExpandedTime] = useState<
-    "morning" | "afternoon" | "evening" | "night" | null
   >("morning");
   const [isViewerReady, setIsViewerReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -454,7 +451,9 @@ export default function BalconyView() {
   return (
     <div className="h-screen w-screen bg-black">
       {/* Global Navbar */}
-      {!isFullscreenActive && <GlobalNavbar currentPage="balcony" showRERA={false} />}
+      {!isFullscreenActive && (
+        <GlobalNavbar currentPage="balcony" showRERA={false} />
+      )}
 
       {/* Main Marzipano Viewer */}
       <div className="h-full w-full relative">
@@ -469,11 +468,23 @@ export default function BalconyView() {
         <button
           onClick={toggleFullscreen}
           className={`absolute right-6 z-20 w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md ${
-            isFullscreenActive ? "bottom-6" : "bottom-32 phone-landscape:bottom-16"
+            isFullscreenActive
+              ? "bottom-6"
+              : "bottom-32 phone-landscape:bottom-16"
           }`}
           title={isFullscreenActive ? "Exit Fullscreen" : "Enter Fullscreen"}
         >
-          {isFullscreenActive ? <Minimize2 size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" /> : <Maximize2 size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />}
+          {isFullscreenActive ? (
+            <Minimize2
+              size={20}
+              className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+            />
+          ) : (
+            <Maximize2
+              size={20}
+              className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+            />
+          )}
         </button>
 
         {/* Full-screen splash only before anything has ever rendered — there's
@@ -515,36 +526,63 @@ export default function BalconyView() {
         </div>
       </div>
 
-      {/* SIDEBAR */}
+      {/* SIDEBAR — time of day (left) */}
       {!isFullscreenActive && (
         <Sidebar
           isFullscreenActive={isFullscreenActive}
+          side="left"
+          width="w-[190px] phone-landscape:w-[135px]"
+          activeItemRounded
           header={{
             icon: Aperture,
             subtitle: "Balcony Views",
             title: selectedTower,
           }}
-          sections={createSidebarSections(
-            (["morning", "afternoon", "evening", "night"] as const).map((time) => ({
-              id: time,
-              title: time.charAt(0).toUpperCase() + time.slice(1),
-              isCollapsible: true,
-              isExpanded: expandedTime === time,
-              onHeaderClick: () =>
-                setExpandedTime(expandedTime === time ? null : time),
+          sections={createSidebarSections([
+            {
+              id: "time-of-day",
               items: createSidebarItems(
-                allTowersFloors[time][selectedTower].map((floorData, index) => ({
-                  id: `${time}_${floorData.id}`,
-                  label: getFloorLabel(floorData.floor),
-                  onClick: () => {
-                    setSelectedTime(time);
-                    switchFloor(index);
-                  },
-                  isActive: selectedTime === time && currentFloorIndex === index,
-                })),
+                (["morning", "afternoon", "evening", "night"] as const).map(
+                  (time) => ({
+                    id: time,
+                    label: time.charAt(0).toUpperCase() + time.slice(1),
+                    onClick: () => setSelectedTime(time),
+                    isActive: selectedTime === time,
+                  }),
+                ),
               ),
-            })),
-          )}
+            },
+          ])}
+        />
+      )}
+
+      {/* SIDEBAR — floors (right) */}
+      {!isFullscreenActive && (
+        <Sidebar
+          isFullscreenActive={isFullscreenActive}
+          side="right"
+          width="w-[170px] phone-landscape:w-[120px]"
+          activeItemRounded
+          header={{
+            icon: Layers,
+            subtitle: "Floors",
+            title: selectedTime.charAt(0).toUpperCase() + selectedTime.slice(1),
+          }}
+          sections={createSidebarSections([
+            {
+              id: "floors",
+              items: createSidebarItems(
+                allTowersFloors[selectedTime][selectedTower].map(
+                  (floorData, index) => ({
+                    id: `${selectedTime}_${floorData.id}`,
+                    label: getFloorLabel(floorData.floor),
+                    onClick: () => switchFloor(index),
+                    isActive: currentFloorIndex === index,
+                  }),
+                ),
+              ),
+            },
+          ])}
         />
       )}
 
@@ -552,7 +590,9 @@ export default function BalconyView() {
       {!isFullscreenActive && (
         <div className="absolute bottom-6 left-1/2 z-40 flex -translate-x-1/2 gap-2 phone-landscape:bottom-3 phone-landscape:gap-1">
           {(
-            Object.keys(allTowersFloors.morning) as Array<"Tower 1" | "Tower 2" | "Tower 3">
+            Object.keys(allTowersFloors.morning) as Array<
+              "Tower 1" | "Tower 2" | "Tower 3"
+            >
           ).map((tower) => (
             <button
               key={tower}

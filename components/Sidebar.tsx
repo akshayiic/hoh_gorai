@@ -81,6 +81,9 @@ interface SidebarProps {
   footer?: ReactNode;
   className?: string;
   isFullscreenActive?: boolean;
+  side?: "left" | "right";
+  width?: string;
+  activeItemRounded?: boolean;
 }
 
 export default function Sidebar({
@@ -89,9 +92,16 @@ export default function Sidebar({
   footer,
   className = "",
   isFullscreenActive = false,
+  side = "left",
+  width = "w-[250px] phone-landscape:w-[160px]",
+  activeItemRounded = false,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const HeaderIcon = header?.icon;
+  const sidePosition =
+    side === "right"
+      ? "right-10 phone-landscape:right-4"
+      : "left-10 phone-landscape:left-4";
 
   return (
     <>
@@ -100,7 +110,7 @@ export default function Sidebar({
         <button
           onClick={() => setIsCollapsed(false)}
           aria-label="Expand categories"
-          className={`absolute left-10 top-[6.5rem] phone-landscape:left-4 phone-landscape:top-14 z-20 ${
+          className={`absolute ${sidePosition} top-[6.5rem] phone-landscape:top-14 z-20 ${
             isCollapsed ? "flex" : "hidden"
           } items-center justify-center w-9 h-9 rounded-full bg-[rgba(32,38,42,0.72)] border border-white/[0.08] shadow-[0_12px_30px_rgba(0,0,0,0.18)] text-[#E2E2E2] cursor-pointer`}
         >
@@ -109,13 +119,13 @@ export default function Sidebar({
       )}
 
       <aside
-        className={`absolute left-10 top-[6.5rem] z-20 ${
+        className={`absolute ${sidePosition} top-[6.5rem] z-20 ${
           isCollapsed ? "hidden" : "hidden lg:block phone-landscape:block"
-        } phone-landscape:left-4 phone-landscape:top-14 ${className}`}
+        } phone-landscape:top-14 ${className}`}
       >
         <div
-          className="
-    w-[250px]
+          className={`
+    ${width}
     rounded-[10px]
     overflow-hidden
 
@@ -123,12 +133,11 @@ export default function Sidebar({
     border border-white/[0.08]
 
     shadow-[0_12px_30px_rgba(0,0,0,0.18)]
-    phone-landscape:w-[160px]
     phone-landscape:rounded-[8px]
-  "
+  `}
         >
           <div
-            className={`px-6 py-4 phone-landscape:px-3 phone-landscape:py-2 phone-landscape:overflow-y-auto phone-landscape:scrollbar-hide ${
+            className={`p-4 phone-landscape:px-3 phone-landscape:py-2 phone-landscape:overflow-y-auto phone-landscape:scrollbar-hide ${
               isFullscreenActive
                 ? "phone-landscape:max-h-[60vh]"
                 : "phone-landscape:max-h-[40vh]"
@@ -253,7 +262,7 @@ export default function Sidebar({
                         phone-landscape:gap-2
                         ${
                           item.isActive
-                            ? "bg-black/35 text-white font-medium shadow-inner"
+                            ? `bg-black/35 text-white font-medium shadow-inner ${activeItemRounded ? "rounded-[20px]" : ""}`
                             : "text-[#D2D2D2] hover:bg-black/15 hover:text-white"
                         }
                       `}
