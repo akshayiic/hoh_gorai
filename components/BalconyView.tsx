@@ -470,7 +470,7 @@ export default function BalconyView() {
           className={`absolute right-6 z-20 w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md ${
             isFullscreenActive
               ? "bottom-6"
-              : "bottom-32 phone-landscape:bottom-16"
+              : "bottom-32 phone-landscape:bottom-12"
           }`}
           title={isFullscreenActive ? "Exit Fullscreen" : "Enter Fullscreen"}
         >
