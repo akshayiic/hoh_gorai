@@ -101,7 +101,7 @@ export default function Sidebar({
   const sidePosition =
     side === "right"
       ? "right-10 phone-landscape:right-4"
-      : "left-10 phone-landscape:left-4";
+      : "left-6 phone-landscape:left-4";
 
   return (
     <>
