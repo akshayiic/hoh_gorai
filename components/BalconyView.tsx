@@ -526,11 +526,11 @@ export default function BalconyView() {
         </div>
       </div>
 
-      {/* SIDEBAR — time of day (left) */}
+      {/* SIDEBAR — time of day (right) */}
       {!isFullscreenActive && (
         <Sidebar
           isFullscreenActive={isFullscreenActive}
-          side="left"
+          side="right"
           width="w-[190px] phone-landscape:w-[135px]"
           activeItemRounded
           header={{
@@ -556,11 +556,11 @@ export default function BalconyView() {
         />
       )}
 
-      {/* SIDEBAR — floors (right) */}
+      {/* SIDEBAR — floors (left) */}
       {!isFullscreenActive && (
         <Sidebar
           isFullscreenActive={isFullscreenActive}
-          side="right"
+          side="left"
           width="w-[170px] phone-landscape:w-[120px]"
           activeItemRounded
           header={{
