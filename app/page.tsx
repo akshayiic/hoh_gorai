@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2, Maximize2, Minimize2 } from "lucide-react";
+import { Maximize2, Minimize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import GlobalNavbar from "@/components/GlobalNavbar";
+import BottomNavbar from "@/components/BottomNavbar";
 
 const isPhoneLandscape = () =>
   typeof window !== "undefined" &&
@@ -11,14 +12,53 @@ const isPhoneLandscape = () =>
   window.matchMedia("(pointer: coarse)").matches &&
   window.innerHeight <= 500;
 
+// The three screens served from `/`: the progress ring, the welcome spread, and
+// the project layout the visitor picks a section from. None of them changes the
+// URL, so the stage is kept in sessionStorage — returning to `/` from Location
+// (or any other page) lands back on the layout instead of replaying the intro.
+type Stage = "loading" | "welcome" | "layout";
+const STAGE_KEY = "hoh_stage";
+
+function FullscreenButton({
+  isActive,
+  onToggle,
+  className = "",
+}: {
+  isActive: boolean;
+  onToggle: () => void;
+  className?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className={`absolute z-20 w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md ${className}`}
+      title={isActive ? "Exit Fullscreen" : "Enter Fullscreen"}
+    >
+      {isActive ? (
+        <Minimize2
+          size={20}
+          className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+        />
+      ) : (
+        <Maximize2
+          size={20}
+          className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+        />
+      )}
+    </button>
+  );
+}
+
 export default function WelcomeExperience() {
-  const [loading, setLoading] = useState(true);
+  // Null until the stage is decided — either by the stored value (below) or by
+  // the visitor moving themselves.
+  const [stage, setStage] = useState<Stage | null>(null);
+  const activeStage = stage ?? "loading";
   const [progress, setProgress] = useState(0);
-  const [isNavigating, setIsNavigating] = useState(false);
   const [isFullscreenActive, setIsFullscreenActive] = useState(
     () => typeof document !== "undefined" && !!document.fullscreenElement,
   );
-  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(
     null,
@@ -133,7 +173,18 @@ export default function WelcomeExperience() {
   const dotX = 72 + radius * Math.cos(angle);
   const dotY = 72 + radius * Math.sin(angle);
 
+  // Resume the layout for a visitor who has already been through the intro this
+  // session. sessionStorage can't be read while rendering (the server has none),
+  // and setting state straight from an effect body is a cascading render, so the
+  // read is queued — it lands before the first frame the visitor could act on.
   useEffect(() => {
+    if (sessionStorage.getItem(STAGE_KEY) !== "layout") return;
+    queueMicrotask(() => setStage((current) => current ?? "layout"));
+  }, []);
+
+  useEffect(() => {
+    if (activeStage !== "loading") return;
+
     const duration = 2500; // 2.5 seconds total loading
     const intervalTime = 25; // 25ms increments
     const totalSteps = duration / intervalTime;
@@ -149,28 +200,40 @@ export default function WelcomeExperience() {
 
       if (step >= totalSteps) {
         clearInterval(timer);
-        setLoading(false);
+        setStage((current) => current ?? "welcome");
       }
     }, intervalTime);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [activeStage]);
+
+  const enterLayout = () => {
+    sessionStorage.setItem(STAGE_KEY, "layout");
+    setStage("layout");
+  };
 
   return (
     <div
       ref={containerRef}
       className="h-screen w-screen bg-black overflow-hidden relative font-sans text-white"
     >
-      {/* Preload background image to cache it during the loading screen */}
+      {/* Preload the screens that follow so they're cached by the time the
+          progress ring finishes */}
       <img
-        src="/gallery/explore_bg.webp"
+        src="/gallery/hero_bg-trimmed.png"
+        className="hidden"
+        aria-hidden="true"
+        alt=""
+      />
+      <img
+        src="/gallery/hoh_layout.webp"
         className="hidden"
         aria-hidden="true"
         alt=""
       />
 
       <AnimatePresence mode="wait">
-        {loading ? (
+        {activeStage === "loading" && (
           // LOADING SCREEN (Reflecting the screenshot design)
           <motion.div
             key="loading"
@@ -238,20 +301,27 @@ export default function WelcomeExperience() {
               </p>
             </div>
           </motion.div>
-        ) : (
+        )}
+
+        {activeStage === "welcome" && (
           // WELCOME SCREEN (Reflecting the Home Screen screenshot design)
           <motion.div
             key="welcome"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             transition={{ duration: 1.2 }}
             className="absolute inset-0 overflow-hidden"
           >
-            {/* Background */}
+            {/* Background — fills the screen and is pinned to the top edge, so
+                any crop a wide viewport forces comes off the bottom (forest)
+                rather than cutting into the spread's heading. The trimmed copy
+                is hero_bg.png with its grey page margin cropped off; the
+                original leaves grey bands down both sides at full screen. */}
             <div
-              className="absolute inset-0 bg-cover bg-center"
+              className="absolute inset-0 bg-cover bg-top bg-no-repeat"
               style={{
-                backgroundImage: `url('/gallery/explore_bg.webp')`,
+                backgroundImage: `url('/gallery/hero_bg-trimmed.png')`,
               }}
             />
 
@@ -297,32 +367,13 @@ export default function WelcomeExperience() {
                 />
               </div>
 
-              {/* Heading */}
-              <h1 className="text-white font-light leading-none">
-                <span className="block mt-2 text-5xl md:text-7xl phone-landscape:text-2xl phone-landscape:mt-1">
-                  The Westward Shift
-                </span>
-              </h1>
-
-              {/* Description */}
-              <p className="text-white/80 text-lg md:text-2xl font-light mb-4 mt-6 phone-landscape:text-xs phone-landscape:mt-2 phone-landscape:mb-2">
-                Journey to Iconic Skylines Shaped by Timeless Design
-              </p>
-
               {/* CTA */}
               <button
-                onClick={() => {
-                  setIsNavigating(true);
-                  router.push("/location");
-                }}
-                disabled={isNavigating}
-                className="group text-white font-semibold text-2xl absolute bottom-[10rem] cursor-pointer phone-landscape:text-sm phone-landscape:bottom-6 disabled:cursor-wait"
+                onClick={enterLayout}
+                className="group text-white font-semibold text-2xl absolute bottom-[10rem] cursor-pointer phone-landscape:text-sm phone-landscape:bottom-6"
               >
                 <span className="relative z-10 inline-flex items-center gap-2">
-                  {isNavigating && (
-                    <Loader2 className="w-5 h-5 animate-spin phone-landscape:w-4 phone-landscape:h-4" />
-                  )}
-                  {isNavigating ? "Loading..." : "Explore Now"}
+                  Explore Now
                 </span>
 
                 {/* Decorative corners */}
@@ -339,42 +390,41 @@ export default function WelcomeExperience() {
               </button>
             </div>
 
-            {/* Fullscreen toggle */}
-            <button
-              type="button"
-              onClick={toggleFullscreen}
-              className="absolute top-6 right-6 z-20 w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md phone-landscape:top-2 phone-landscape:right-2"
-              title={
-                isFullscreenActive ? "Exit Fullscreen" : "Enter Fullscreen"
-              }
-            >
-              {isFullscreenActive ? (
-                <Minimize2
-                  size={20}
-                  className="phone-landscape:w-3.5 phone-landscape:h-3.5"
-                />
-              ) : (
-                <Maximize2
-                  size={20}
-                  className="phone-landscape:w-3.5 phone-landscape:h-3.5"
-                />
-              )}
-            </button>
+            <FullscreenButton
+              isActive={isFullscreenActive}
+              onToggle={toggleFullscreen}
+              className="top-6 right-6 phone-landscape:top-2 phone-landscape:right-2"
+            />
+          </motion.div>
+        )}
 
-            {/* Full-screen transition overlay while the location page loads */}
-            <AnimatePresence>
-              {isNavigating && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
-                >
-                  <Loader2 className="w-10 h-10 text-white animate-spin phone-landscape:w-7 phone-landscape:h-7" />
-                </motion.div>
-              )}
-            </AnimatePresence>
+        {activeStage === "layout" && (
+          // PROJECT LAYOUT — the hub the visitor picks a section from. Stays on
+          // `/`; the header and bottom navbar are what carry them onward.
+          <motion.div
+            key="layout"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.9 }}
+            className="absolute inset-0 overflow-hidden bg-black"
+          >
+            {/* Pinned to the top edge so the tower's crown is never what a
+                wide viewport crops. */}
+            <img
+              src="/gallery/hoh_layout.webp"
+              alt="Hiranandani Bayview project layout"
+              className="absolute inset-0 h-full w-full object-cover object-top"
+            />
+
+            <GlobalNavbar currentPage="" />
+            <BottomNavbar activeItem="home" />
+
+            <FullscreenButton
+              isActive={isFullscreenActive}
+              onToggle={toggleFullscreen}
+              className="right-6 bottom-32 phone-landscape:right-4 phone-landscape:bottom-12"
+            />
           </motion.div>
         )}
       </AnimatePresence>

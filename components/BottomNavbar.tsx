@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import { Map, Building2, Waves, Hotel } from "lucide-react";
 
 interface BottomNavbarProps {
-  activeItem: "location" | "apartments" | "balcony" | "amenities";
+  // "home" is the project-layout hub on `/`: the bar is shown, but none of the
+  // destinations is the current one, so every item stays an unlabelled icon.
+  activeItem: "location" | "apartments" | "balcony" | "amenities" | "home";
 }
 
 const navItems = [

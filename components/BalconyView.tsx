@@ -1,7 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Aperture, Layers, Maximize2, Minimize2 } from "lucide-react";
+import {
+  Layers,
+  Maximize2,
+  Minimize2,
+  Moon,
+  Sun,
+  Sunrise,
+  Sunset,
+} from "lucide-react";
 import BottomNavbar from "@/components/BottomNavbar";
 import GlobalNavbar from "@/components/GlobalNavbar";
 import Sidebar, {
@@ -139,6 +147,15 @@ const allTowersFloors = {
     ]
   }
 };
+
+// Time-of-day switcher, rendered as an icon row next to the fullscreen
+// toggle instead of a full right-hand sidebar.
+const timeOfDayOptions = [
+  { id: "morning", label: "Morning", icon: Sunrise },
+  { id: "afternoon", label: "Afternoon", icon: Sun },
+  { id: "evening", label: "Evening", icon: Sunset },
+  { id: "night", label: "Night", icon: Moon },
+] as const;
 
 // Marzipano pins a scene's first tile level in GPU memory for as long as the
 // scene exists, even when it isn't visible. Keeping only a handful of scenes
@@ -464,28 +481,53 @@ export default function BalconyView() {
           style={{ width: "100%", height: "100%" }}
         />
 
-        {/* Fullscreen toggle */}
-        <button
-          onClick={toggleFullscreen}
-          className={`absolute right-6 z-20 w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md ${
+        {/* Time-of-day icons + fullscreen toggle, aligned horizontally just
+            above the Vestate watermark in the bottom-right corner. */}
+        <div
+          className={`absolute right-7 z-20 flex items-center gap-2 phone-landscape:right-4 phone-landscape:gap-1.5 ${
             isFullscreenActive
               ? "bottom-6"
-              : "bottom-32 phone-landscape:bottom-12"
+              : "bottom-24 phone-landscape:bottom-12"
           }`}
-          title={isFullscreenActive ? "Exit Fullscreen" : "Enter Fullscreen"}
         >
-          {isFullscreenActive ? (
-            <Minimize2
-              size={20}
-              className="phone-landscape:w-3.5 phone-landscape:h-3.5"
-            />
-          ) : (
-            <Maximize2
-              size={20}
-              className="phone-landscape:w-3.5 phone-landscape:h-3.5"
-            />
-          )}
-        </button>
+          {!isFullscreenActive &&
+            timeOfDayOptions.map(({ id, label, icon: TimeIcon }) => (
+              <button
+                key={id}
+                onClick={() => setSelectedTime(id)}
+                title={label}
+                aria-label={label}
+                className={`w-10 h-10 rounded-lg border flex items-center justify-center transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md ${
+                  selectedTime === id
+                    ? "bg-white text-black border-transparent"
+                    : "bg-black/45 backdrop-blur-md border-white/10 text-white hover:bg-black/70 hover:text-[#C79A59]"
+                }`}
+              >
+                <TimeIcon
+                  size={20}
+                  className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+                />
+              </button>
+            ))}
+
+          <button
+            onClick={toggleFullscreen}
+            className="w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
+            title={isFullscreenActive ? "Exit Fullscreen" : "Enter Fullscreen"}
+          >
+            {isFullscreenActive ? (
+              <Minimize2
+                size={20}
+                className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+              />
+            ) : (
+              <Maximize2
+                size={20}
+                className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+              />
+            )}
+          </button>
+        </div>
 
         {/* Full-screen splash only before anything has ever rendered — there's
             no prior frame to keep showing yet. */}
@@ -512,7 +554,7 @@ export default function BalconyView() {
             non-blocking indicator while the next scene's fallback warms up,
             matching the Svelte page's instant-feeling switchTo(). */}
         <div
-          className={`absolute bottom-24 right-6 z-50 flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 backdrop-blur-md transition-opacity duration-300 ${
+          className={`absolute bottom-40 right-7 z-50 flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 backdrop-blur-md transition-opacity duration-300 phone-landscape:bottom-24 phone-landscape:right-4 ${
             hasRenderedOnce && isLoading ? "opacity-100" : "opacity-0"
           }`}
         >
@@ -526,36 +568,6 @@ export default function BalconyView() {
         </div>
       </div>
 
-      {/* SIDEBAR — time of day (right) */}
-      {!isFullscreenActive && (
-        <Sidebar
-          isFullscreenActive={isFullscreenActive}
-          side="right"
-          width="w-[190px] phone-landscape:w-[135px]"
-          activeItemRounded
-          header={{
-            icon: Aperture,
-            subtitle: "Balcony Views",
-            title: selectedTower,
-          }}
-          sections={createSidebarSections([
-            {
-              id: "time-of-day",
-              items: createSidebarItems(
-                (["morning", "afternoon", "evening", "night"] as const).map(
-                  (time) => ({
-                    id: time,
-                    label: time.charAt(0).toUpperCase() + time.slice(1),
-                    onClick: () => setSelectedTime(time),
-                    isActive: selectedTime === time,
-                  }),
-                ),
-              ),
-            },
-          ])}
-        />
-      )}
-
       {/* SIDEBAR — floors (left) */}
       {!isFullscreenActive && (
         <Sidebar
@@ -563,10 +575,11 @@ export default function BalconyView() {
           side="left"
           width="w-[170px] phone-landscape:w-[120px]"
           activeItemRounded
+          compact
+          visibleItemCount={5}
           header={{
             icon: Layers,
-            subtitle: "Floors",
-            title: selectedTime.charAt(0).toUpperCase() + selectedTime.slice(1),
+            title: "Floors",
           }}
           sections={createSidebarSections([
             {

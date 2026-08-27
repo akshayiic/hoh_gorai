@@ -1,184 +1,81 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
-import { RotateCcw, Building2, Grid3X3, Trees, Maximize2, Minimize2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Grid3X3, Maximize2, Minimize2 } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import GlobalNavbar from "@/components/GlobalNavbar";
 import BottomNavbar from "@/components/BottomNavbar";
 import Sidebar, {
   createSidebarSections,
   createSidebarItems,
 } from "@/components/Sidebar";
+import TowerFloorPlan from "@/components/TowerFloorPlan";
 
-const isPhoneLandscape = () =>
-  typeof window !== "undefined" &&
-  window.matchMedia("(orientation: landscape)").matches &&
-  window.matchMedia("(pointer: coarse)").matches &&
-  window.innerHeight <= 500;
+type TowerKey = "Tower 1" | "Tower 2" | "Tower 3";
 
-const distance = (a: React.Touch, b: React.Touch) =>
-  Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+interface TowerUnit {
+  /**
+   * Matches the ids TowerFloorPlan derives from the export — `unit-1`…`unit-N`
+   * numbered clockwise from the plan's top-left corner.
+   */
+  id: string;
+  /** Flat number(s) printed inside the outline on the sheet. */
+  flat: string;
+  type: string;
+  /** RERA carpet area in sq.ft, straight off the sheet's area statement table. */
+  carpet: string;
+}
 
-// Tower configurations based on actual folder structure
-const towerConfigs = {
+// One entry per outlined unit in each tower export, in the order the plan
+// numbers them. Flat numbers come from the circled markers drawn at each unit's
+// entrance; types and areas come from the AREA STATEMENT TABLE printed at the
+// bottom of the same sheet, so the sidebar quotes the drawing it sits next to.
+// Tower 1's units line up 1:1 with its flat numbers; in Towers 2 and 3 one
+// outline covers a pair of flats that share a single table row.
+const towerUnits: Record<TowerKey, TowerUnit[]> = {
   "Tower 1": [
-    {
-      id: "flat-1",
-      title: "Flat 1 - 3 BHK",
-      area: "824 sq.ft",
-      image: "/gallery/Tower A/tower1-flat-1-3bhk.jpg",
-      type: "3bhk",
-    },
-    {
-      id: "flat-2_3",
-      title: "Flat 2 & 3 - 2 BHK",
-      area: "756 sq.ft",
-      image: "/gallery/Tower A/tower1-flat-2_3-2bhk.jpg",
-      type: "2bhk",
-    },
-    {
-      id: "flat-4",
-      title: "Flat 4 - 3 BHK",
-      area: "824 sq.ft",
-      image: "/gallery/Tower A/tower1-flat-4-3bhk.jpg",
-      type: "3bhk",
-    },
-    {
-      id: "flat-5",
-      title: "Flat 5 - 2 BHK",
-      area: "756 sq.ft",
-      image: "/gallery/Tower A/tower1-flat-5-2bhk.jpg",
-      type: "2bhk",
-    },
-    {
-      id: "flat-6",
-      title: "Flat 6 - 3 BHK",
-      area: "824 sq.ft",
-      image: "/gallery/Tower A/tower1-flat-6-3bhk.jpg",
-      type: "3bhk",
-    },
-    {
-      id: "master",
-      title: "Master Floor Plan",
-      area: "Complete Tower",
-      image: "/gallery/Tower A/tower1-floor.jpg",
-      type: "master",
-    },
+    { id: "unit-1", flat: "01", type: "3 BHK", carpet: "1017.62" },
+    { id: "unit-2", flat: "02", type: "2 BHK", carpet: "702.44" },
+    { id: "unit-3", flat: "03", type: "2 BHK", carpet: "702.44" },
+    { id: "unit-4", flat: "04", type: "3 BHK", carpet: "1010.97" },
+    { id: "unit-5", flat: "05", type: "2 BHK", carpet: "725.85" },
+    { id: "unit-6", flat: "06", type: "3 BHK", carpet: "1042.07" },
   ],
   "Tower 2": [
-    {
-      id: "flat-1_2",
-      title: "Flat 1 & 2 - 2 BHK",
-      area: "756 sq.ft",
-      image: "/gallery/Tower B/tower2-flat-1_2-2bhk.jpg",
-      type: "2bhk",
-    },
-    {
-      id: "flat-3",
-      title: "Flat 3 - 3 BHK",
-      area: "810 sq.ft",
-      image: "/gallery/Tower B/tower2-flat-3-3bhk.jpg",
-      type: "3bhk",
-    },
-    {
-      id: "flat-4",
-      title: "Flat 4 - 2 BHK",
-      area: "756 sq.ft",
-      image: "/gallery/Tower B/tower2-flat-4-2bhk.jpg",
-      type: "2bhk",
-    },
-    {
-      id: "flat-5",
-      title: "Flat 5 - 3 BHK",
-      area: "810 sq.ft",
-      image: "/gallery/Tower B/tower2-flat-5-3bhk.jpg",
-      type: "3bhk",
-    },
-    {
-      id: "master",
-      title: "Master Floor Plan",
-      area: "Complete Tower",
-      image: "/gallery/Tower B/tower2-floorplan.jpg",
-      type: "master",
-    },
+    { id: "unit-1", flat: "03", type: "3 BHK", carpet: "1013.00" },
+    { id: "unit-2", flat: "04", type: "2 BHK", carpet: "702.17" },
+    { id: "unit-3", flat: "05", type: "3 BHK", carpet: "1002.28" },
+    { id: "unit-4", flat: "01 & 02", type: "2 BHK", carpet: "700.71" },
   ],
   "Tower 3": [
-    {
-      id: "flat-1",
-      title: "Flat 1 - 3 BHK",
-      area: "835 sq.ft",
-      image: "/gallery/Tower C/tower3-flat-1-3bhk.jpg",
-      type: "3bhk",
-    },
-    {
-      id: "flat-2_3_4",
-      title: "Flat 2, 3 & 4 - 2 BHK",
-      area: "756 sq.ft",
-      image: "/gallery/Tower C/tower3-flat-2_3_4-2bhk.jpg",
-      type: "2bhk",
-    },
-    {
-      id: "flat-5",
-      title: "Flat 5 - 2 BHK",
-      area: "756 sq.ft",
-      image: "/gallery/Tower C/tower3-flat-5-2bhk.jpg",
-      type: "2bhk",
-    },
-    {
-      id: "flat-6_7",
-      title: "Flat 6 & 7 - 2 BHK",
-      area: "756 sq.ft",
-      image: "/gallery/Tower C/tower3-flat-6_7-2bhk.jpg",
-      type: "2bhk",
-    },
-    {
-      id: "flat-8",
-      title: "Flat 8 - 3 BHK",
-      area: "835 sq.ft",
-      image: "/gallery/Tower C/tower3-flat-8-3bhk.jpg",
-      type: "3bhk",
-    },
-    {
-      id: "master",
-      title: "Master Floor Plan",
-      area: "Complete Tower",
-      image: "/gallery/Tower C/tower3-floorplan.jpg",
-      type: "master",
-    },
+    { id: "unit-1", flat: "05", type: "2 BHK", carpet: "714.33" },
+    { id: "unit-2", flat: "06", type: "2 BHK", carpet: "720.18" },
+    { id: "unit-3", flat: "07", type: "2 BHK", carpet: "720.18" },
+    { id: "unit-4", flat: "08", type: "3 BHK", carpet: "1013.60" },
+    { id: "unit-5", flat: "01", type: "3 BHK", carpet: "1046.64" },
+    { id: "unit-6", flat: "02", type: "2 BHK", carpet: "725.85" },
+    { id: "unit-7", flat: "03 & 04", type: "2 BHK", carpet: "725.85" },
   ],
 };
 
+const towerPlans: Record<TowerKey, string> = {
+  "Tower 1": "/gallery/Tower A/tower-a.svg",
+  "Tower 2": "/gallery/Tower B/tower-b.svg",
+  "Tower 3": "/gallery/Tower C/tower-c.svg",
+};
+
+const unitNumber = (unitId: string) => unitId.replace("unit-", "");
+
 export default function ApartmentsPage() {
-  const router = useRouter();
-
-  const [selectedTower, setSelectedTower] = useState<
-    "Tower 1" | "Tower 2" | "Tower 3"
-  >("Tower 1");
-
-  const [selectedPlanIndex, setSelectedPlanIndex] = useState(0);
-
-  const [showOverlay, setShowOverlay] = useState(true);
+  const [selectedTower, setSelectedTower] = useState<TowerKey>("Tower 1");
+  // null = the whole floor; otherwise the unit zoomed into on the plan.
+  const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
   const [isFullscreenActive, setIsFullscreenActive] = useState(
     () => typeof document !== "undefined" && !!document.fullscreenElement,
   );
-  const [zoom, setZoom] = useState({ scale: 1, x: 0, y: 0 });
-  const [isImageLoading, setIsImageLoading] = useState(false);
 
-  const currentTowerPlans = towerConfigs[selectedTower];
-  const activePlan = currentTowerPlans[selectedPlanIndex];
-
-  const pinchRef = useRef<{ dist: number; scale: number } | null>(null);
-  const panRef = useRef<{ x: number; y: number; zoomX: number; zoomY: number } | null>(null);
-  const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(null);
-
-  // Reset zoom whenever the displayed floor plan changes, and blur the
-  // outgoing image until the new one finishes loading instead of leaving
-  // the stale photo sitting there sharp while the new one fetches.
-  useEffect(() => {
-    setZoom({ scale: 1, x: 0, y: 0 });
-    setIsImageLoading(true);
-  }, [selectedTower, selectedPlanIndex]);
+  const units = towerUnits[selectedTower];
+  const planSrc = towerPlans[selectedTower];
 
   // Fullscreens `document.documentElement`, not this page's own div — that's
   // the one element that survives client-side navigation, so switching pages
@@ -208,73 +105,6 @@ export default function ApartmentsPage() {
     return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
   }, []);
 
-  // Phone-landscape pinch-to-zoom, double-tap-to-zoom, and drag-to-pan for
-  // the floor plan image.
-  const onImageTouchStart = (e: React.TouchEvent) => {
-    if (!isPhoneLandscape()) return;
-
-    if (e.touches.length === 2) {
-      pinchRef.current = {
-        dist: distance(e.touches[0], e.touches[1]),
-        scale: zoom.scale,
-      };
-      panRef.current = null;
-      return;
-    }
-
-    if (e.touches.length === 1) {
-      if (zoom.scale > 1) {
-        panRef.current = {
-          x: e.touches[0].clientX,
-          y: e.touches[0].clientY,
-          zoomX: zoom.x,
-          zoomY: zoom.y,
-        };
-      }
-
-      const touch = e.touches[0];
-      const now = Date.now();
-      const last = lastTapRef.current;
-      if (
-        last &&
-        now - last.time < 300 &&
-        Math.abs(touch.clientX - last.x) < 30 &&
-        Math.abs(touch.clientY - last.y) < 30
-      ) {
-        setZoom((prev) =>
-          prev.scale > 1 ? { scale: 1, x: 0, y: 0 } : { scale: 2.5, x: 0, y: 0 },
-        );
-        lastTapRef.current = null;
-      } else {
-        lastTapRef.current = { time: now, x: touch.clientX, y: touch.clientY };
-      }
-    }
-  };
-
-  const onImageTouchMove = (e: React.TouchEvent) => {
-    if (pinchRef.current && e.touches.length === 2) {
-      const newDist = distance(e.touches[0], e.touches[1]);
-      const nextScale = Math.min(
-        4,
-        Math.max(1, pinchRef.current.scale * (newDist / pinchRef.current.dist)),
-      );
-      setZoom((prev) => ({ ...prev, scale: nextScale }));
-      return;
-    }
-
-    if (panRef.current && e.touches.length === 1) {
-      const { x: startX, y: startY, zoomX, zoomY } = panRef.current;
-      const dx = e.touches[0].clientX - startX;
-      const dy = e.touches[0].clientY - startY;
-      setZoom((prev) => ({ ...prev, x: zoomX + dx, y: zoomY + dy }));
-    }
-  };
-
-  const onImageTouchEnd = (e: React.TouchEvent) => {
-    if (e.touches.length < 2) pinchRef.current = null;
-    if (e.touches.length === 0) panRef.current = null;
-  };
-
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-black">
       {/* Background Masterplan */}
@@ -291,25 +121,32 @@ export default function ApartmentsPage() {
       {/* Global Navbar */}
       <GlobalNavbar currentPage="apartments" showRERA={false} />
 
-      {/* Sidebar */}
+      {/* Sidebar — the same units the plan outlines, so picking one here zooms
+          it there, and picking one there highlights it here */}
       <Sidebar
         isFullscreenActive={isFullscreenActive}
         header={{
           icon: Grid3X3,
           title: selectedTower,
-          subtitle: "Floor Plans",
+          subtitle: "Carpet Area (RERA)",
         }}
         sections={createSidebarSections([
           {
-            id: "floor-plans",
-            items: createSidebarItems(
-              currentTowerPlans.map((plan, index) => ({
-                id: plan.id,
-                label: `${plan.title} - ${plan.area}`,
-                onClick: () => setSelectedPlanIndex(index),
-                isActive: selectedPlanIndex === index,
+            id: "units",
+            items: createSidebarItems([
+              {
+                id: "whole-floor",
+                label: "Master Floor Plan",
+                onClick: () => setActiveUnitId(null),
+                isActive: activeUnitId === null,
+              },
+              ...units.map((unit) => ({
+                id: unit.id,
+                label: `Unit ${unitNumber(unit.id)} - ${unit.type} - ${unit.carpet} sq.ft`,
+                onClick: () => setActiveUnitId(unit.id),
+                isActive: activeUnitId === unit.id,
               })),
-            ),
+            ]),
           },
         ])}
       />
@@ -324,32 +161,14 @@ export default function ApartmentsPage() {
       </button>
 
       {/* Floorplan Area */}
-      <div className="absolute top-[80px] bottom-[100px] left-4 lg:left-[360px] right-4 lg:right-8 flex items-center justify-center p-4 phone-landscape:top-14 phone-landscape:bottom-14 phone-landscape:left-4 phone-landscape:right-4 phone-landscape:p-1 phone-landscape:touch-none">
-        <div
-          className="relative w-full max-w-[1000px] max-h-full aspect-[1400/900] flex items-center justify-center overflow-hidden"
-          onTouchStart={onImageTouchStart}
-          onTouchMove={onImageTouchMove}
-          onTouchEnd={onImageTouchEnd}
-        >
-          <div
-            className="relative w-full h-full"
-            style={{
-              transform: `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})`,
-              transition: pinchRef.current || panRef.current ? "none" : "transform 0.2s ease-out",
-            }}
-          >
-            <Image
-              src={activePlan.image}
-              alt=""
-              fill
-              priority
-              sizes="(max-width: 1000px) 100vw, 1000px"
-              onLoad={() => setIsImageLoading(false)}
-              className={`object-contain transition-[opacity,filter] duration-500 ${
-                showOverlay ? "opacity-100" : "opacity-20"
-              } ${isImageLoading ? "blur-md scale-105" : "blur-0 scale-100"}`}
-            />
-          </div>
+      <div className="absolute top-[80px] bottom-[72px] left-4 lg:left-[340px] right-4 lg:right-8 flex items-center justify-center p-2 phone-landscape:top-14 phone-landscape:bottom-14 phone-landscape:left-4 phone-landscape:right-4 phone-landscape:p-1 phone-landscape:touch-none">
+        <div className="relative w-full max-w-[1400px] max-h-full aspect-[3900/2700]">
+          <TowerFloorPlan
+            key={planSrc}
+            src={planSrc}
+            activeUnitId={activeUnitId}
+            onSelectUnit={setActiveUnitId}
+          />
         </div>
       </div>
 
@@ -358,14 +177,12 @@ export default function ApartmentsPage() {
 
       {/* Towers */}
       <div className="absolute bottom-6 left-1/2 z-40 flex -translate-x-1/2 gap-2 phone-landscape:bottom-3 phone-landscape:gap-1">
-        {(
-          Object.keys(towerConfigs) as Array<"Tower 1" | "Tower 2" | "Tower 3">
-        ).map((tower) => (
+        {(Object.keys(towerUnits) as TowerKey[]).map((tower) => (
           <button
             key={tower}
             onClick={() => {
               setSelectedTower(tower);
-              setSelectedPlanIndex(0);
+              setActiveUnitId(null);
             }}
             className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition cursor-pointer duration-200 phone-landscape:px-3 phone-landscape:h-6 phone-landscape:text-[9px] phone-landscape:rounded-md ${
               selectedTower === tower

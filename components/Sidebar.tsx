@@ -84,6 +84,14 @@ interface SidebarProps {
   side?: "left" | "right";
   width?: string;
   activeItemRounded?: boolean;
+  /** Tighter vertical rhythm: less padding on the panel and fixed-height rows. */
+  compact?: boolean;
+  /**
+   * Caps each section's list to this many rows and scrolls the rest behind a
+   * visible scrollbar. Rows get a fixed height so the cap lands exactly on a
+   * row boundary.
+   */
+  visibleItemCount?: number;
 }
 
 export default function Sidebar({
@@ -95,9 +103,21 @@ export default function Sidebar({
   side = "left",
   width = "w-[250px] phone-landscape:w-[160px]",
   activeItemRounded = false,
+  compact = false,
+  visibleItemCount,
 }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const HeaderIcon = header?.icon;
+  // Rows are `space-y-[2px]` apart, so N visible rows measure
+  // N * row height + (N - 1) * 2px. --sidebar-row-h is set on the panel below
+  // and re-declared for phone-landscape, keeping the cap breakpoint-aware.
+  const itemsScrollStyle = visibleItemCount
+    ? {
+        maxHeight: `calc(var(--sidebar-row-h) * ${visibleItemCount} + 2px * ${
+          visibleItemCount - 1
+        })`,
+      }
+    : undefined;
   const sidePosition =
     side === "right"
       ? "right-10 phone-landscape:right-4"
@@ -134,13 +154,23 @@ export default function Sidebar({
 
     shadow-[0_12px_30px_rgba(0,0,0,0.18)]
     phone-landscape:rounded-[8px]
+    [--sidebar-row-h:30px]
+    phone-landscape:[--sidebar-row-h:24px]
   `}
         >
           <div
-            className={`p-4 phone-landscape:px-3 phone-landscape:py-2 phone-landscape:overflow-y-auto phone-landscape:scrollbar-hide ${
-              isFullscreenActive
-                ? "phone-landscape:max-h-[60vh]"
-                : "phone-landscape:max-h-[40vh]"
+            className={`${
+              compact
+                ? "px-4 py-2 phone-landscape:px-3 phone-landscape:py-1.5"
+                : "p-4 phone-landscape:px-3 phone-landscape:py-2"
+            } ${
+              visibleItemCount
+                ? ""
+                : `phone-landscape:overflow-y-auto phone-landscape:scrollbar-hide ${
+                    isFullscreenActive
+                      ? "phone-landscape:max-h-[60vh]"
+                      : "phone-landscape:max-h-[40vh]"
+                  }`
             }`}
           >
             {/* Header */}
@@ -191,7 +221,11 @@ export default function Sidebar({
                   </p>
                 )}
 
-                <hr className="border-[#596164]/50 mt-2 mb-2 phone-landscape:mt-1.5 phone-landscape:mb-1.5" />
+                <hr
+                  className={`border-[#596164]/50 phone-landscape:mt-1.5 phone-landscape:mb-1.5 ${
+                    compact ? "mt-1.5 mb-1.5" : "mt-2 mb-2"
+                  }`}
+                />
               </>
             )}
 
@@ -230,10 +264,19 @@ export default function Sidebar({
                   ))}
 
                 <div
-                  className={`space-y-[2px] overflow-hidden transition-all duration-300 ${
+                  style={
+                    section.isCollapsible && !section.isExpanded
+                      ? undefined
+                      : itemsScrollStyle
+                  }
+                  className={`space-y-[2px] transition-all duration-300 ${
+                    visibleItemCount
+                      ? "overflow-y-auto overflow-x-hidden sidebar-scroll"
+                      : "overflow-hidden"
+                  } ${
                     section.isCollapsible && !section.isExpanded
                       ? "max-h-0 opacity-0"
-                      : "max-h-[500px] opacity-100"
+                      : `opacity-100 ${visibleItemCount ? "" : "max-h-[500px]"}`
                   }`}
                 >
                   {section.items.map((item) => {
@@ -248,7 +291,6 @@ export default function Sidebar({
                         -mx-3
                         px-3
                         pl-6
-                        py-[8px]
                         flex
                         items-center
                         gap-3
@@ -258,8 +300,12 @@ export default function Sidebar({
                         rounded-[6px]
                         cursor-pointer
                         phone-landscape:pl-5
-                        phone-landscape:py-[5px]
                         phone-landscape:gap-2
+                        ${
+                          compact
+                            ? "h-[var(--sidebar-row-h)] py-0 shrink-0"
+                            : "py-[8px] phone-landscape:py-[5px]"
+                        }
                         ${
                           item.isActive
                             ? `bg-black/35 text-white font-medium shadow-inner ${activeItemRounded ? "rounded-[20px]" : ""}`
