@@ -3,11 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { RotateCw } from "lucide-react";
 
-// public/gallery/360 holds one render per 15° of a single horizontal orbit, so
+// The CDN holds one render per 15° of a single horizontal orbit (1-based), so
 // stepping through them in order reads as walking around the tower.
 const FRAME_COUNT = 24;
 const framePath = (index: number) =>
-  `/gallery/360/360.${String(index).padStart(4, "0")}.webp`;
+  `https://assets.vestate.io/webtool/hiranandani/gorai/overview/day/${index + 1}.webp`;
 
 // One drag across the full width turns the building all the way round; the floor
 // keeps the gesture workable on a narrow phone.

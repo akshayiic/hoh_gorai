@@ -55,7 +55,8 @@
       "Bash(pip install *)",
       "Bash(curl -s --max-time 90 -X POST -d @/tmp/uttan_query.txt \"https://overpass.kumi.systems/api/interpreter\" -o /tmp/uttan_raw.json)",
       "Bash(curl -sv --max-time 90 -X POST -d @/tmp/uttan_query.txt \"https://overpass.kumi.systems/api/interpreter\" -o /tmp/uttan_raw.json)",
-      "Bash(curl -s -o /dev/null -w \"geojson:%{http_code}\\\\n\" http://localhost:3000/data/green-areas.geojson)"
+      "Bash(curl -s -o /dev/null -w \"geojson:%{http_code}\\\\n\" http://localhost:3000/data/green-areas.geojson)",
+      "Bash(curl -sI \"https://assets.vestate.io/webtool/hiranandani/gorai/overview/day/1.webp\" | head -5; curl -sI \"https://assets.vestate.io/webtool/hiranandani/gorai/overview/day/24.webp\" | head -3)"
     ]
   }
 }
