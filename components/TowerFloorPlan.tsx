@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { ChevronLeft, ScanSearch } from "lucide-react";
+import { ScanSearch } from "lucide-react";
 
 type UnitBox = { x: number; y: number; w: number; h: number };
 
@@ -23,6 +23,35 @@ interface TowerPlan {
 // A selected unit is framed to this fraction of the plan area, leaving a little
 // breathing room around it instead of butting the walls against the edges.
 const ZOOM_PADDING = 0.86;
+
+// Framing a unit — and coming back out of one — glides on a long, softly
+// decelerated curve, slow enough to read as a camera move rather than a cut.
+// The pill anchors and the back chip derive their timing from this, so the whole
+// view moves as one piece.
+const ZOOM_MS = 2000;
+// A shallow S: gentle at both ends *and* through the middle. What made earlier
+// curves feel quick was their peak speed — a cubic ease-in-out sprints at 2.9x
+// its own average halfway through, so lengthening it only stretched the pause
+// either side of the rush. This one peaks at 1.4x, so the whole move drifts.
+const ZOOM_EASE = "cubic-bezier(0.4, 0.15, 0.6, 0.85)";
+// Free zoom on top of whatever the plan is currently framing: wheel or pinch to
+// magnify, drag to move around. Limits are expressed on the *combined* scale,
+// so from a framed unit the visitor can zoom back out to the whole floor as
+// well as further in.
+const MIN_EFFECTIVE_ZOOM = 1;
+const MAX_EFFECTIVE_ZOOM = 8;
+// Wheeling sets a target; the rendered zoom then chases it on its own, easing by
+// a fixed fraction of the remaining distance each frame. Because the *rate* is
+// what's bounded, spinning the wheel fast only pushes the target further away —
+// the picture still drifts there slowly instead of lurching. Pinch and drag stay
+// immediate: those follow the fingers.
+const WHEEL_ZOOM_STEP = 0.0015;
+const WHEEL_SMOOTH_TAU = 700;
+const SETTLE_SCALE = 0.002;
+const SETTLE_PX = 0.4;
+const DRAG_SLOP_PX = 6;
+
+const CHROME_FADE_MS = 300;
 
 // The exports leave a blank margin outside the sheet's border frame, which sits
 // 28 units in on every tower. Height is what caps how large the plan can draw
@@ -162,6 +191,12 @@ interface TowerFloorPlanProps {
   /** Path to a tower export, e.g. `/gallery/Tower A/tower-a.svg`. */
   src: string;
   /**
+   * Combined scale of the plan (unit framing × the visitor's own zoom) and how
+   * long that change is animating for. The page drifts its backdrop by a
+   * fraction of the scale, on the same timing.
+   */
+  onZoomChange?: (effectiveScale: number, transitionMs: number) => void;
+  /**
    * Selected unit, as `unit-1`…`unit-N` numbered clockwise from the plan's
    * top-left corner. Owned by the caller so the floor-plan pills and the
    * sidebar list stay in step.
@@ -175,6 +210,7 @@ export default function TowerFloorPlan({
   src,
   activeUnitId,
   onSelectUnit,
+  onZoomChange,
   className = "",
 }: TowerFloorPlanProps) {
   // The parse cache is the source of truth, read straight through during render
@@ -183,7 +219,28 @@ export default function TowerFloorPlan({
   const [, onPlanLoaded] = useReducer((count: number) => count + 1, 0);
   const plan = planCache.get(src) ?? null;
   const [size, setSize] = useState({ w: 0, h: 0 });
+  // Keyed by unit so selecting a different one starts from its own framing
+  // again, without an effect having to reset it.
+  const [zoomState, setZoomState] = useState({
+    unit: activeUnitId,
+    scale: 1,
+    x: 0,
+    y: 0,
+    ms: 0,
+  });
   const containerRef = useRef<HTMLDivElement>(null);
+  const pointersRef = useRef(new Map<number, { x: number; y: number }>());
+  const panRef = useRef<{ x: number; y: number; zoomX: number; zoomY: number } | null>(
+    null,
+  );
+  const pinchRef = useRef<{ dist: number; scale: number } | null>(null);
+  const draggedRef = useRef(false);
+  // Where the zoom is heading, where it is right now, and the frame loop
+  // closing the gap between them.
+  const zoomTargetRef = useRef({ unit: activeUnitId, scale: 1, x: 0, y: 0 });
+  const zoomLiveRef = useRef({ scale: 1, x: 0, y: 0 });
+  const rafRef = useRef<number | null>(null);
+  const lastFrameRef = useRef(0);
 
   useEffect(() => {
     if (planCache.has(src)) return;
@@ -242,8 +299,9 @@ export default function TowerFloorPlan({
   const activeUnit =
     plan?.units.find((unit) => unit.id === activeUnitId) ?? null;
 
-  const transform = useMemo(() => {
-    if (!activeUnit || !fit || !view) return "none";
+  const unitFrame = useMemo(() => {
+    if (!activeUnit || !fit || !view)
+      return { transform: "none", scale: 1, tx: 0, ty: 0 };
 
     const { scale, offX, offY } = fit;
     const rectW = activeUnit.box.w * scale;
@@ -275,17 +333,312 @@ export default function TowerFloorPlan({
     tx = clampAxis(tx, viewLeft, viewLeft + view.w * scale, size.w);
     ty = clampAxis(ty, viewTop, viewTop + view.h * scale, size.h);
 
-    return `translate(${tx}px, ${ty}px) scale(${k})`;
+    return {
+      transform: `translate(${tx}px, ${ty}px) scale(${k})`,
+      scale: k,
+      tx,
+      ty,
+    };
   }, [activeUnit, fit, size, view]);
+
+  const userZoom =
+    zoomState.unit === activeUnitId
+      ? zoomState
+      : // A fresh unit starts from its own framing, easing on the same curve as
+        // the plan so the two move as one.
+        { unit: activeUnitId, scale: 1, x: 0, y: 0, ms: ZOOM_MS };
+  // How far the content may be dragged before its edge would pull inside the
+  // frame, given everything scaling it right now.
+  const panLimit = (extent: number) =>
+    Math.max(0, ((unitFrame.scale * userZoom.scale - 1) * extent) / 2);
+
+  /**
+   * The visitor's offset and the unit framing's own translate compose as
+   * `user + userScale * unitTranslate`, so the limits have to be applied to
+   * that sum. Clamping the visitor's offset alone left the sheet hanging off
+   * centre when they zoomed back out: the scale unwound but the framing's
+   * translate stayed. Clamping the sum makes zooming out walk the plan back to
+   * the middle, and reach it exactly at 1×.
+   */
+  const clampOffset = (x: number, y: number, scale: number) => {
+    const limit = (extent: number) =>
+      Math.max(0, ((unitFrame.scale * scale - 1) * extent) / 2);
+    const clamp = (value: number, max: number) =>
+      Math.min(Math.max(value, -max), max);
+
+    return {
+      x: clamp(x + scale * unitFrame.tx, limit(size.w)) - scale * unitFrame.tx,
+      y: clamp(y + scale * unitFrame.ty, limit(size.h)) - scale * unitFrame.ty,
+    };
+  };
+
+  const clampScale = (scale: number) =>
+    Math.min(
+      Math.max(scale, MIN_EFFECTIVE_ZOOM / unitFrame.scale),
+      MAX_EFFECTIVE_ZOOM / unitFrame.scale,
+    );
+
+  // Anchors the zoom on a point, so whatever sits under the cursor (or pinch
+  // centre) stays put as the scale changes.
+  const zoomAbout = (
+    from: { scale: number; x: number; y: number },
+    nextScale: number,
+    originX: number,
+    originY: number,
+  ) => {
+    const scale = clampScale(nextScale);
+    const ratio = scale / from.scale;
+    return {
+      scale,
+      ...clampOffset(
+        (originX - size.w / 2) * (1 - ratio) + from.x * ratio,
+        (originY - size.h / 2) * (1 - ratio) + from.y * ratio,
+        scale,
+      ),
+    };
+  };
+
+  const stopChasing = () => {
+    if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    rafRef.current = null;
+  };
+
+  useEffect(() => stopChasing, []);
+
+  /** Applies a zoom straight away — for gestures that track the pointer. */
+  const commitZoom = (
+    next: { scale: number; x: number; y: number },
+    ms: number,
+  ) => {
+    stopChasing();
+    zoomLiveRef.current = next;
+    zoomTargetRef.current = { unit: activeUnitId, ...next };
+    setZoomState({ unit: activeUnitId, ...next, ms });
+  };
+
+  // Driven by requestAnimationFrame, which hands us the frame's timestamp — no
+  // need to read a clock ourselves.
+  const chaseTarget = (now: number): void => {
+    // First frame of a chase has no previous stamp; a long-idle tab shouldn't
+    // jump on its first frame back either.
+    const dt = lastFrameRef.current
+      ? Math.min(64, now - lastFrameRef.current)
+      : 16;
+    lastFrameRef.current = now;
+
+    const target = zoomTargetRef.current;
+    if (target.unit !== activeUnitId) {
+      rafRef.current = null;
+      return;
+    }
+
+    const live = zoomLiveRef.current;
+    const closed = 1 - Math.exp(-dt / WHEEL_SMOOTH_TAU);
+    const stepped = {
+      scale: live.scale + (target.scale - live.scale) * closed,
+      x: live.x + (target.x - live.x) * closed,
+      y: live.y + (target.y - live.y) * closed,
+    };
+    const settled =
+      Math.abs(target.scale - stepped.scale) < SETTLE_SCALE &&
+      Math.abs(target.x - stepped.x) < SETTLE_PX &&
+      Math.abs(target.y - stepped.y) < SETTLE_PX;
+    const applied = settled
+      ? { scale: target.scale, x: target.x, y: target.y }
+      : stepped;
+
+    zoomLiveRef.current = applied;
+    // ms 0: the loop is doing the animating, frame by frame, so everything
+    // reading this (pills, the page's backdrop) stays exactly in step.
+    setZoomState({ unit: activeUnitId, ...applied, ms: 0 });
+    rafRef.current = settled ? null : requestAnimationFrame(chaseTarget);
+  };
+
+  const localPoint = (event: React.PointerEvent | React.WheelEvent) => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    return {
+      x: event.clientX - (rect?.left ?? 0),
+      y: event.clientY - (rect?.top ?? 0),
+    };
+  };
+
+  const onWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    const point = localPoint(event);
+    // Steps accumulate on the target, not on what's drawn: a fast scroll piles
+    // up distance rather than speed.
+    const from =
+      zoomTargetRef.current.unit === activeUnitId
+        ? zoomTargetRef.current
+        : { scale: 1, x: 0, y: 0 };
+
+    zoomTargetRef.current = {
+      unit: activeUnitId,
+      ...zoomAbout(
+        from,
+        from.scale * Math.exp(-event.deltaY * WHEEL_ZOOM_STEP),
+        point.x,
+        point.y,
+      ),
+    };
+    zoomLiveRef.current = {
+      scale: userZoom.scale,
+      x: userZoom.x,
+      y: userZoom.y,
+    };
+
+    if (rafRef.current === null) {
+      lastFrameRef.current = 0;
+      rafRef.current = requestAnimationFrame(chaseTarget);
+    }
+  };
+
+  const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    const pointers = pointersRef.current;
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    draggedRef.current = false;
+
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      pinchRef.current = {
+        dist: Math.hypot(a.x - b.x, a.y - b.y),
+        scale: userZoom.scale,
+      };
+      panRef.current = null;
+      return;
+    }
+
+    if (pointers.size === 1) {
+      // Deliberately no setPointerCapture here: capturing on pointerdown
+      // retargets the following click to this container, which would swallow
+      // every unit pill and outline tap. It is taken once a drag is real.
+      panRef.current = {
+        x: event.clientX,
+        y: event.clientY,
+        zoomX: userZoom.x,
+        zoomY: userZoom.y,
+      };
+    }
+  };
+
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const pointers = pointersRef.current;
+    if (!pointers.has(event.pointerId)) return;
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+
+    if (pinchRef.current && pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      const dist = Math.hypot(a.x - b.x, a.y - b.y);
+      const rect = containerRef.current?.getBoundingClientRect();
+      draggedRef.current = true;
+      commitZoom(
+        zoomAbout(
+          userZoom,
+          pinchRef.current.scale * (dist / pinchRef.current.dist),
+          (a.x + b.x) / 2 - (rect?.left ?? 0),
+          (a.y + b.y) / 2 - (rect?.top ?? 0),
+        ),
+        0,
+      );
+      return;
+    }
+
+    const pan = panRef.current;
+    if (!pan) return;
+
+    const dx = event.clientX - pan.x;
+    const dy = event.clientY - pan.y;
+    if (
+      !draggedRef.current &&
+      (Math.abs(dx) > DRAG_SLOP_PX || Math.abs(dy) > DRAG_SLOP_PX)
+    ) {
+      draggedRef.current = true;
+      // Now that it is a drag rather than a tap, follow the pointer even if it
+      // leaves the plan.
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+
+    if (panLimit(size.w) === 0 && panLimit(size.h) === 0) return; // nothing to move
+
+    commitZoom(
+      {
+        scale: userZoom.scale,
+        ...clampOffset(pan.zoomX + dx, pan.zoomY + dy, userZoom.scale),
+      },
+      0,
+    );
+  };
+
+  const endPointer = (event: React.PointerEvent<HTMLDivElement>) => {
+    const pointers = pointersRef.current;
+    const pan = panRef.current;
+    // Catches a flick that lands without intermediate move events: the click
+    // that follows still has to know it was a drag, not a tap.
+    if (
+      pan &&
+      (Math.abs(event.clientX - pan.x) > DRAG_SLOP_PX ||
+        Math.abs(event.clientY - pan.y) > DRAG_SLOP_PX)
+    ) {
+      draggedRef.current = true;
+    }
+
+    pointers.delete(event.pointerId);
+    if (pointers.size < 2) pinchRef.current = null;
+    if (pointers.size === 0) panRef.current = null;
+  };
+
+  // A drag that moved the plan shouldn't also count as picking a unit.
+  const wasDrag = () => draggedRef.current;
+
+  const resetUserZoom = () =>
+    commitZoom({ scale: 1, x: 0, y: 0 }, ZOOM_MS);
+
+  const effectiveScale = unitFrame.scale * userZoom.scale;
+
+  useEffect(() => {
+    onZoomChange?.(effectiveScale, userZoom.ms);
+  }, [effectiveScale, userZoom.ms, onZoomChange]);
+
+  const canPan = panLimit(size.w) > 0 || panLimit(size.h) > 0;
 
   return (
     <div
       ref={containerRef}
-      className={`relative h-full w-full overflow-hidden ${className}`}
+      onWheel={onWheel}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={endPointer}
+      onPointerCancel={endPointer}
+      onDoubleClick={resetUserZoom}
+      // Deliberately unclipped: the plan sits in a box only as wide as its
+      // fitted self, so clipping there cut the magnified sheet off at a hard
+      // rectangle. The page root clips instead, letting a zoom fill the screen.
+      className={`relative h-full w-full touch-none ${
+        canPan ? "cursor-grab active:cursor-grabbing" : ""
+      } ${className}`}
     >
+      {/* Free zoom sits outside the unit framing so the two compose: the plan
+          settles on a unit, then the visitor can magnify and move it. */}
       <div
-        className="absolute inset-0 transition-transform duration-500 ease-out"
-        style={{ transform, transformOrigin: "center", willChange: "transform" }}
+        className="absolute inset-0"
+        style={{
+          transform: `translate(${userZoom.x}px, ${userZoom.y}px) scale(${userZoom.scale})`,
+          transformOrigin: "center",
+          willChange: "transform",
+          transitionProperty: "transform",
+          transitionDuration: `${userZoom.ms}ms`,
+          transitionTimingFunction: ZOOM_EASE,
+        }}
+      >
+      <div
+        className="absolute inset-0"
+        style={{
+          transform: unitFrame.transform,
+          transformOrigin: "center",
+          willChange: "transform",
+          transitionProperty: "transform",
+          transitionDuration: `${ZOOM_MS}ms`,
+          transitionTimingFunction: ZOOM_EASE,
+        }}
       >
         {plan && (
           <svg
@@ -303,7 +656,9 @@ export default function TowerFloorPlan({
                 width={plan.width}
                 height={plan.height}
                 preserveAspectRatio="none"
-                onClick={() => onSelectUnit(null)}
+                onClick={() => {
+                  if (!wasDrag()) onSelectUnit(null);
+                }}
               />
             )}
 
@@ -317,50 +672,94 @@ export default function TowerFloorPlan({
                   // A selected unit sheds its overlay entirely — that's the
                   // "upper layer" coming off — but stays hit-testable so
                   // clicking it again backs out to the full floor.
+                  // Plain fade with no delay: the same transition carries the
+                  // hover dimming, which has to stay immediate.
                   className={`transition-opacity duration-300 ${
                     isActive
                       ? "cursor-zoom-out opacity-0"
                       : "cursor-zoom-in opacity-70 hover:opacity-40"
                   }`}
-                  onClick={() => onSelectUnit(isActive ? null : unit.id)}
+                  onClick={() => {
+                    if (wasDrag()) return;
+                    onSelectUnit(isActive ? null : unit.id);
+                  }}
                 />
               );
             })}
           </svg>
         )}
       </div>
+      </div>
 
-      {/* Unit pills, pinned to each detected unit's centre */}
-      {plan &&
-        fit &&
-        !activeUnit &&
-        plan.units.map((unit) => (
-          <button
-            key={unit.id}
-            onClick={() => onSelectUnit(unit.id)}
-            style={{
-              left: fit.offX + (unit.box.x + unit.box.w / 2) * fit.scale,
-              top: fit.offY + (unit.box.y + unit.box.h / 2) * fit.scale,
-            }}
-            className="absolute z-10 flex mt-4 -translate-x-1/2 -translate-y-1/2 items-center gap-2 rounded-full border border-white/10 bg-black/80 px-3 h-8 text-[12px] font-medium text-white shadow-lg backdrop-blur-md transition hover:bg-black hover:text-[#C79A59] cursor-pointer phone-landscape:h-[18px] phone-landscape:gap-0 phone-landscape:px-1.5 phone-landscape:text-[8px] phone-landscape:font-semibold phone-landscape:tracking-tight"
-          >
-            <ScanSearch size={14} className="shrink-0 phone-landscape:hidden" />
-            <span>{unit.label}</span>
-          </button>
-        ))}
-
-      {/* Back out of a zoomed unit */}
-      {activeUnit && (
-        <button
-          onClick={() => onSelectUnit(null)}
-          className="absolute left-0 top-0 z-10 flex items-center gap-2 rounded-full border border-white/10 bg-black/80 px-3 h-8 text-[12px] font-medium text-white shadow-lg backdrop-blur-md transition hover:bg-black hover:text-[#C79A59] cursor-pointer phone-landscape:h-[18px] phone-landscape:gap-0.5 phone-landscape:px-1.5 phone-landscape:text-[8px] phone-landscape:font-semibold"
+      {/* Unit pills stay anchored to their units through every zoom. The layer
+          carries the visitor's own pan/zoom (no animation, so the counter-scale
+          below cancels it exactly), while each anchor's left/top animates on the
+          same curve as the unit framing — which moves points linearly in the
+          eased progress, so a pill stays glued to its unit the whole way. */}
+      {plan && fit && (
+        <div
+          className="pointer-events-none absolute inset-0 z-10"
+          style={{
+            transform: `translate(${userZoom.x}px, ${userZoom.y}px) scale(${userZoom.scale})`,
+            transformOrigin: "center",
+            transitionProperty: "transform",
+            transitionDuration: `${userZoom.ms}ms`,
+            transitionTimingFunction: ZOOM_EASE,
+          }}
         >
-          <ChevronLeft
-            size={14}
-            className="shrink-0 phone-landscape:w-2.5 phone-landscape:h-2.5"
-          />
-          <span>{activeUnit.label}</span>
-        </button>
+          {plan.units.map((unit) => {
+            const isActive = unit.id === activeUnitId;
+            const anchorX = fit.offX + (unit.box.x + unit.box.w / 2) * fit.scale;
+            const anchorY = fit.offY + (unit.box.y + unit.box.h / 2) * fit.scale;
+
+            return (
+              <div
+                key={unit.id}
+                className="absolute"
+                style={{
+                  left:
+                    size.w / 2 +
+                    (anchorX - size.w / 2) * unitFrame.scale +
+                    unitFrame.tx,
+                  top:
+                    size.h / 2 +
+                    (anchorY - size.h / 2) * unitFrame.scale +
+                    unitFrame.ty,
+                  transition: `left ${ZOOM_MS}ms ${ZOOM_EASE}, top ${ZOOM_MS}ms ${ZOOM_EASE}`,
+                }}
+              >
+                <button
+                  onClick={() => {
+                    if (!wasDrag()) onSelectUnit(unit.id);
+                  }}
+                  // The unit being viewed keeps its pill exactly where it sits
+                  // on the plan — dimmed and inert rather than moved or hidden.
+                  disabled={isActive}
+                  style={{
+                    // Centres the pill on its anchor and holds it at a constant
+                    // screen size however far the plan is magnified.
+                    transform: `translate(-50%, -50%) scale(${1 / userZoom.scale})`,
+                    transformOrigin: "center",
+                    transitionProperty: "transform, opacity, background-color, color",
+                    transitionDuration: `${userZoom.ms}ms, ${CHROME_FADE_MS}ms, 150ms, 150ms`,
+                    transitionTimingFunction: `${ZOOM_EASE}, ease-out, ease-out, ease-out`,
+                  }}
+                  className={`flex lg:mt-4 sm:mt-0 items-center gap-2 whitespace-nowrap rounded-full border border-white/10 bg-black/80 px-3 h-8 text-[12px] font-medium text-white shadow-lg backdrop-blur-md phone-landscape:h-[18px] phone-landscape:gap-0 phone-landscape:px-1.5 phone-landscape:text-[8px] phone-landscape:font-semibold phone-landscape:tracking-tight ${
+                    isActive
+                      ? "pointer-events-none cursor-default opacity-40"
+                      : "pointer-events-auto cursor-pointer opacity-100 hover:bg-black hover:text-[#C79A59]"
+                  }`}
+                >
+                  <ScanSearch
+                    size={14}
+                    className="shrink-0 phone-landscape:hidden"
+                  />
+                  <span>{unit.label}</span>
+                </button>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {!plan && (

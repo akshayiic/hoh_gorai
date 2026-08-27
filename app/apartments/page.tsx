@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { Grid3X3, Maximize2, Minimize2 } from "lucide-react";
 import Image from "next/image";
 import GlobalNavbar from "@/components/GlobalNavbar";
@@ -66,12 +66,27 @@ const towerPlans: Record<TowerKey, string> = {
 
 const unitNumber = (unitId: string) => unitId.replace("unit-", "");
 
+// The backdrop follows the plan's zoom by a fraction of it — enough that the
+// whole scene feels like it moves together, not enough to pull focus.
+const BACKDROP_ZOOM_SHARE = 0.03;
+// Matches TowerFloorPlan's ZOOM_EASE so the backdrop drifts in step.
+const BACKDROP_EASE = "cubic-bezier(0.65, 0, 0.35, 1)";
+const NO_ZOOM = { scale: 1, ms: 0 };
+
 export default function ApartmentsPage() {
   const [selectedTower, setSelectedTower] = useState<TowerKey>("Tower 1");
   // null = the whole floor; otherwise the unit zoomed into on the plan.
   const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
   const [isFullscreenActive, setIsFullscreenActive] = useState(
     () => typeof document !== "undefined" && !!document.fullscreenElement,
+  );
+  // Mirrors the plan's zoom, timing included, so the backdrop moves with it
+  // rather than on its own clock.
+  const [planZoom, setPlanZoom] = useState(NO_ZOOM);
+  // Stable identity: TowerFloorPlan reports through an effect.
+  const handleZoomChange = useCallback(
+    (scale: number, ms: number) => setPlanZoom({ scale, ms }),
+    [],
   );
 
   const units = towerUnits[selectedTower];
@@ -107,14 +122,24 @@ export default function ApartmentsPage() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-black">
-      {/* Background Masterplan */}
-      <Image
-        src="/gallery/apartment-bg.png"
-        alt=""
-        fill
-        priority
-        className="object-cover"
-      />
+      {/* Background — the project aerial, drifting with the plan's zoom */}
+      <div
+        className="absolute inset-0"
+        style={{
+          transform: `scale(${1 + (planZoom.scale - 1) * BACKDROP_ZOOM_SHARE})`,
+          transformOrigin: "center",
+          transition: `transform ${planZoom.ms}ms ${BACKDROP_EASE}`,
+          willChange: "transform",
+        }}
+      >
+        <Image
+          src="/gallery/hoh_layout.webp"
+          alt=""
+          fill
+          priority
+          className="object-cover"
+        />
+      </div>
 
       <div className="absolute inset-0 bg-black/45" />
 
@@ -128,7 +153,7 @@ export default function ApartmentsPage() {
         header={{
           icon: Grid3X3,
           title: selectedTower,
-          subtitle: "Carpet Area (RERA)",
+          subtitle: "Floor Plans",
         }}
         sections={createSidebarSections([
           {
@@ -157,17 +182,31 @@ export default function ApartmentsPage() {
         className="absolute right-6 bottom-32 z-20 w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
         title={isFullscreenActive ? "Exit Fullscreen" : "Enter Fullscreen"}
       >
-        {isFullscreenActive ? <Minimize2 size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" /> : <Maximize2 size={20} className="phone-landscape:w-3.5 phone-landscape:h-3.5" />}
+        {isFullscreenActive ? (
+          <Minimize2
+            size={20}
+            className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+          />
+        ) : (
+          <Maximize2
+            size={20}
+            className="phone-landscape:w-3.5 phone-landscape:h-3.5"
+          />
+        )}
       </button>
 
-      {/* Floorplan Area */}
-      <div className="absolute top-[80px] bottom-[72px] left-4 lg:left-[340px] right-4 lg:right-8 flex items-center justify-center p-2 phone-landscape:top-14 phone-landscape:bottom-14 phone-landscape:left-4 phone-landscape:right-4 phone-landscape:p-1 phone-landscape:touch-none">
+      {/* Floorplan Area — inset past the sidebar on every size (the phone
+          sidebar ends at 176px), so a zoomed unit fills a frame that is
+          actually visible instead of sliding under the panel. The plan is
+          height-bound at these sizes, so the inset costs it no size. */}
+      <div className="absolute top-[80px] bottom-[72px] left-4 lg:left-[340px] right-4 lg:right-8 flex items-center justify-center p-2 phone-landscape:top-14 phone-landscape:bottom-14 phone-landscape:left-[184px] phone-landscape:right-4 phone-landscape:p-1 phone-landscape:touch-none">
         <div className="relative w-full max-w-[1400px] max-h-full aspect-[3900/2700]">
           <TowerFloorPlan
             key={planSrc}
             src={planSrc}
             activeUnitId={activeUnitId}
             onSelectUnit={setActiveUnitId}
+            onZoomChange={handleZoomChange}
           />
         </div>
       </div>

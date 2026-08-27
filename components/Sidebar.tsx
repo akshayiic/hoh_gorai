@@ -160,10 +160,6 @@ export default function Sidebar({
         >
           <div
             className={`${
-              compact
-                ? "px-4 py-2 phone-landscape:px-3 phone-landscape:py-1.5"
-                : "p-4 phone-landscape:px-3 phone-landscape:py-2"
-            } ${
               visibleItemCount
                 ? ""
                 : `phone-landscape:overflow-y-auto phone-landscape:scrollbar-hide ${
@@ -173,20 +169,27 @@ export default function Sidebar({
                   }`
             }`}
           >
-            {/* Header */}
+            {/* Header — the only block that keeps the panel's padding. Rows
+                below carry their own, so a selected row runs edge to edge. */}
             {header && (
-              <>
+              <div
+                className={
+                  compact
+                    ? "px-4 pt-2 phone-landscape:px-3 phone-landscape:pt-1.5"
+                    : "px-4 pt-3 phone-landscape:px-3 phone-landscape:pt-2"
+                }
+              >
                 <div className="flex items-start gap-3 phone-landscape:gap-2">
                   {header.icon && (
                     <button
                       onClick={() => setIsCollapsed(true)}
                       aria-label="Collapse categories"
-                      className="shrink-0 cursor-pointer bg-transparent border-0 p-0 flex items-center justify-center"
+                      className="shrink-0 cursor-pointer bg-transparent border-0  flex items-center justify-center phone-landscape:px-2"
                     >
                       <header.icon
                         size={24}
                         strokeWidth={1.8}
-                        className="text-[#E2E2E2] mt-[2px] phone-landscape:w-4 phone-landscape:h-4"
+                        className="text-[#E2E2E2] mt-[4px] phone-landscape:w-4 phone-landscape:h-4"
                       />
                     </button>
                   )}
@@ -226,17 +229,30 @@ export default function Sidebar({
                     compact ? "mt-1.5 mb-1.5" : "mt-2 mb-2"
                   }`}
                 />
-              </>
+              </div>
             )}
 
             {/* Sections */}
-            {sections.map((section, index) => (
+            <div
+              className={`${
+                compact
+                  ? "pb-2 phone-landscape:pb-1.5"
+                  : "pb-3 phone-landscape:pb-2"
+              } ${
+                header
+                  ? ""
+                  : compact
+                    ? "pt-2 phone-landscape:pt-1.5"
+                    : "pt-3 phone-landscape:pt-2"
+              }`}
+            >
+              {sections.map((section, index) => (
               <div key={section.id}>
                 {section.title &&
                   (section.isCollapsible ? (
                     <button
                       onClick={section.onHeaderClick}
-                      className="w-full flex items-center justify-between text-[14px] font-semibold text-[#E2E2E2] mb-2 cursor-pointer hover:text-white transition-colors text-left phone-landscape:text-[11px] phone-landscape:mb-1"
+                      className="w-full flex items-center justify-between px-4 text-[14px] font-semibold text-[#E2E2E2] mb-2 cursor-pointer hover:text-white transition-colors text-left phone-landscape:px-3 phone-landscape:text-[11px] phone-landscape:mb-1"
                     >
                       <span>{section.title}</span>
                       <span
@@ -251,10 +267,12 @@ export default function Sidebar({
                   ) : (
                     <h3
                       className="
+                      px-4
                       text-[14px]
                       font-semibold
                       text-[#E2E2E2]
                       mb-2
+                      phone-landscape:px-3
                       phone-landscape:text-[11px]
                       phone-landscape:mb-1
                     "
@@ -287,8 +305,7 @@ export default function Sidebar({
                         key={item.id}
                         onClick={() => item.onClick?.()}
                         className={`
-                        w-[calc(100%+1.5rem)]
-                        -mx-3
+                        w-full
                         px-3
                         pl-6
                         flex
@@ -335,20 +352,21 @@ export default function Sidebar({
                   })}
                 </div>
 
-                {index !== sections.length - 1 && (
+                  {index !== sections.length - 1 && (
+                    <hr className="border-[#596164]/50 my-4 phone-landscape:my-2" />
+                  )}
+                </div>
+              ))}
+
+              {/* Footer */}
+              {footer && (
+                <>
                   <hr className="border-[#596164]/50 my-4 phone-landscape:my-2" />
-                )}
-              </div>
-            ))}
 
-            {/* Footer */}
-            {footer && (
-              <>
-                <hr className="border-[#596164]/50 my-4 phone-landscape:my-2" />
-
-                <div>{footer}</div>
-              </>
-            )}
+                  <div className="px-4 phone-landscape:px-3">{footer}</div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </aside>

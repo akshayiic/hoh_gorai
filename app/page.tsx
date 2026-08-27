@@ -5,6 +5,7 @@ import { Maximize2, Minimize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import GlobalNavbar from "@/components/GlobalNavbar";
 import BottomNavbar from "@/components/BottomNavbar";
+import Tower360, { preload360 } from "@/components/Tower360";
 
 const isPhoneLandscape = () =>
   typeof window !== "undefined" &&
@@ -13,11 +14,10 @@ const isPhoneLandscape = () =>
   window.innerHeight <= 500;
 
 // The three screens served from `/`: the progress ring, the welcome spread, and
-// the project layout the visitor picks a section from. None of them changes the
-// URL, so the stage is kept in sessionStorage — returning to `/` from Location
-// (or any other page) lands back on the layout instead of replaying the intro.
+// the tower itself. None of them changes the URL, and the stage is deliberately
+// not remembered — arriving at `/` (Go Home, the logo, a fresh visit) always
+// plays the sequence through from the loading screen.
 type Stage = "loading" | "welcome" | "layout";
-const STAGE_KEY = "hoh_stage";
 
 function FullscreenButton({
   isActive,
@@ -173,13 +173,10 @@ export default function WelcomeExperience() {
   const dotX = 72 + radius * Math.cos(angle);
   const dotY = 72 + radius * Math.sin(angle);
 
-  // Resume the layout for a visitor who has already been through the intro this
-  // session. sessionStorage can't be read while rendering (the server has none),
-  // and setting state straight from an effect body is a cascading render, so the
-  // read is queued — it lands before the first frame the visitor could act on.
+  // Warm the orbit while the intro plays, so the tower is ready to rotate the
+  // moment the visitor gets there.
   useEffect(() => {
-    if (sessionStorage.getItem(STAGE_KEY) !== "layout") return;
-    queueMicrotask(() => setStage((current) => current ?? "layout"));
+    preload360();
   }, []);
 
   useEffect(() => {
@@ -207,9 +204,12 @@ export default function WelcomeExperience() {
     return () => clearInterval(timer);
   }, [activeStage]);
 
-  const enterLayout = () => {
-    sessionStorage.setItem(STAGE_KEY, "layout");
-    setStage("layout");
+  const enterLayout = () => setStage("layout");
+
+  // The logo restarts the whole sequence from here without a page load.
+  const restartIntro = () => {
+    setProgress(0);
+    setStage("loading");
   };
 
   return (
@@ -221,12 +221,6 @@ export default function WelcomeExperience() {
           progress ring finishes */}
       <img
         src="/gallery/hero_bg-trimmed.png"
-        className="hidden"
-        aria-hidden="true"
-        alt=""
-      />
-      <img
-        src="/gallery/hoh_layout.webp"
         className="hidden"
         aria-hidden="true"
         alt=""
@@ -399,8 +393,9 @@ export default function WelcomeExperience() {
         )}
 
         {activeStage === "layout" && (
-          // PROJECT LAYOUT — the hub the visitor picks a section from. Stays on
-          // `/`; the header and bottom navbar are what carry them onward.
+          // THE TOWER — the hub the visitor picks a section from, shown as a
+          // drag-to-rotate orbit. Stays on `/`; the header and bottom navbar
+          // are what carry them onward.
           <motion.div
             key="layout"
             initial={{ opacity: 0 }}
@@ -409,15 +404,9 @@ export default function WelcomeExperience() {
             transition={{ duration: 0.9 }}
             className="absolute inset-0 overflow-hidden bg-black"
           >
-            {/* Pinned to the top edge so the tower's crown is never what a
-                wide viewport crops. */}
-            <img
-              src="/gallery/hoh_layout.webp"
-              alt="Hiranandani Bayview project layout"
-              className="absolute inset-0 h-full w-full object-cover object-top"
-            />
+            <Tower360 />
 
-            <GlobalNavbar currentPage="" />
+            <GlobalNavbar currentPage="" onLogoClick={restartIntro} />
             <BottomNavbar activeItem="home" />
 
             <FullscreenButton

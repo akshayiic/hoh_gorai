@@ -10,6 +10,12 @@ interface GlobalNavbarProps {
   showReset?: boolean;
   onReset?: () => void;
   showRERA?: boolean;
+  /**
+   * Handles the logo tap when the host page can restart the intro itself (the
+   * home experience does). Everywhere else the logo navigates to `/`, which
+   * mounts that experience fresh and plays it from the loading screen.
+   */
+  onLogoClick?: () => void;
 }
 
 export default function GlobalNavbar({
@@ -18,6 +24,7 @@ export default function GlobalNavbar({
   showReset = false,
   onReset,
   showRERA = false,
+  onLogoClick,
 }: GlobalNavbarProps) {
   const router = useRouter();
   const [history, setHistory] = useState<string[]>([]);
@@ -35,6 +42,16 @@ export default function GlobalNavbar({
       setHistory(navHistory);
     }
   }, [currentPage]);
+
+  const handleStartOver = () => {
+    if (onLogoClick) {
+      onLogoClick();
+      return;
+    }
+    // Home is a fresh start, so the back trail goes with it.
+    sessionStorage.removeItem("nav_history");
+    router.push("/");
+  };
 
   const handleGoBack = () => {
     if (currentPage === "location") {
@@ -55,9 +72,15 @@ export default function GlobalNavbar({
   return (
     <>
       {/* LOGO & TITLE BOX */}
-      <div className="main-logo-container font-app absolute left-6 top-6 z-20 flex items-center gap-3 phone-landscape:left-4 phone-landscape:top-3 phone-landscape:gap-2">
+      <div className="main-logo-container font-app absolute left-6 top-6 z-20 phone-landscape:left-4 phone-landscape:top-3">
+        <button
+          type="button"
+          onClick={handleStartOver}
+          aria-label="Start the experience from the beginning"
+          className="flex items-center gap-3 cursor-pointer text-left phone-landscape:gap-2"
+        >
         {/* Logo Box */}
-        <div className="flex items-center justify-center w-[58px] h-[58px] bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 rounded-[5px] shadow-lg phone-landscape:w-9 phone-landscape:h-9">
+        <div className="flex items-center justify-center w-[58px] h-[58px] bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 rounded-[5px] shadow-lg transition hover:border-[#C79A59]/60 phone-landscape:w-9 phone-landscape:h-9">
           <img
             src="/icons/hoh2.svg"
             alt="Logo"
@@ -74,6 +97,7 @@ export default function GlobalNavbar({
             Gorai, Mumbai
           </p>
         </div>
+        </button>
       </div>
 
       {/* TOP ACTIONS */}
