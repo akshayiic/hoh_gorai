@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import { ScanSearch } from "lucide-react";
 
 type UnitBox = { x: number; y: number; w: number; h: number };
@@ -12,11 +20,27 @@ interface Unit {
   box: UnitBox;
 }
 
+/** A raster the export paints, with the placement it painted it at. */
+interface PlanImage {
+  href: string;
+  width: number;
+  height: number;
+  /** Maps the image's own pixels into plan coordinates. */
+  matrix: number[];
+}
+
 interface TowerPlan {
   viewBox: string;
   width: number;
   height: number;
-  raster: { href: string; width: number; height: number } | null;
+  /** The project aerial, cropped and rotated as the export placed it. */
+  backdrop: PlanImage | null;
+  /** Opacity of the black wash the export lays over the aerial. */
+  wash: number;
+  /** The floor-plan render. */
+  sheet: PlanImage | null;
+  /** The building silhouette the sheet is cut to, as a path `d`. */
+  sheetClip: string | null;
   units: Unit[];
 }
 
@@ -26,9 +50,11 @@ const ZOOM_PADDING = 0.86;
 
 // Framing a unit — and coming back out of one — glides on a long, softly
 // decelerated curve, slow enough to read as a camera move rather than a cut.
-// The pill anchors and the back chip derive their timing from this, so the whole
+// The whole scene travels, aerial and all, so this is longer than it would need
+// to be for the sheet alone: a big move wants a slow one to stay subtle. The
+// pill anchors and the back chip derive their timing from this, so the whole
 // view moves as one piece.
-const ZOOM_MS = 2000;
+const ZOOM_MS = 1000;
 // A shallow S: gentle at both ends *and* through the middle. What made earlier
 // curves feel quick was their peak speed — a cubic ease-in-out sprints at 2.9x
 // its own average halfway through, so lengthening it only stretched the pause
@@ -53,15 +79,9 @@ const DRAG_SLOP_PX = 6;
 
 const CHROME_FADE_MS = 300;
 
-// The exports leave a blank margin outside the sheet's border frame, which sits
-// 28 units in on every tower. Height is what caps how large the plan can draw
-// (there is spare width either way), so that dead margin is trimmed off the top
-// and bottom — stopping short of the frame itself so nothing looks cut.
-const SHEET_TRIM_Y = 24;
-
-// Each tower SVG embeds a ~2MB JPEG of the floor-plan render, so parsed plans
-// are memoized per file — switching towers back and forth is then instant and
-// never re-decodes the export.
+// Each tower SVG embeds the aerial backdrop and the floor-plan render, so
+// parsed plans are memoized per file — switching towers back and forth is then
+// instant and never re-decodes the export.
 const planCache = new Map<string, TowerPlan>();
 const planRequests = new Map<string, Promise<TowerPlan>>();
 
@@ -91,11 +111,48 @@ function measureUnitBoxes(ds: string[], viewBox: string): UnitBox[] {
   }
 }
 
-// The tower SVGs are Figma exports with a fixed shape: one full-canvas <rect>
-// painting the floor-plan render (an <image> parked in <defs>), then one
-// translucent #CEC3AE <path> per unit sitting on top of it. Those paths are
-// both the unit outlines we hit-test against and the "upper layer" a selected
-// unit sheds, so unit detection is just reading them off the export.
+const IDENTITY = [1, 0, 0, 1, 0, 0];
+
+/** Reads the `matrix()` / `scale()` Figma writes on a pattern's <use>. */
+function parseTransform(value: string | null): number[] {
+  const matrix = value?.match(/matrix\(([^)]+)\)/);
+  if (matrix) {
+    const parts = matrix[1].split(/[\s,]+/).map(Number);
+    return parts.length === 6 ? parts : IDENTITY;
+  }
+  const scale = value?.match(/scale\(([^)]+)\)/);
+  if (scale) {
+    const [sx, sy = sx] = scale[1].split(/[\s,]+/).map(Number);
+    return [sx, 0, 0, sy, 0, 0];
+  }
+  return IDENTITY;
+}
+
+// A pattern's content is measured in the filled box (`objectBoundingBox`), so
+// its matrix has to be composed with `translate(x, y) scale(w, h)` to land in
+// plan coordinates.
+function placeInBox(
+  m: number[],
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): number[] {
+  return [m[0] * w, m[1] * h, m[2] * w, m[3] * h, m[4] * w + x, m[5] * h + y];
+}
+
+// The tower SVGs are Figma exports of the whole scene: the project aerial
+// painted across the canvas, a black wash over it, then the floor-plan render
+// cut to the building's footprint, and one translucent #CEC3AE <path> per unit.
+//
+// Figma expresses all of that in the two constructs Chrome is worst at
+// re-rasterising: every raster is a <pattern>, and the footprint is an alpha
+// <mask>. Both are recomputed at each step of a zoom, and re-tiling a 26MB
+// backdrop through a pattern stalled the compositor for seconds — the plan
+// appeared to flicker and freeze on the way back out. So the export is taken
+// apart instead of injected: each pattern is resolved back to the plain <image>
+// and transform it stands for, and the mask to an equivalent <clipPath>. Chrome
+// decodes a plain image once and then only transforms it.
 function parsePlan(svgText: string): TowerPlan {
   const doc = new DOMParser().parseFromString(svgText, "image/svg+xml");
   const root = doc.documentElement;
@@ -108,23 +165,69 @@ function parsePlan(svgText: string): TowerPlan {
   const width = vbWidth || attrWidth;
   const height = vbHeight || attrHeight;
 
-  const image = doc.querySelector("image");
-  const href =
-    image?.getAttribute("href") ||
-    image?.getAttributeNS("http://www.w3.org/1999/xlink", "href") ||
+  // An XML document has no DTD declaring `id`, so `#id` selectors do not match
+  // in it — the attribute has to be addressed directly.
+  const byId = (id: string) => (id ? root.querySelector(`[id="${id}"]`) : null);
+  const hrefOf = (el: Element | null) =>
+    el?.getAttribute("href") ||
+    el?.getAttributeNS("http://www.w3.org/1999/xlink", "href") ||
     null;
-  // The export always paints the render across the whole canvas, so the
-  // <image>'s own size is only a fallback for the viewBox.
-  const raster = href
-    ? {
-        href,
-        width: Number(image?.getAttribute("width")) || width,
-        height: Number(image?.getAttribute("height")) || height,
-      }
-    : null;
+  const urlId = (value: string | null) =>
+    value?.match(/url\(#([^)]+)\)/)?.[1] ?? "";
 
-  const ds = Array.from(root.children)
-    .filter((el) => el.tagName.toLowerCase() === "path")
+  /** Resolves a rect's `fill="url(#patternN)"` to the image it paints. */
+  const imageFor = (rect: Element | null): PlanImage | null => {
+    const pattern = byId(urlId(rect?.getAttribute("fill") ?? null));
+    const use = pattern?.querySelector("use") ?? null;
+    const image = byId((hrefOf(use) ?? "").replace(/^#/, ""));
+    const href = hrefOf(image);
+    if (!rect || !href) return null;
+
+    return {
+      href,
+      width: Number(image?.getAttribute("width")) || width,
+      height: Number(image?.getAttribute("height")) || height,
+      matrix: placeInBox(
+        parseTransform(use?.getAttribute("transform") ?? null),
+        Number(rect.getAttribute("x")) || 0,
+        Number(rect.getAttribute("y")) || 0,
+        Number(rect.getAttribute("width")) || width,
+        Number(rect.getAttribute("height")) || height,
+      ),
+    };
+  };
+
+  // The sheet is the patterned rect inside the masked group; the backdrop is
+  // the other one, painted across the whole canvas.
+  const masked = root.querySelector("g[mask]");
+  const sheetRect = masked?.querySelector("rect") ?? null;
+  const backdropRect =
+    Array.from(root.querySelectorAll("rect")).find(
+      (el) => el !== sheetRect && urlId(el.getAttribute("fill")),
+    ) ?? null;
+
+  const sheetClip =
+    byId(urlId(masked?.getAttribute("mask") ?? null))
+      ?.querySelector("path")
+      ?.getAttribute("d") ?? null;
+
+  // The wash is a plain black rect over the aerial. (Figma also writes a
+  // <foreignObject> backdrop-filter blur beside it; at 2.5px across a 4096-wide
+  // canvas it is invisible, and keeping it would re-blur that whole surface on
+  // every frame of a zoom, so it is dropped.)
+  const washRect = Array.from(root.querySelectorAll("rect")).find(
+    (el) => (el.getAttribute("fill") || "").toLowerCase() === "black",
+  );
+  const wash = washRect
+    ? Number(washRect.getAttribute("fill-opacity") ?? 1) || 0
+    : 0;
+
+  // Unit outlines are the only #CEC3AE fills in the export, wherever the
+  // exporter happened to nest them — Tower A's sit inside the masked group,
+  // Towers B and C's at the top level — so they are matched by paint rather
+  // than by position.
+  const ds = Array.from(root.querySelectorAll("path"))
+    .filter((el) => (el.getAttribute("fill") || "").toUpperCase() === "#CEC3AE")
     .map((el) => el.getAttribute("d") || "")
     .filter(Boolean);
 
@@ -150,7 +253,10 @@ function parsePlan(svgText: string): TowerPlan {
     viewBox,
     width,
     height,
-    raster,
+    backdrop: imageFor(backdropRect),
+    wash,
+    sheet: imageFor(sheetRect),
+    sheetClip,
     units: ordered.map((u, i) => ({
       id: `unit-${i + 1}`,
       label: `Unit ${i + 1}`,
@@ -191,11 +297,11 @@ interface TowerFloorPlanProps {
   /** Path to a tower export, e.g. `/gallery/Tower A/tower-a.svg`. */
   src: string;
   /**
-   * Combined scale of the plan (unit framing × the visitor's own zoom) and how
-   * long that change is animating for. The page drifts its backdrop by a
-   * fraction of the scale, on the same timing.
+   * Tailwind classes describing the area a selected unit should be framed in —
+   * the slice of the screen the page chrome leaves clear. The plan itself still
+   * covers the whole container; only the zoom target respects this.
    */
-  onZoomChange?: (effectiveScale: number, transitionMs: number) => void;
+  frameClassName?: string;
   /**
    * Selected unit, as `unit-1`…`unit-N` numbered clockwise from the plan's
    * top-left corner. Owned by the caller so the floor-plan pills and the
@@ -210,13 +316,15 @@ export default function TowerFloorPlan({
   src,
   activeUnitId,
   onSelectUnit,
-  onZoomChange,
+  frameClassName = "",
   className = "",
 }: TowerFloorPlanProps) {
   // The parse cache is the source of truth, read straight through during render
   // so a cached export shows immediately — including right after a tower switch.
   // The reducer exists only to re-render once a fetch lands.
   const [, onPlanLoaded] = useReducer((count: number) => count + 1, 0);
+  // Colons are legal in an id but awkward inside a url(#…) reference.
+  const clipId = `plan-clip-${useId().replace(/:/g, "")}`;
   const plan = planCache.get(src) ?? null;
   const [size, setSize] = useState({ w: 0, h: 0 });
   // Keyed by unit so selecting a different one starts from its own framing
@@ -229,10 +337,16 @@ export default function TowerFloorPlan({
     ms: 0,
   });
   const containerRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<HTMLDivElement>(null);
+  // The clear area a selected unit is framed in, in container pixels.
+  const [frameRect, setFrameRect] = useState<UnitBox | null>(null);
   const pointersRef = useRef(new Map<number, { x: number; y: number }>());
-  const panRef = useRef<{ x: number; y: number; zoomX: number; zoomY: number } | null>(
-    null,
-  );
+  const panRef = useRef<{
+    x: number;
+    y: number;
+    zoomX: number;
+    zoomY: number;
+  } | null>(null);
   const pinchRef = useRef<{ dist: number; scale: number } | null>(null);
   const draggedRef = useRef(false);
   // Where the zoom is heading, where it is right now, and the frame loop
@@ -250,7 +364,9 @@ export default function TowerFloorPlan({
       .then(() => {
         if (!cancelled) onPlanLoaded();
       })
-      .catch((error) => console.error("Tower floor plan failed to load", error));
+      .catch((error) =>
+        console.error("Tower floor plan failed to load", error),
+      );
 
     return () => {
       cancelled = true;
@@ -273,28 +389,48 @@ export default function TowerFloorPlan({
     return () => observer.disconnect();
   }, []);
 
-  // The slice of the export actually shown, in viewBox units.
+  // The export is the finished scene, margins and all, so it is shown whole.
   const view = useMemo(() => {
     if (!plan) return null;
-    const trim = Math.min(SHEET_TRIM_Y, plan.height / 4);
+    const [x, y, w, h] = plan.viewBox.split(/[\s,]+/).map(Number);
     return {
-      x: 0,
-      y: trim,
-      w: plan.width,
-      h: plan.height - trim * 2,
+      x: x || 0,
+      y: y || 0,
+      w: w || plan.width,
+      h: h || plan.height,
     };
   }, [plan]);
 
-  // Maps viewBox coordinates to container pixels for the letterboxed plan.
+  // Maps viewBox coordinates to container pixels. The export carries its own
+  // backdrop and fills the screen, so this covers rather than fits: the scene
+  // is scaled to the *larger* of the two ratios and the overflow runs off the
+  // edges, leaving no letterbox bar for the page to paint behind.
   const fit = useMemo(() => {
     if (!view || !size.w || !size.h) return null;
-    const scale = Math.min(size.w / view.w, size.h / view.h);
+    const scale = Math.max(size.w / view.w, size.h / view.h);
     return {
       scale,
       offX: (size.w - view.w * scale) / 2 - view.x * scale,
       offY: (size.h - view.h * scale) / 2 - view.y * scale,
     };
   }, [view, size]);
+
+  // Position, not size, is what matters here, and ResizeObserver reports only
+  // the latter — so the frame is re-read whenever the container resizes, which
+  // is what moves it.
+  useLayoutEffect(() => {
+    const frame = frameRef.current;
+    const host = containerRef.current;
+    if (!frame || !host) return;
+    const box = frame.getBoundingClientRect();
+    const hostBox = host.getBoundingClientRect();
+    setFrameRect({
+      x: box.left - hostBox.left,
+      y: box.top - hostBox.top,
+      w: box.width,
+      h: box.height,
+    });
+  }, [size.w, size.h, frameClassName]);
 
   const activeUnit =
     plan?.units.find((unit) => unit.id === activeUnitId) ?? null;
@@ -309,23 +445,33 @@ export default function TowerFloorPlan({
     const rectX = offX + activeUnit.box.x * scale;
     const rectY = offY + activeUnit.box.y * scale;
 
+    // The plan covers the whole screen, but a unit is framed in the part of it
+    // the sidebar and the bars leave clear — otherwise a zoom would settle
+    // half-under the panel.
+    const frame = frameRect ?? { x: 0, y: 0, w: size.w, h: size.h };
+
     // Scaling happens about the container centre, so the translate is whatever
-    // it takes to drag the unit's (already scaled) centre back onto it.
-    const k = Math.min(size.w / rectW, size.h / rectH) * ZOOM_PADDING;
-    let tx = -(rectX + rectW / 2 - size.w / 2) * k;
-    let ty = -(rectY + rectH / 2 - size.h / 2) * k;
+    // it takes to drag the unit's (already scaled) centre onto the frame's.
+    const k = Math.min(frame.w / rectW, frame.h / rectH) * ZOOM_PADDING;
+    let tx =
+      frame.x + frame.w / 2 - size.w / 2 - (rectX + rectW / 2 - size.w / 2) * k;
+    let ty =
+      frame.y + frame.h / 2 - size.h / 2 - (rectY + rectH / 2 - size.h / 2) * k;
 
     // …then hold the sheet over the frame. A unit at the sheet's edge (Tower
     // 2's left column runs the full height at the very left) would otherwise
     // drag the paper off-centre and leave the page showing beside it.
     const scaledAt = (edge: number, centre: number) =>
       centre + (edge - centre) * k;
-    const clampAxis = (t: number, near: number, far: number, extent: number) => {
+    const clampAxis = (
+      t: number,
+      near: number,
+      far: number,
+      extent: number,
+    ) => {
       const max = -scaledAt(near, extent / 2);
       const min = extent - scaledAt(far, extent / 2);
-      return min <= max
-        ? Math.min(Math.max(t, min), max)
-        : (min + max) / 2; // sheet smaller than the frame: centre it instead
+      return min <= max ? Math.min(Math.max(t, min), max) : (min + max) / 2; // sheet smaller than the frame: centre it instead
     };
 
     const viewLeft = offX + view.x * scale;
@@ -339,7 +485,7 @@ export default function TowerFloorPlan({
       tx,
       ty,
     };
-  }, [activeUnit, fit, size, view]);
+  }, [activeUnit, fit, frameRect, size, view]);
 
   const userZoom =
     zoomState.unit === activeUnitId
@@ -589,14 +735,7 @@ export default function TowerFloorPlan({
   // A drag that moved the plan shouldn't also count as picking a unit.
   const wasDrag = () => draggedRef.current;
 
-  const resetUserZoom = () =>
-    commitZoom({ scale: 1, x: 0, y: 0 }, ZOOM_MS);
-
-  const effectiveScale = unitFrame.scale * userZoom.scale;
-
-  useEffect(() => {
-    onZoomChange?.(effectiveScale, userZoom.ms);
-  }, [effectiveScale, userZoom.ms, onZoomChange]);
+  const resetUserZoom = () => commitZoom({ scale: 1, x: 0, y: 0 }, ZOOM_MS);
 
   const canPan = panLimit(size.w) > 0 || panLimit(size.h) > 0;
 
@@ -609,9 +748,8 @@ export default function TowerFloorPlan({
       onPointerUp={endPointer}
       onPointerCancel={endPointer}
       onDoubleClick={resetUserZoom}
-      // Deliberately unclipped: the plan sits in a box only as wide as its
-      // fitted self, so clipping there cut the magnified sheet off at a hard
-      // rectangle. The page root clips instead, letting a zoom fill the screen.
+      // Deliberately unclipped: the page root clips instead, so a magnified
+      // plan runs to the edges of the screen rather than to a hard rectangle.
       className={`relative h-full w-full touch-none ${
         canPan ? "cursor-grab active:cursor-grabbing" : ""
       } ${className}`}
@@ -629,67 +767,115 @@ export default function TowerFloorPlan({
           transitionTimingFunction: ZOOM_EASE,
         }}
       >
-      <div
-        className="absolute inset-0"
-        style={{
-          transform: unitFrame.transform,
-          transformOrigin: "center",
-          willChange: "transform",
-          transitionProperty: "transform",
-          transitionDuration: `${ZOOM_MS}ms`,
-          transitionTimingFunction: ZOOM_EASE,
-        }}
-      >
-        {plan && (
-          <svg
-            viewBox={
-              view ? `${view.x} ${view.y} ${view.w} ${view.h}` : plan.viewBox
-            }
-            preserveAspectRatio="xMidYMid meet"
-            className="h-full w-full"
-          >
-            {plan.raster && (
-              <image
-                href={plan.raster.href}
-                x={0}
-                y={0}
-                width={plan.width}
-                height={plan.height}
-                preserveAspectRatio="none"
-                onClick={() => {
-                  if (!wasDrag()) onSelectUnit(null);
-                }}
-              />
-            )}
+        <div
+          className="absolute inset-0"
+          style={{
+            transform: unitFrame.transform,
+            transformOrigin: "center",
+            willChange: "transform",
+            transitionProperty: "transform",
+            transitionDuration: `${ZOOM_MS}ms`,
+            transitionTimingFunction: ZOOM_EASE,
+          }}
+        >
+          {plan && (
+            <svg
+              viewBox={plan.viewBox}
+              preserveAspectRatio="xMidYMid slice"
+              className="h-full w-full"
+              // Clicking the scene — aerial, wash or sheet alike — backs out to
+              // the whole floor. The unit outlines below stop their own clicks.
+              onClick={() => {
+                if (!wasDrag()) onSelectUnit(null);
+              }}
+            >
+              {plan.sheetClip && (
+                <defs>
+                  <clipPath id={clipId}>
+                    <path d={plan.sheetClip} />
+                  </clipPath>
+                </defs>
+              )}
 
-            {plan.units.map((unit) => {
-              const isActive = unit.id === activeUnitId;
-              return (
-                <path
-                  key={unit.id}
-                  d={unit.d}
-                  fill="#CEC3AE"
-                  // A selected unit sheds its overlay entirely — that's the
-                  // "upper layer" coming off — but stays hit-testable so
-                  // clicking it again backs out to the full floor.
-                  // Plain fade with no delay: the same transition carries the
-                  // hover dimming, which has to stay immediate.
-                  className={`transition-opacity duration-300 ${
-                    isActive
-                      ? "cursor-zoom-out opacity-0"
-                      : "cursor-zoom-in opacity-70 hover:opacity-40"
-                  }`}
-                  onClick={() => {
-                    if (wasDrag()) return;
-                    onSelectUnit(isActive ? null : unit.id);
-                  }}
+              {/* The whole scene sits inside the zoom, so the aerial, the wash
+                and the sheet move as one page rather than as layers sliding
+                over each other. */}
+              {plan.backdrop && (
+                <image
+                  href={plan.backdrop.href}
+                  width={plan.backdrop.width}
+                  height={plan.backdrop.height}
+                  transform={`matrix(${plan.backdrop.matrix.join(" ")})`}
+                  preserveAspectRatio="none"
                 />
-              );
-            })}
-          </svg>
-        )}
+              )}
+
+              {plan.wash > 0 && (
+                <rect
+                  width={plan.width}
+                  height={plan.height}
+                  fill="black"
+                  fillOpacity={plan.wash}
+                />
+              )}
+
+              {/* The floor-plan render, cut to the building's footprint. The clip
+                sits on the group so it is measured in plan coordinates, as the
+                export's mask was, rather than in the image's own transformed
+                space. */}
+              {plan.sheet && (
+                <g clipPath={plan.sheetClip ? `url(#${clipId})` : undefined}>
+                  <image
+                    href={plan.sheet.href}
+                    width={plan.sheet.width}
+                    height={plan.sheet.height}
+                    transform={`matrix(${plan.sheet.matrix.join(" ")})`}
+                    preserveAspectRatio="none"
+                  />
+                </g>
+              )}
+
+              {plan.units.map((unit) => {
+                const isActive = unit.id === activeUnitId;
+                return (
+                  <path
+                    key={unit.id}
+                    d={unit.d}
+                    fill="#CEC3AE"
+                    // A selected unit sheds its overlay entirely — that's the
+                    // "upper layer" coming off — but stays hit-testable so
+                    // clicking it again backs out to the full floor.
+                    // Plain fade with no delay: the same transition carries the
+                    // hover dimming, which has to stay immediate.
+                    className={`transition-opacity duration-300 ${
+                      isActive
+                        ? "cursor-zoom-out opacity-0"
+                        : "cursor-zoom-in opacity-70 hover:opacity-40"
+                    }`}
+                    // Stops the click reaching the <svg>'s own handler, which
+                    // would immediately back out again.
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      if (wasDrag()) return;
+                      onSelectUnit(isActive ? null : unit.id);
+                    }}
+                  />
+                );
+              })}
+            </svg>
+          )}
+        </div>
       </div>
-      </div>
+
+      {/* Measures the area a zoom should settle in. It draws nothing; the
+          page hands it the same insets its chrome occupies. */}
+      <div
+        ref={frameRef}
+        aria-hidden
+        className={`pointer-events-none invisible ${
+          frameClassName || "absolute inset-0"
+        }`}
+      />
 
       {/* Unit pills stay anchored to their units through every zoom. The layer
           carries the visitor's own pan/zoom (no animation, so the counter-scale
@@ -709,8 +895,10 @@ export default function TowerFloorPlan({
         >
           {plan.units.map((unit) => {
             const isActive = unit.id === activeUnitId;
-            const anchorX = fit.offX + (unit.box.x + unit.box.w / 2) * fit.scale;
-            const anchorY = fit.offY + (unit.box.y + unit.box.h / 2) * fit.scale;
+            const anchorX =
+              fit.offX + (unit.box.x + unit.box.w / 2) * fit.scale;
+            const anchorY =
+              fit.offY + (unit.box.y + unit.box.h / 2) * fit.scale;
 
             return (
               <div
@@ -740,7 +928,8 @@ export default function TowerFloorPlan({
                     // screen size however far the plan is magnified.
                     transform: `translate(-50%, -50%) scale(${1 / userZoom.scale})`,
                     transformOrigin: "center",
-                    transitionProperty: "transform, opacity, background-color, color",
+                    transitionProperty:
+                      "transform, opacity, background-color, color",
                     transitionDuration: `${userZoom.ms}ms, ${CHROME_FADE_MS}ms, 150ms, 150ms`,
                     transitionTimingFunction: `${ZOOM_EASE}, ease-out, ease-out, ease-out`,
                   }}
