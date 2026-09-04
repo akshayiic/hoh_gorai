@@ -220,7 +220,7 @@ export default function WelcomeExperience() {
       {/* Preload the screens that follow so they're cached by the time the
           progress ring finishes */}
       <img
-        src="/gallery/hero_bg-trimmed.png"
+        src="/gallery/hoh_landing.jpg"
         className="hidden"
         aria-hidden="true"
         alt=""
@@ -315,7 +315,7 @@ export default function WelcomeExperience() {
             <div
               className="absolute inset-0 bg-cover bg-top bg-no-repeat"
               style={{
-                backgroundImage: `url('/gallery/hero_bg-trimmed.png')`,
+                backgroundImage: `url('/gallery/hoh_landing.jpg')`,
               }}
             />
 

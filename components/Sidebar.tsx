@@ -78,6 +78,7 @@ function SidebarIcon({ src, isActive }: SidebarIconProps) {
 interface SidebarProps {
   header?: SidebarHeader;
   sections?: SidebarSection[];
+  children?: ReactNode;
   footer?: ReactNode;
   className?: string;
   isFullscreenActive?: boolean;
@@ -97,6 +98,7 @@ interface SidebarProps {
 export default function Sidebar({
   header,
   sections = [],
+  children,
   footer,
   className = "",
   isFullscreenActive = false,
@@ -232,141 +234,162 @@ export default function Sidebar({
               </div>
             )}
 
-            {/* Sections */}
-            <div
-              className={`${
-                compact
-                  ? "pb-2 phone-landscape:pb-1.5"
-                  : "pb-3 phone-landscape:pb-2"
-              } ${
-                header
-                  ? ""
-                  : compact
-                    ? "pt-2 phone-landscape:pt-1.5"
-                    : "pt-3 phone-landscape:pt-2"
-              }`}
-            >
-              {sections.map((section, index) => (
-              <div key={section.id}>
-                {section.title &&
-                  (section.isCollapsible ? (
-                    <button
-                      onClick={section.onHeaderClick}
-                      className="w-full flex items-center justify-between px-4 text-[14px] font-semibold text-[#E2E2E2] mb-2 cursor-pointer hover:text-white transition-colors text-left phone-landscape:px-3 phone-landscape:text-[11px] phone-landscape:mb-1"
-                    >
-                      <span>{section.title}</span>
-                      <span
-                        className={`transform transition-transform duration-200 ${section.isExpanded ? "rotate-180" : ""}`}
-                      >
-                        <ChevronDown
-                          size={14}
-                          className="text-[#C7C7C7] phone-landscape:w-3 phone-landscape:h-3"
-                        />
-                      </span>
-                    </button>
-                  ) : (
-                    <h3
-                      className="
-                      px-4
-                      text-[14px]
-                      font-semibold
-                      text-[#E2E2E2]
-                      mb-2
-                      phone-landscape:px-3
-                      phone-landscape:text-[11px]
-                      phone-landscape:mb-1
-                    "
-                    >
-                      {section.title}
-                    </h3>
-                  ))}
-
-                <div
-                  style={
-                    section.isCollapsible && !section.isExpanded
-                      ? undefined
-                      : itemsScrollStyle
-                  }
-                  className={`space-y-[2px] transition-all duration-300 ${
-                    visibleItemCount
-                      ? "overflow-y-auto overflow-x-hidden sidebar-scroll"
-                      : "overflow-hidden"
-                  } ${
-                    section.isCollapsible && !section.isExpanded
-                      ? "max-h-0 opacity-0"
-                      : `opacity-100 ${visibleItemCount ? "" : "max-h-[500px]"}`
-                  }`}
-                >
-                  {section.items.map((item) => {
-                    const Icon = item.icon;
-
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => item.onClick?.()}
-                        className={`
-                        w-full
-                        px-3
-                        pl-6
-                        flex
-                        items-center
-                        gap-3
-                        text-left
-                        transition-all
-                        duration-150
-                        rounded-[6px]
-                        cursor-pointer
-                        phone-landscape:pl-5
-                        phone-landscape:gap-2
-                        ${
-                          compact
-                            ? "h-[var(--sidebar-row-h)] py-0 shrink-0"
-                            : "py-[8px] phone-landscape:py-[5px]"
-                        }
-                        ${
-                          item.isActive
-                            ? `bg-black/35 text-white font-medium shadow-inner ${activeItemRounded ? "rounded-[20px]" : ""}`
-                            : "text-[#D2D2D2] hover:bg-black/15 hover:text-white"
-                        }
-                      `}
-                      >
-                        {item.icon &&
-                          (typeof item.icon === "string" ? (
-                            <SidebarIcon
-                              src={item.icon}
-                              isActive={!!item.isActive}
-                            />
-                          ) : (
-                            <Icon
-                              size={15}
-                              strokeWidth={1.8}
-                              className={`shrink-0 phone-landscape:w-3 phone-landscape:h-3 ${item.isActive ? "text-white" : "text-[#D2D2D2]"}`}
-                            />
-                          ))}
-
-                        <span className="text-[14px] font-normal phone-landscape:text-[10.5px]">
-                          {item.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                  {index !== sections.length - 1 && (
+            {/* Content: Children or Sections */}
+            {children ? (
+              <div
+                className={`px-4 pb-3 phone-landscape:px-3 phone-landscape:pb-2 ${
+                  header
+                    ? ""
+                    : compact
+                      ? "pt-2 phone-landscape:pt-1.5"
+                      : "pt-3 phone-landscape:pt-2"
+                }`}
+              >
+                {children}
+                {footer && (
+                  <>
                     <hr className="border-[#596164]/50 my-4 phone-landscape:my-2" />
-                  )}
-                </div>
-              ))}
+                    <div className="px-0">{footer}</div>
+                  </>
+                )}
+              </div>
+            ) : (
+              /* Sections */
+              <div
+                className={`${
+                  compact
+                    ? "pb-2 phone-landscape:pb-1.5"
+                    : "pb-3 phone-landscape:pb-2"
+                } ${
+                  header
+                    ? ""
+                    : compact
+                      ? "pt-2 phone-landscape:pt-1.5"
+                      : "pt-3 phone-landscape:pt-2"
+                }`}
+              >
+                {sections.map((section, index) => (
+                  <div key={section.id}>
+                    {section.title &&
+                      (section.isCollapsible ? (
+                        <button
+                          onClick={section.onHeaderClick}
+                          className="w-full flex items-center justify-between px-4 text-[14px] font-semibold text-[#E2E2E2] mb-2 cursor-pointer hover:text-white transition-colors text-left phone-landscape:px-3 phone-landscape:text-[11px] phone-landscape:mb-1"
+                        >
+                          <span>{section.title}</span>
+                          <span
+                            className={`transform transition-transform duration-200 ${section.isExpanded ? "rotate-180" : ""}`}
+                          >
+                            <ChevronDown
+                              size={14}
+                              className="text-[#C7C7C7] phone-landscape:w-3 phone-landscape:h-3"
+                            />
+                          </span>
+                        </button>
+                      ) : (
+                        <h3
+                          className="
+                          px-4
+                          text-[14px]
+                          font-semibold
+                          text-[#E2E2E2]
+                          mb-2
+                          phone-landscape:px-3
+                          phone-landscape:text-[11px]
+                          phone-landscape:mb-1
+                        "
+                        >
+                          {section.title}
+                        </h3>
+                      ))}
 
-              {/* Footer */}
-              {footer && (
-                <>
-                  <hr className="border-[#596164]/50 my-4 phone-landscape:my-2" />
+                    <div
+                      style={
+                        section.isCollapsible && !section.isExpanded
+                          ? undefined
+                          : itemsScrollStyle
+                      }
+                      className={`space-y-[2px] transition-all duration-300 ${
+                        visibleItemCount
+                          ? "overflow-y-auto overflow-x-hidden sidebar-scroll"
+                          : "overflow-hidden"
+                      } ${
+                        section.isCollapsible && !section.isExpanded
+                          ? "max-h-0 opacity-0"
+                          : `opacity-100 ${visibleItemCount ? "" : "max-h-[500px]"}`
+                      }`}
+                    >
+                      {section.items.map((item) => {
+                        const Icon = item.icon;
 
-                  <div className="px-4 phone-landscape:px-3">{footer}</div>
-                </>
-              )}
-            </div>
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => item.onClick?.()}
+                            className={`
+                            w-full
+                            px-3
+                            pl-6
+                            flex
+                            items-center
+                            gap-3
+                            text-left
+                            transition-all
+                            duration-150
+                            rounded-[6px]
+                            cursor-pointer
+                            phone-landscape:pl-5
+                            phone-landscape:gap-2
+                            ${
+                              compact
+                                ? "h-[var(--sidebar-row-h)] py-0 shrink-0"
+                                : "py-[8px] phone-landscape:py-[5px]"
+                            }
+                            ${
+                              item.isActive
+                                ? `bg-black/35 text-white font-medium shadow-inner ${activeItemRounded ? "rounded-[20px]" : ""}`
+                                : "text-[#D2D2D2] hover:bg-black/15 hover:text-white"
+                            }
+                          `}
+                          >
+                            {item.icon &&
+                              (typeof item.icon === "string" ? (
+                                <SidebarIcon
+                                  src={item.icon}
+                                  isActive={!!item.isActive}
+                                />
+                              ) : (
+                                <Icon
+                                  size={15}
+                                  strokeWidth={1.8}
+                                  className={`shrink-0 phone-landscape:w-3 phone-landscape:h-3 ${item.isActive ? "text-white" : "text-[#D2D2D2]"}`}
+                                />
+                              ))}
+
+                            <span className="text-[14px] font-normal phone-landscape:text-[10.5px]">
+                              {item.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {index !== sections.length - 1 && (
+                      <hr className="border-[#596164]/50 my-4 phone-landscape:my-2" />
+                    )}
+                  </div>
+                ))}
+
+                {/* Footer */}
+                {footer && (
+                  <>
+                    <hr className="border-[#596164]/50 my-4 phone-landscape:my-2" />
+
+                    <div className="px-4 phone-landscape:px-3">{footer}</div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </aside>

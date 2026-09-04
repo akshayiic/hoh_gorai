@@ -296,6 +296,8 @@ function loadPlan(src: string): Promise<TowerPlan> {
 interface TowerFloorPlanProps {
   /** Path to a tower export, e.g. `/gallery/Tower A/tower-a.svg`. */
   src: string;
+  /** Optional rotation in degrees (e.g. 180) */
+  rotation?: number;
   /**
    * Tailwind classes describing the area a selected unit should be framed in —
    * the slice of the screen the page chrome leaves clear. The plan itself still
@@ -307,15 +309,26 @@ interface TowerFloorPlanProps {
    * top-left corner. Owned by the caller so the floor-plan pills and the
    * sidebar list stay in step.
    */
-  activeUnitId: string | null;
-  onSelectUnit: (unitId: string | null) => void;
+  activeUnitId?: string | null;
+  onSelectUnit?: (unitId: string | null) => void;
+  /**
+   * List of unit ids whose overlay should be hidden (revealing the unit).
+   */
+  hiddenOverlayUnitIds?: string[];
+  /**
+   * Called when a unit is clicked/toggled.
+   */
+  onToggleUnit?: (unitId: string) => void;
   className?: string;
 }
 
 export default function TowerFloorPlan({
   src,
-  activeUnitId,
+  rotation = 0,
+  activeUnitId = null,
   onSelectUnit,
+  hiddenOverlayUnitIds,
+  onToggleUnit,
   frameClassName = "",
   className = "",
 }: TowerFloorPlanProps) {
@@ -442,8 +455,16 @@ export default function TowerFloorPlan({
     const { scale, offX, offY } = fit;
     const rectW = activeUnit.box.w * scale;
     const rectH = activeUnit.box.h * scale;
-    const rectX = offX + activeUnit.box.x * scale;
-    const rectY = offY + activeUnit.box.y * scale;
+    const rawX =
+      rotation === 180 && plan
+        ? plan.width - (activeUnit.box.x + activeUnit.box.w)
+        : activeUnit.box.x;
+    const rawY =
+      rotation === 180 && plan
+        ? plan.height - (activeUnit.box.y + activeUnit.box.h)
+        : activeUnit.box.y;
+    const rectX = offX + rawX * scale;
+    const rectY = offY + rawY * scale;
 
     // The plan covers the whole screen, but a unit is framed in the part of it
     // the sidebar and the bars leave clear — otherwise a zoom would settle
@@ -786,7 +807,7 @@ export default function TowerFloorPlan({
               // Clicking the scene — aerial, wash or sheet alike — backs out to
               // the whole floor. The unit outlines below stop their own clicks.
               onClick={() => {
-                if (!wasDrag()) onSelectUnit(null);
+                if (!wasDrag()) onSelectUnit?.(null);
               }}
             >
               {plan.sheetClip && (
@@ -800,68 +821,85 @@ export default function TowerFloorPlan({
               {/* The whole scene sits inside the zoom, so the aerial, the wash
                 and the sheet move as one page rather than as layers sliding
                 over each other. */}
-              {plan.backdrop && (
-                <image
-                  href={plan.backdrop.href}
-                  width={plan.backdrop.width}
-                  height={plan.backdrop.height}
-                  transform={`matrix(${plan.backdrop.matrix.join(" ")})`}
-                  preserveAspectRatio="none"
-                />
-              )}
-
-              {plan.wash > 0 && (
-                <rect
-                  width={plan.width}
-                  height={plan.height}
-                  fill="black"
-                  fillOpacity={plan.wash}
-                />
-              )}
-
-              {/* The floor-plan render, cut to the building's footprint. The clip
-                sits on the group so it is measured in plan coordinates, as the
-                export's mask was, rather than in the image's own transformed
-                space. */}
-              {plan.sheet && (
-                <g clipPath={plan.sheetClip ? `url(#${clipId})` : undefined}>
+              <g
+                transform={
+                  rotation
+                    ? `rotate(${rotation} ${plan.width / 2} ${plan.height / 2})`
+                    : undefined
+                }
+              >
+                {plan.backdrop && (
                   <image
-                    href={plan.sheet.href}
-                    width={plan.sheet.width}
-                    height={plan.sheet.height}
-                    transform={`matrix(${plan.sheet.matrix.join(" ")})`}
+                    href={plan.backdrop.href}
+                    width={plan.backdrop.width}
+                    height={plan.backdrop.height}
+                    transform={`matrix(${plan.backdrop.matrix.join(" ")})`}
                     preserveAspectRatio="none"
                   />
-                </g>
-              )}
+                )}
 
-              {plan.units.map((unit) => {
-                const isActive = unit.id === activeUnitId;
-                return (
-                  <path
-                    key={unit.id}
-                    d={unit.d}
-                    fill="#CEC3AE"
-                    // A selected unit sheds its overlay entirely — that's the
-                    // "upper layer" coming off — but stays hit-testable so
-                    // clicking it again backs out to the full floor.
-                    // Plain fade with no delay: the same transition carries the
-                    // hover dimming, which has to stay immediate.
-                    className={`transition-opacity duration-300 ${
-                      isActive
-                        ? "cursor-zoom-out opacity-0"
-                        : "cursor-zoom-in opacity-70 hover:opacity-40"
-                    }`}
-                    // Stops the click reaching the <svg>'s own handler, which
-                    // would immediately back out again.
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      if (wasDrag()) return;
-                      onSelectUnit(isActive ? null : unit.id);
-                    }}
+                {plan.wash > 0 && (
+                  <rect
+                    width={plan.width}
+                    height={plan.height}
+                    fill="black"
+                    fillOpacity={plan.wash}
                   />
-                );
-              })}
+                )}
+
+                {/* The floor-plan render, cut to the building's footprint. The clip
+                  sits on the group so it is measured in plan coordinates, as the
+                  export's mask was, rather than in the image's own transformed
+                  space. */}
+                {plan.sheet && (
+                  <g clipPath={plan.sheetClip ? `url(#${clipId})` : undefined}>
+                    <image
+                      href={plan.sheet.href}
+                      width={plan.sheet.width}
+                      height={plan.sheet.height}
+                      transform={`matrix(${plan.sheet.matrix.join(" ")})`}
+                      preserveAspectRatio="none"
+                    />
+                  </g>
+                )}
+
+                {plan.units.map((unit) => {
+                  const isOverlayHidden = hiddenOverlayUnitIds
+                    ? hiddenOverlayUnitIds.includes(unit.id)
+                    : activeUnitId
+                      ? unit.id === activeUnitId
+                      : false;
+
+                  return (
+                    <path
+                      key={unit.id}
+                      d={unit.d}
+                      fill="#CEC3AE"
+                      // A selected unit sheds its overlay entirely — that's the
+                      // "upper layer" coming off — but stays hit-testable so
+                      // clicking it again backs out to the full floor.
+                      // Plain fade with no delay: the same transition carries the
+                      // hover dimming, which has to stay immediate.
+                      className={`transition-opacity duration-300 ${
+                        isOverlayHidden
+                          ? "cursor-zoom-out opacity-0"
+                          : "cursor-zoom-in opacity-70 hover:opacity-40"
+                      }`}
+                      // Stops the click reaching the <svg>'s own handler, which
+                      // would immediately back out again.
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (wasDrag()) return;
+                        if (onToggleUnit) {
+                          onToggleUnit(unit.id);
+                        } else if (onSelectUnit) {
+                          onSelectUnit(isOverlayHidden ? null : unit.id);
+                        }
+                      }}
+                    />
+                  );
+                })}
+              </g>
             </svg>
           )}
         </div>
@@ -894,11 +932,21 @@ export default function TowerFloorPlan({
           }}
         >
           {plan.units.map((unit) => {
-            const isActive = unit.id === activeUnitId;
-            const anchorX =
-              fit.offX + (unit.box.x + unit.box.w / 2) * fit.scale;
-            const anchorY =
-              fit.offY + (unit.box.y + unit.box.h / 2) * fit.scale;
+            const isOverlayHidden = hiddenOverlayUnitIds
+              ? hiddenOverlayUnitIds.includes(unit.id)
+              : activeUnitId
+                ? unit.id === activeUnitId
+                : false;
+            const unitCenterX =
+              rotation === 180
+                ? plan.width - (unit.box.x + unit.box.w / 2)
+                : unit.box.x + unit.box.w / 2;
+            const unitCenterY =
+              rotation === 180
+                ? plan.height - (unit.box.y + unit.box.h / 2)
+                : unit.box.y + unit.box.h / 2;
+            const anchorX = fit.offX + unitCenterX * fit.scale;
+            const anchorY = fit.offY + unitCenterY * fit.scale;
 
             return (
               <div
@@ -918,11 +966,17 @@ export default function TowerFloorPlan({
               >
                 <button
                   onClick={() => {
-                    if (!wasDrag()) onSelectUnit(unit.id);
+                    if (!wasDrag()) {
+                      if (onToggleUnit) {
+                        onToggleUnit(unit.id);
+                      } else if (onSelectUnit) {
+                        onSelectUnit(unit.id);
+                      }
+                    }
                   }}
                   // The unit being viewed keeps its pill exactly where it sits
                   // on the plan — dimmed and inert rather than moved or hidden.
-                  disabled={isActive}
+                  disabled={isOverlayHidden}
                   style={{
                     // Centres the pill on its anchor and holds it at a constant
                     // screen size however far the plan is magnified.
@@ -934,7 +988,7 @@ export default function TowerFloorPlan({
                     transitionTimingFunction: `${ZOOM_EASE}, ease-out, ease-out, ease-out`,
                   }}
                   className={`flex lg:mt-4 sm:mt-0 items-center gap-2 whitespace-nowrap rounded-full border border-white/10 bg-black/80 px-3 h-8 text-[12px] font-medium text-white shadow-lg backdrop-blur-md phone-landscape:h-[18px] phone-landscape:gap-0 phone-landscape:px-1.5 phone-landscape:text-[8px] phone-landscape:font-semibold phone-landscape:tracking-tight ${
-                    isActive
+                    isOverlayHidden
                       ? "pointer-events-none cursor-default opacity-40"
                       : "pointer-events-auto cursor-pointer opacity-100 hover:bg-black hover:text-[#C79A59]"
                   }`}
