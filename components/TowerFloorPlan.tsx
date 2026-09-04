@@ -506,7 +506,7 @@ export default function TowerFloorPlan({
       tx,
       ty,
     };
-  }, [activeUnit, fit, frameRect, size, view]);
+  }, [activeUnit, fit, frameRect, size, view, rotation, plan]);
 
   const userZoom =
     zoomState.unit === activeUnitId
@@ -864,11 +864,12 @@ export default function TowerFloorPlan({
                 )}
 
                 {plan.units.map((unit) => {
-                  const isOverlayHidden = hiddenOverlayUnitIds
-                    ? hiddenOverlayUnitIds.includes(unit.id)
-                    : activeUnitId
-                      ? unit.id === activeUnitId
-                      : false;
+                  const isActive = unit.id === activeUnitId;
+                  const isOverlayHidden =
+                    isActive ||
+                    (hiddenOverlayUnitIds
+                      ? hiddenOverlayUnitIds.includes(unit.id)
+                      : false);
 
                   return (
                     <path
@@ -890,10 +891,10 @@ export default function TowerFloorPlan({
                       onClick={(event) => {
                         event.stopPropagation();
                         if (wasDrag()) return;
-                        if (onToggleUnit) {
+                        if (onSelectUnit) {
+                          onSelectUnit(isActive ? null : unit.id);
+                        } else if (onToggleUnit) {
                           onToggleUnit(unit.id);
-                        } else if (onSelectUnit) {
-                          onSelectUnit(isOverlayHidden ? null : unit.id);
                         }
                       }}
                     />
@@ -932,11 +933,12 @@ export default function TowerFloorPlan({
           }}
         >
           {plan.units.map((unit) => {
-            const isOverlayHidden = hiddenOverlayUnitIds
-              ? hiddenOverlayUnitIds.includes(unit.id)
-              : activeUnitId
-                ? unit.id === activeUnitId
-                : false;
+            const isActive = unit.id === activeUnitId;
+            const isOverlayHidden =
+              isActive ||
+              (hiddenOverlayUnitIds
+                ? hiddenOverlayUnitIds.includes(unit.id)
+                : false);
             const unitCenterX =
               rotation === 180
                 ? plan.width - (unit.box.x + unit.box.w / 2)
@@ -967,16 +969,16 @@ export default function TowerFloorPlan({
                 <button
                   onClick={() => {
                     if (!wasDrag()) {
-                      if (onToggleUnit) {
+                      if (onSelectUnit) {
+                        onSelectUnit(isActive ? null : unit.id);
+                      } else if (onToggleUnit) {
                         onToggleUnit(unit.id);
-                      } else if (onSelectUnit) {
-                        onSelectUnit(unit.id);
                       }
                     }
                   }}
                   // The unit being viewed keeps its pill exactly where it sits
                   // on the plan — dimmed and inert rather than moved or hidden.
-                  disabled={isOverlayHidden}
+                  disabled={isActive}
                   style={{
                     // Centres the pill on its anchor and holds it at a constant
                     // screen size however far the plan is magnified.
@@ -988,7 +990,7 @@ export default function TowerFloorPlan({
                     transitionTimingFunction: `${ZOOM_EASE}, ease-out, ease-out, ease-out`,
                   }}
                   className={`flex lg:mt-4 sm:mt-0 items-center gap-2 whitespace-nowrap rounded-full border border-white/10 bg-black/80 px-3 h-8 text-[12px] font-medium text-white shadow-lg backdrop-blur-md phone-landscape:h-[18px] phone-landscape:gap-0 phone-landscape:px-1.5 phone-landscape:text-[8px] phone-landscape:font-semibold phone-landscape:tracking-tight ${
-                    isOverlayHidden
+                    isActive
                       ? "pointer-events-none cursor-default opacity-40"
                       : "pointer-events-auto cursor-pointer opacity-100 hover:bg-black hover:text-[#C79A59]"
                   }`}

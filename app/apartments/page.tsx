@@ -87,6 +87,7 @@ const PLAN_FRAME =
 
 export default function ApartmentsPage() {
   const [selectedTower, setSelectedTower] = useState<TowerKey>("Tower 1");
+  const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
   const [selectedBhks, setSelectedBhks] = useState<string[]>([]);
   const [isFullscreenActive, setIsFullscreenActive] = useState(
     () => typeof document !== "undefined" && !!document.fullscreenElement,
@@ -105,6 +106,7 @@ export default function ApartmentsPage() {
   };
 
   const toggleBhk = (bhkType: string) => {
+    setActiveUnitId(null);
     setSelectedBhks((prev) =>
       prev.includes(bhkType)
         ? prev.filter((t) => t !== bhkType)
@@ -159,11 +161,9 @@ export default function ApartmentsPage() {
           key={`${planSrc}-${rotation}`}
           src={planSrc}
           rotation={rotation}
+          activeUnitId={activeUnitId}
+          onSelectUnit={setActiveUnitId}
           hiddenOverlayUnitIds={hiddenOverlayUnitIds}
-          onToggleUnit={(unitId) => {
-            const unit = units.find((u) => u.id === unitId);
-            if (unit) toggleBhk(unit.type);
-          }}
           frameClassName={PLAN_FRAME}
         />
       </div>
@@ -267,6 +267,7 @@ export default function ApartmentsPage() {
             key={tower}
             onClick={() => {
               setSelectedTower(tower);
+              setActiveUnitId(null);
             }}
             className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition cursor-pointer duration-200 phone-landscape:px-3 phone-landscape:h-6 phone-landscape:text-[9px] phone-landscape:rounded-md ${
               selectedTower === tower
