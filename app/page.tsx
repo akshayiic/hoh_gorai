@@ -220,7 +220,7 @@ export default function WelcomeExperience() {
       {/* Preload the screens that follow so they're cached by the time the
           progress ring finishes */}
       <img
-        src="/gallery/hoh_landing.jpg"
+        src="/gallery/hoh_landing.webp"
         className="hidden"
         aria-hidden="true"
         alt=""
@@ -315,7 +315,7 @@ export default function WelcomeExperience() {
             <div
               className="absolute inset-0 bg-cover bg-top bg-no-repeat"
               style={{
-                backgroundImage: `url('/gallery/hoh_landing.jpg')`,
+                backgroundImage: `url('/gallery/hoh_landing.webp')`,
               }}
             />
 
@@ -353,18 +353,18 @@ export default function WelcomeExperience() {
             {/* Content */}
             <div className="relative z-10 flex h-full flex-col items-center justify-center text-center px-6">
               {/* Logo */}
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 phone-landscape:top-2">
+              <div className="absolute top-12 -right-8 -translate-x-1/2 phone-landscape:top-2">
                 <img
                   src="/gallery/hoh-logo.png"
                   alt=""
-                  className="h-30 object-contain phone-landscape:h-14"
+                  className="h-20 object-contain phone-landscape:h-14"
                 />
               </div>
 
               {/* CTA */}
               <button
                 onClick={enterLayout}
-                className="group text-white font-semibold text-2xl absolute bottom-[10rem] cursor-pointer phone-landscape:text-sm phone-landscape:bottom-6"
+                className="group text-white font-semibold text-2xl absolute bottom-[3rem] cursor-pointer phone-landscape:text-sm phone-landscape:bottom-6"
               >
                 <span className="relative z-10 inline-flex items-center gap-2">
                   Explore Now
