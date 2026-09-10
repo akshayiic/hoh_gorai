@@ -80,43 +80,43 @@ const infrastructure: {
       locations: [
         {
           title: "HDFC",
-          name: "HDFC  - 3km (10 Mins)",
-          coordinates: { lat: 19.230887, lng: 72.8512622 },
-        },
-        {
-          title: "bank of baroda",
-          name: "bank of baroda - 3.2km (12 Mins)",
-          coordinates: { lat: 19.2263277, lng: 72.8531056 },
-        },
-        {
-          title: "Axis Bank",
-          name: "Axis Bank  - 6.2km (20 Mins)",
-          coordinates: { lat: 19.2285996, lng: 72.8636277 },
-        },
-        {
-          title: "CKP Bank",
-          name: "CKP Bank - 600m (8 Mins)",
-          coordinates: { lat: 19.2301197, lng: 72.8289677 },
-        },
-        {
-          title: "Uco Bank",
-          name: "Uco Bank - 5.6km (18 Mins)",
-          coordinates: { lat: 19.2293833, lng: 72.8588835 },
-        },
-        {
-          title: "Union Bank of India",
-          name: "Union Bank of India  - 3.7km (11 Mins)",
-          coordinates: { lat: 19.2464863, lng: 72.8495949 },
-        },
-        {
-          title: "bank of maharashtra",
-          name: "bank of maharashtra  - 2.8km (10 Mins)",
-          coordinates: { lat: 19.2127887, lng: 72.8283273 },
+          name: "HDFC - 600m (3 Mins)",
+          coordinates: { lat: 19.235184, lng: 72.8284681 },
         },
         {
           title: "ICICI",
-          name: "ICICI - 400m (4 Mins)",
-          coordinates: { lat: 19.2312, lng: 72.8290 },
+          name: "ICICI - 200m (1 Min)",
+          coordinates: { lat: 19.2322104, lng: 72.8287817 },
+        },
+        {
+          title: "CKP Bank",
+          name: "CKP Bank - 400m (1 Min)",
+          coordinates: { lat: 19.2301197, lng: 72.8289677 },
+        },
+        {
+          title: "Bank of Maharashtra",
+          name: "Bank of Maharashtra - 300m (1 Min)",
+          coordinates: { lat: 19.232787, lng: 72.828405 },
+        },
+        {
+          title: "Bank of Baroda",
+          name: "Bank of Baroda - 500m (2 Mins)",
+          coordinates: { lat: 19.2327381, lng: 72.8259222 },
+        },
+        {
+          title: "UCO Bank",
+          name: "UCO Bank - 400m (2 Mins)",
+          coordinates: { lat: 19.2307071, lng: 72.8287214 },
+        },
+        {
+          title: "Axis Bank",
+          name: "Axis Bank - 1.2km (4 Mins)",
+          coordinates: { lat: 19.2270023, lng: 72.8242808 },
+        },
+        {
+          title: "Union Bank of India",
+          name: "Union Bank of India - 900m (3 Mins)",
+          coordinates: { lat: 19.2270052, lng: 72.8280828 },
         },
       ],
     },

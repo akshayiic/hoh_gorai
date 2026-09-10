@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import GlobalNavbar from "@/components/GlobalNavbar";
 import BottomNavbar from "@/components/BottomNavbar";
 import Tower360, { preload360 } from "@/components/Tower360";
+import { useRouter } from "next/navigation";
 
 const isPhoneLandscape = () =>
   typeof window !== "undefined" &&
@@ -64,6 +65,8 @@ export default function WelcomeExperience() {
     null,
   );
   const twoFingerStartYRef = useRef<{ y: number; time: number } | null>(null);
+
+  const router = useRouter();
 
   // Fullscreens `document.documentElement`, not this page's own div — that's
   // the one element that survives client-side navigation, so switching pages
@@ -352,18 +355,9 @@ export default function WelcomeExperience() {
 
             {/* Content */}
             <div className="relative z-10 flex h-full flex-col items-center justify-center text-center px-6">
-              {/* Logo */}
-              <div className="absolute top-12 -right-8 -translate-x-1/2 phone-landscape:top-2">
-                <img
-                  src="/gallery/hoh-logo.png"
-                  alt=""
-                  className="h-20 object-contain phone-landscape:h-14"
-                />
-              </div>
-
               {/* CTA */}
               <button
-                onClick={enterLayout}
+                onClick={() => router.push("/location")}
                 className="group text-white font-semibold text-2xl absolute bottom-[3rem] cursor-pointer phone-landscape:text-sm phone-landscape:bottom-6"
               >
                 <span className="relative z-10 inline-flex items-center gap-2">
