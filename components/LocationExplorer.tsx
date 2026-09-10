@@ -31,7 +31,7 @@ import {
   DomOverlayHandle,
 } from "@/lib/googleMaps";
 
-const GoraiBayviewLocation = { lat: 19.2341126, lng: 72.8291472 }; // Gorai Bayview Site
+const GoraiBluecrestLocation = { lat: 19.2341126, lng: 72.8291472 }; // Gorai Bluecrest Site
 
 interface LocationItem {
   title: string;
@@ -54,8 +54,8 @@ const infrastructure: {
       locations: [
         {
           title: "VIBGYOR",
-          name: "VIBGYOR - 4.4km (13 Mins)",
-          coordinates: { lat: 19.2508934, lng: 72.8506325 },
+          name: "VIBGYOR - 600m (3 Mins)",
+          coordinates: { lat: 19.2349668, lng: 72.829209 },
         },
         {
           title: "ORCHIDS",
@@ -80,43 +80,43 @@ const infrastructure: {
       locations: [
         {
           title: "HDFC",
-          name: "HDFC  - 3km (10 Mins)",
-          coordinates: { lat: 19.230887, lng: 72.8512622 },
-        },
-        {
-          title: "bank of baroda",
-          name: "bank of baroda - 3.2km (12 Mins)",
-          coordinates: { lat: 19.2263277, lng: 72.8531056 },
-        },
-        {
-          title: "Axis Bank",
-          name: "Axis Bank  - 6.2km (20 Mins)",
-          coordinates: { lat: 19.2285996, lng: 72.8636277 },
-        },
-        {
-          title: "CKP Bank",
-          name: "CKP Bank - 600m (8 Mins)",
-          coordinates: { lat: 19.2301197, lng: 72.8289677 },
-        },
-        {
-          title: "Uco Bank",
-          name: "Uco Bank - 5.6km (18 Mins)",
-          coordinates: { lat: 19.2293833, lng: 72.8588835 },
-        },
-        {
-          title: "Union Bank of India",
-          name: "Union Bank of India  - 3.7km (11 Mins)",
-          coordinates: { lat: 19.2464863, lng: 72.8495949 },
-        },
-        {
-          title: "bank of maharashtra",
-          name: "bank of maharashtra  - 2.8km (10 Mins)",
-          coordinates: { lat: 19.2127887, lng: 72.8283273 },
+          name: "HDFC - 600m (3 Mins)",
+          coordinates: { lat: 19.235184, lng: 72.8284681 },
         },
         {
           title: "ICICI",
-          name: "ICICI - 400m (4 Mins)",
-          coordinates: { lat: 19.2312, lng: 72.8290 },
+          name: "ICICI - 200m (1 Min)",
+          coordinates: { lat: 19.2322104, lng: 72.8287817 },
+        },
+        {
+          title: "CKP Bank",
+          name: "CKP Bank - 400m (1 Min)",
+          coordinates: { lat: 19.2301197, lng: 72.8289677 },
+        },
+        {
+          title: "Bank of Maharashtra",
+          name: "Bank of Maharashtra - 300m (1 Min)",
+          coordinates: { lat: 19.232787, lng: 72.828405 },
+        },
+        {
+          title: "Bank of Baroda",
+          name: "Bank of Baroda - 500m (2 Mins)",
+          coordinates: { lat: 19.2327381, lng: 72.8259222 },
+        },
+        {
+          title: "UCO Bank",
+          name: "UCO Bank - 400m (2 Mins)",
+          coordinates: { lat: 19.2307071, lng: 72.8287214 },
+        },
+        {
+          title: "Axis Bank",
+          name: "Axis Bank - 1.2km (4 Mins)",
+          coordinates: { lat: 19.2270023, lng: 72.8242808 },
+        },
+        {
+          title: "Union Bank of India",
+          name: "Union Bank of India - 900m (3 Mins)",
+          coordinates: { lat: 19.2270052, lng: 72.8280828 },
         },
       ],
     },
@@ -214,8 +214,8 @@ const infrastructure: {
       locations: [
         {
           title: "western express highway",
-          name: "western express highway - 11.9km (36 Mins)",
-          coordinates: { lat: 19.1663509, lng: 72.8586328 },
+          name: "western express highway - 6.3km (16 Mins)",
+          coordinates: { lat: 19.234237, lng: 72.863294 },
         },
         {
           title: "borivali Metro",
@@ -229,13 +229,13 @@ const infrastructure: {
         },
         {
           title: "New link road",
-          name: "New link road - 5.9km (20 Mins)",
-          coordinates: { lat: 19.1898948, lng: 72.8354623 },
+          name: "New link road - 2.9km (9 Mins)",
+          coordinates: { lat: 19.2195691, lng: 72.8402488 },
         },
         {
           title: "SV Road",
-          name: "SV Road - 9.8km (35 Mins)",
-          coordinates: { lat: 19.1734416, lng: 72.8541016 },
+          name: "SV Road - 4.1km (12 Mins)",
+          coordinates: { lat: 19.2194065, lng: 72.8522794 },
         },
       ],
     },
@@ -337,9 +337,9 @@ const infrastructure: {
       locations: [
         {
           title: "Coastal Road",
-          name: "Coastal Road - upcoming - 4km (13 Mins)",
-              coordinates: { lat: 19.214745, lng: 72.8117535 },
-          routeCoordinates: { lat: 19.214745, lng: 72.8117535 },
+          name: "Coastal Road - upcoming - 700m (3 Mins)",
+          coordinates: { lat: 19.233298, lng: 72.8244038 },
+          routeCoordinates: { lat: 19.233298, lng: 72.8244038 },
         },
         {
           title: "Borivali Thane twin Tunnel",
@@ -423,7 +423,7 @@ export default function LocationExplorer({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showRoutePanel, setShowRoutePanel] = useState(false);
   const [originAddress, setOriginAddress] = useState(
-    "Gorai Bayview, Borivali West, Mumbai",
+    "Gorai Bluecrest, Borivali West, Mumbai",
   );
   const [destinationAddress, setDestinationAddress] = useState("");
   const [isCleanView, setIsCleanView] = useState(false);
@@ -474,14 +474,14 @@ export default function LocationExplorer({
       if (cancelled || !mapContainerRef.current) return;
 
       const map = createMap(mapContainerRef.current, {
-        center: GoraiBayviewLocation,
+        center: GoraiBluecrestLocation,
         zoom: 13,
       });
       mapRef.current = map;
       loadGreenAreasOverlay(map);
 
       google.maps.event.addListenerOnce(map, "idle", () => {
-        // Main Logo on map for Gorai Bayview (No outer ring, clean full fit, same size of circle)
+        // Main Logo on map for Gorai Bluecrest (No outer ring, clean full fit, same size of circle)
         const el = document.createElement("div");
         el.className = "luxury-home-marker flex items-center justify-center";
         el.style.width = "44px";
@@ -491,11 +491,11 @@ export default function LocationExplorer({
 
         el.innerHTML = `
           <div class="luxury-home-inner">
-            <img src="/icons/hoh2.svg" class="luxury-home-logo-img" alt="Hiranandani Bayview" />
+            <img src="/icons/hoh2.svg" class="luxury-home-logo-img" alt="Hiranandani Bluecrest" />
           </div>
         `;
 
-        const homeMarker = createDomOverlay(GoraiBayviewLocation, el);
+        const homeMarker = createDomOverlay(GoraiBluecrestLocation, el);
         homeMarker.setMap(map);
 
         homeMarkerRef.current = homeMarker;
@@ -653,7 +653,7 @@ export default function LocationExplorer({
       // Screen position and collision box for Home Marker
       const homeScreenPos = homeMarkerRef.current?.getScreenPosition();
       if (!homeScreenPos) return;
-      const homeR = 24; // Radius around 44px home marker + padding
+      const homeR = 36; // Radius around 44px home marker + padding to guarantee generous clearance
 
       const homeEl = homeMarkerRef.current?.element;
       const homeRect = homeEl?.getBoundingClientRect();
@@ -1035,22 +1035,42 @@ export default function LocationExplorer({
         };
       };
 
-      // Compact angle directions (in degrees) fanning around 360°
+      // Wide fanning angle directions (in degrees) around 360° with fine angular steps
       const candidateBaseAngles = [
-        -90, -70, -45, -20, 0, 20, 45, 70, 90, 110, 135, 160, 180, -160, -135,
-        -110,
+        -90, -75, -60, -45, -30, -15, 0, 15, 30, 45, 60, 75, 90, 105, 120, 135,
+        150, 165, 180, -165, -150, -135, -120, -105,
       ];
-      // Short, compact line lengths matching the attachment image (16px to 76px)
-      const lineLengths = [16, 24, 34, 46, 60, 76, 95];
+      // Generous line lengths allowing lines to spread cleanly into open canvas space (24px to 170px)
+      const lineLengths = [24, 38, 54, 72, 92, 116, 142, 170];
       const elbowStyles = [0, 1, 2, 3];
 
       markerInfos.forEach((info) => {
         const W_lbl = info.width / 2;
         const H_lbl = info.height / 2;
 
+        const dxHome = info.x - homeScreenPos.x;
+        const dyHome = info.y - homeScreenPos.y;
+        const distToHome = Math.hypot(dxHome, dyHome);
+        const angleAwayFromHome = (Math.atan2(dyHome, dxHome) * 180) / Math.PI;
+
+        // For markers close to HOH site (like VIBGYOR, ICICI), prioritize angles pointing AWAY from HOH
+        let markerCandidateAngles = candidateBaseAngles;
+        if (distToHome < 160) {
+          markerCandidateAngles = [...candidateBaseAngles].sort((a, b) => {
+            const diffA = Math.abs(
+              ((((a - angleAwayFromHome) % 360) + 540) % 360) - 180,
+            );
+            const diffB = Math.abs(
+              ((((b - angleAwayFromHome) % 360) + 540) % 360) - 180,
+            );
+            return diffA - diffB;
+          });
+        }
+
+        const initialAngleRad = (angleAwayFromHome * Math.PI) / 180;
         let bestPosition = "Right";
-        let bestOffsetX = R + 24;
-        let bestOffsetY = -18;
+        let bestOffsetX = distToHome < 160 ? Math.round((R + 30) * Math.cos(initialAngleRad)) : R + 24;
+        let bestOffsetY = distToHome < 160 ? Math.round((R + 30) * Math.sin(initialAngleRad)) : -18;
         let bestLocalSegments = computeConnectorSegments(
           bestOffsetX,
           bestOffsetY,
@@ -1082,10 +1102,10 @@ export default function LocationExplorer({
 
           for (
             let aIdx = 0;
-            aIdx < candidateBaseAngles.length && !found;
+            aIdx < markerCandidateAngles.length && !found;
             aIdx++
           ) {
-            const baseAngleDeg = candidateBaseAngles[aIdx];
+            const baseAngleDeg = markerCandidateAngles[aIdx];
             const jitterDeg =
               (pseudoRandom(`${info.title}|${aIdx}`) * 2 - 1) * 12;
             const angleRad = ((baseAngleDeg + jitterDeg) * Math.PI) / 180;
@@ -1203,7 +1223,17 @@ export default function LocationExplorer({
 
               // Check connector line against Home Marker, Navbar Logo, and other POI dots
               let lineCollides = false;
-              if (
+              if (distToHome < homeR) {
+                // If POI dot is inside home marker perimeter, line must travel outward away from home marker
+                const lineMovesAway = absSegments.every(
+                  (s) =>
+                    Math.hypot(s.x2 - homeScreenPos.x, s.y2 - homeScreenPos.y) >=
+                    Math.hypot(s.x1 - homeScreenPos.x, s.y1 - homeScreenPos.y) - 1,
+                );
+                if (!lineMovesAway) {
+                  lineCollides = true;
+                }
+              } else if (
                 absSegments.some((s) =>
                   segmentIntersectsCircle(
                     s.x1,
@@ -1382,9 +1412,10 @@ export default function LocationExplorer({
                   continue;
                 }
 
-                // Check label vs all POI dots
+                // Check label vs all other POI dots
                 let labelHitsDot = false;
                 for (let k = 0; k < markerInfos.length; k++) {
+                  if (markerInfos[k].title === info.title) continue;
                   if (
                     checkCircleRectOverlap(
                       markerInfos[k].x,
@@ -1634,7 +1665,7 @@ export default function LocationExplorer({
     };
 
     catData.locations.forEach((loc) => {
-      if (loc.title === "Gorai Bayview Site") return;
+      if (loc.title === "Gorai Bluecrest Site") return;
 
       const parsed = parseLocationName(loc.title, loc.name);
 
@@ -1700,9 +1731,9 @@ export default function LocationExplorer({
     // Auto-fit bounds to encompass all locations in the category plus the main site
     if (catData.locations.length > 0) {
       const bounds = new google.maps.LatLngBounds();
-      bounds.extend(GoraiBayviewLocation);
+      bounds.extend(GoraiBluecrestLocation);
       catData.locations.forEach((loc) => {
-        if (loc.title !== "Gorai Bayview Site") {
+        if (loc.title !== "Gorai Bluecrest Site") {
           bounds.extend(loc.coordinates);
         }
       });
@@ -1717,11 +1748,11 @@ export default function LocationExplorer({
         : { top: 80, bottom: 80, left: 340, right: 120 };
 
       if (isBanks) {
-        // Banks are situated in the local Borivali/Gorai vicinity; zoom in closer to clearly show nearby banks
-        fitBoundsWithMaxZoom(map, bounds, padding, 15);
+        // Banks overview: zoom in closer (~15.8) so all 8 bank names have ample breathing room
+        fitBoundsWithMaxZoom(map, bounds, padding, 16);
         google.maps.event.addListenerOnce(map, "idle", () => {
-          if ((map.getZoom() ?? 13) < 14) {
-            map.setZoom(14);
+          if ((map.getZoom() ?? 14) < 15.8) {
+            map.setZoom(15.8);
           }
         });
       } else if (isTransport) {
@@ -1820,7 +1851,7 @@ export default function LocationExplorer({
   function handleShowRoute(
     destCoordinates: { lat: number; lng: number },
     destName: string,
-    originCoords = GoraiBayviewLocation,
+    originCoords = GoraiBluecrestLocation,
   ) {
     const map = mapRef.current;
     if (!map) {
@@ -1876,7 +1907,21 @@ export default function LocationExplorer({
             ? { top: 100, bottom: 80, left: 30, right: 30 }
             : { top: 120, bottom: 120, left: 360, right: 120 };
 
-        fitBoundsWithMaxZoom(map, bounds, safePadding, 15);
+        const isVibgyor = destName.toLowerCase().includes("vibgyor");
+        const isCloseLocation = distanceMeters > 0 && distanceMeters < 1500;
+        const maxRouteZoom = isVibgyor ? 17.5 : isCloseLocation ? 17.5 : 16.5;
+
+        fitBoundsWithMaxZoom(map, bounds, safePadding, maxRouteZoom);
+
+        if (isCloseLocation || isVibgyor) {
+          google.maps.event.addListenerOnce(map, "idle", () => {
+            const currentZoom = map.getZoom() ?? 15;
+            const targetMinZoom = isVibgyor ? 17 : distanceMeters < 800 ? 16.5 : 15.5;
+            if (currentZoom < targetMinZoom) {
+              map.setZoom(targetMinZoom);
+            }
+          });
+        }
 
         animateRouteDrawing(map, path);
         setIsRouteLoading(false);
@@ -1998,9 +2043,9 @@ export default function LocationExplorer({
     clearRouteLayer();
     setSelectedLocation(null);
     setDestinationAddress("");
-    setOriginAddress("Gorai Bayview, Borivali West, Mumbai");
+    setOriginAddress("Gorai Bluecrest, Borivali West, Mumbai");
     if (mapRef.current) {
-      mapRef.current.panTo(GoraiBayviewLocation);
+      mapRef.current.panTo(GoraiBluecrestLocation);
       mapRef.current.setZoom(13);
     }
   };

@@ -79,24 +79,24 @@ export default function GlobalNavbar({
           aria-label="Start the experience from the beginning"
           className="flex items-center gap-3 cursor-pointer text-left phone-landscape:gap-2"
         >
-        {/* Logo Box */}
-        <div className="flex items-center justify-center w-[58px] h-[58px] bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 rounded-[5px] shadow-lg transition hover:border-[#C79A59]/60 phone-landscape:w-9 phone-landscape:h-9">
-          <img
-            src="/icons/hoh2.svg"
-            alt="Logo"
-            className="h-8 w-8 object-contain phone-landscape:h-5 phone-landscape:w-5"
-          />
-        </div>
+          {/* Logo Box */}
+          <div className="flex items-center justify-center w-[58px] h-[58px] bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 rounded-[5px] shadow-lg transition hover:border-[#C79A59]/60 phone-landscape:w-9 phone-landscape:h-9">
+            <img
+              src="/icons/hoh2.svg"
+              alt="Logo"
+              className="h-8 w-8 object-contain phone-landscape:h-5 phone-landscape:w-5"
+            />
+          </div>
 
-        {/* Project Name Box (Sidebar themed UI style) */}
-        <div className="flex flex-col justify-center h-[58px] px-4 bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 rounded-[5px] shadow-lg phone-landscape:h-9 phone-landscape:px-2.5">
-          <h1 className="text-[22px] font-bold text-white leading-tight tracking-wide phone-landscape:text-[12px]">
-            Hiranandani Bayview
-          </h1>
-          <p className="text-[14px] font-medium text-[#BBBBBB] leading-none mt-1 phone-landscape:text-[9px] phone-landscape:mt-0.5">
-            Gorai, Mumbai
-          </p>
-        </div>
+          {/* Project Name Box (Sidebar themed UI style) */}
+          <div className="flex flex-col justify-center h-[58px] px-4 bg-[#2C3437]/65 backdrop-blur-md border border-[#40484B]/70 rounded-[5px] shadow-lg phone-landscape:h-9 phone-landscape:px-2.5">
+            <h1 className="text-[22px] font-bold text-white leading-tight tracking-wide phone-landscape:text-[12px]">
+              Hiranandani Bluecrest
+            </h1>
+            <p className="text-[14px] font-medium text-[#BBBBBB] leading-none mt-1 phone-landscape:text-[9px] phone-landscape:mt-0.5">
+              Gorai, Mumbai
+            </p>
+          </div>
         </button>
       </div>
 
