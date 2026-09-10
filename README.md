@@ -1,6 +1,6 @@
-# Gorai Bayview Virtual Tour
+# Gorai Bluecrest Virtual Tour
 
-A Next.js virtual tour application for Gorai Bayview, featuring 360° panoramic views, interactive floor plans, and image gallery.
+A Next.js virtual tour application for Gorai Bluecrest, featuring 360° panoramic views, interactive floor plans, and image gallery.
 
 ## Features
 

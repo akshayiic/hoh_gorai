@@ -107,7 +107,7 @@ export default function Tower360({ className = "" }: { className?: string }) {
           viewport crops. */}
       <img
         src={framePath(frame)}
-        alt="Hiranandani Bayview, seen from around the tower"
+        alt="Hiranandani Bluecrest, seen from around the tower"
         draggable={false}
         decoding="sync"
         className="pointer-events-none absolute inset-0 h-full w-full select-none object-cover object-top"

@@ -10,7 +10,7 @@ interface BuildingInfoProps {
 }
 
 const projectInfo = {
-  name: "Gorai Bayview",
+  name: "Gorai Bluecrest",
   developer: "House of Hiranandani",
   location: "Panvel, Mumbai",
   reraNumber: "P52000000000",

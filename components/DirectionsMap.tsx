@@ -68,7 +68,7 @@ export default function DirectionsMap({
             },
           }).addListener("click", function (this: google.maps.Marker) {
             new google.maps.InfoWindow({
-              content: "Gorai Bayview (Start)",
+              content: "Gorai Bluecrest (Start)",
             }).open(map, this);
           });
 
@@ -210,7 +210,7 @@ export default function DirectionsMap({
         <div className="flex items-center gap-2 mb-2">
           <Navigation size={16} className="text-green-400" />
           <span className="font-semibold">
-            Route from Gorai Bayview to {destinationName}
+            Route from Gorai Bluecrest to {destinationName}
           </span>
         </div>
         {(distance || duration) && (
