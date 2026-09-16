@@ -84,7 +84,7 @@ export default function BalconyView() {
   );
   const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
   const [selectedTime, setSelectedTime] = useState<
-    "morning" | "afternoon" | "evening" | "night"
+    "morning" | "afternoon" | "evening"
   >("morning");
   const [isViewerReady, setIsViewerReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
