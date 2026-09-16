@@ -122,7 +122,7 @@ export default function Sidebar({
     : undefined;
   const sidePosition =
     side === "right"
-      ? "right-10 phone-landscape:right-4"
+      ? "right-6 phone-landscape:right-4"
       : "left-6 phone-landscape:left-4";
 
   return (
@@ -132,7 +132,7 @@ export default function Sidebar({
         <button
           onClick={() => setIsCollapsed(false)}
           aria-label="Expand categories"
-          className={`absolute ${sidePosition} top-[6.5rem] phone-landscape:top-14 z-20 ${
+          className={`absolute ${sidePosition} top-6 phone-landscape:top-3 z-20 ${
             isCollapsed ? "flex" : "hidden"
           } items-center justify-center w-9 h-9 rounded-full bg-[rgba(32,38,42,0.72)] border border-white/[0.08] shadow-[0_12px_30px_rgba(0,0,0,0.18)] text-[#E2E2E2] cursor-pointer`}
         >
@@ -141,9 +141,9 @@ export default function Sidebar({
       )}
 
       <aside
-        className={`absolute ${sidePosition} top-[6.5rem] z-20 ${
+        className={`absolute ${sidePosition} top-6 z-20 ${
           isCollapsed ? "hidden" : "hidden lg:block phone-landscape:block"
-        } phone-landscape:top-14 ${className}`}
+        } phone-landscape:top-3 ${className}`}
       >
         <div
           className={`
@@ -259,7 +259,7 @@ export default function Sidebar({
                 className={`${
                   compact
                     ? "pb-2 phone-landscape:pb-1.5"
-                    : "pb-3 phone-landscape:pb-2"
+                    : "pb-1 phone-landscape:pb-2"
                 } ${
                   header
                     ? ""
@@ -274,7 +274,7 @@ export default function Sidebar({
                       (section.isCollapsible ? (
                         <button
                           onClick={section.onHeaderClick}
-                          className="w-full flex items-center justify-between px-4 text-[14px] font-semibold text-[#E2E2E2] mb-2 cursor-pointer hover:text-white transition-colors text-left phone-landscape:px-3 phone-landscape:text-[11px] phone-landscape:mb-1"
+                          className="w-full flex items-center justify-between px-4 text-[14px] font-semibold text-[#E2E2E2] cursor-pointer hover:text-white transition-colors text-left phone-landscape:px-3 phone-landscape:text-[11px] phone-landscape:mb-1"
                         >
                           <span>{section.title}</span>
                           <span
@@ -375,7 +375,7 @@ export default function Sidebar({
                     </div>
 
                     {index !== sections.length - 1 && (
-                      <hr className="border-[#596164]/50 my-4 phone-landscape:my-2" />
+                      <hr className="border-[#596164]/50 my-1 phone-landscape:my-2" />
                     )}
                   </div>
                 ))}

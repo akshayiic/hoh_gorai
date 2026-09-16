@@ -29,11 +29,6 @@ const allTowersFloors = {
       { id: "4-43", floor: 43 },
       { id: "5-48", floor: 48 },
     ],
-    "Tower 3": [
-      { id: "10-38", floor: 38 },
-      { id: "6-43", floor: 43 },
-      { id: "5-48", floor: 48 },
-    ],
   },
   afternoon: {
     "Tower 1": [
@@ -42,11 +37,6 @@ const allTowersFloors = {
       { id: "9-48", floor: 48 },
     ],
     "Tower 2": [
-      { id: "7-38", floor: 38 },
-      { id: "8-43", floor: 43 },
-      { id: "9-48", floor: 48 },
-    ],
-    "Tower 3": [
       { id: "7-38", floor: 38 },
       { id: "8-43", floor: 43 },
       { id: "9-48", floor: 48 },
@@ -63,28 +53,6 @@ const allTowersFloors = {
       { id: "8-43", floor: 43 },
       { id: "9-48", floor: 48 },
     ],
-    "Tower 3": [
-      { id: "7-38", floor: 38 },
-      { id: "8-43", floor: 43 },
-      { id: "9-48", floor: 48 },
-    ],
-  },
-  night: {
-    "Tower 1": [
-      { id: "7-38", floor: 38 },
-      { id: "8-43", floor: 43 },
-      { id: "9-48", floor: 48 },
-    ],
-    "Tower 2": [
-      { id: "7-38", floor: 38 },
-      { id: "8-43", floor: 43 },
-      { id: "9-48", floor: 48 },
-    ],
-    "Tower 3": [
-      { id: "7-38", floor: 38 },
-      { id: "8-43", floor: 43 },
-      { id: "9-48", floor: 48 },
-    ],
   },
 };
 
@@ -94,7 +62,6 @@ const timeOfDayOptions = [
   { id: "morning", label: "Morning", icon: Sunrise },
   { id: "afternoon", label: "Afternoon", icon: Sun },
   { id: "evening", label: "Evening", icon: Sunset },
-  { id: "night", label: "Night", icon: Moon },
 ] as const;
 
 // Marzipano pins a scene's first tile level in GPU memory for as long as the
@@ -112,9 +79,9 @@ const getFloorLabel = (floor: number | string) => {
 };
 
 export default function BalconyView() {
-  const [selectedTower, setSelectedTower] = useState<
-    "Tower 1" | "Tower 2" | "Tower 3"
-  >("Tower 1");
+  const [selectedTower, setSelectedTower] = useState<"Tower 1" | "Tower 2">(
+    "Tower 1",
+  );
   const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
   const [selectedTime, setSelectedTime] = useState<
     "morning" | "afternoon" | "evening" | "night"
@@ -372,7 +339,7 @@ export default function BalconyView() {
     setCurrentFloorIndex(index);
   };
 
-  const handleTowerChange = (tower: "Tower 1" | "Tower 2" | "Tower 3") => {
+  const handleTowerChange = (tower: "Tower 1" | "Tower 2") => {
     setSelectedTower(tower);
     setCurrentFloorIndex(0);
   };
@@ -543,9 +510,7 @@ export default function BalconyView() {
       {!isFullscreenActive && (
         <div className="absolute bottom-6 left-1/2 z-40 flex -translate-x-1/2 gap-2 phone-landscape:bottom-3 phone-landscape:gap-1">
           {(
-            Object.keys(allTowersFloors.morning) as Array<
-              "Tower 1" | "Tower 2" | "Tower 3"
-            >
+            Object.keys(allTowersFloors.morning) as Array<"Tower 1" | "Tower 2">
           ).map((tower) => (
             <button
               key={tower}
