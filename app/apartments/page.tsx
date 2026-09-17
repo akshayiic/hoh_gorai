@@ -27,42 +27,7 @@ interface FlatOption {
 }
 
 const TOWER_A_FLATS: FlatOption[] = [
-  {
-    id: "tower-a-flat-1",
-    tower: "Tower A",
-    label: "Flat 1",
-    imageSrc: "/gallery/Tower C/flat1.webp",
-  },
-  {
-    id: "tower-a-flat-2",
-    tower: "Tower A",
-    label: "Flat 2",
-    imageSrc: "/gallery/Tower C/flat2.webp",
-  },
-  {
-    id: "tower-a-flat-3",
-    tower: "Tower A",
-    label: "Flat 3",
-    imageSrc: "/gallery/Tower C/flat3.webp",
-  },
-  {
-    id: "tower-a-flat-4",
-    tower: "Tower A",
-    label: "Flat 4",
-    imageSrc: "/gallery/Tower C/flat4.webp",
-  },
-  {
-    id: "tower-a-flat-5",
-    tower: "Tower A",
-    label: "Flat 5",
-    imageSrc: "/gallery/Tower C/flat5.webp",
-  },
-  {
-    id: "tower-a-flat-6",
-    tower: "Tower A",
-    label: "Flat 6",
-    imageSrc: "/gallery/Tower C/flat6.webp",
-  },
+
   {
     id: "tower-a-flat-7",
     tower: "Tower A",
@@ -72,36 +37,7 @@ const TOWER_A_FLATS: FlatOption[] = [
 ];
 
 const TOWER_B_FLATS: FlatOption[] = [
-  {
-    id: "tower-b-flat-1",
-    tower: "Tower B",
-    label: "Flat 1",
-    imageSrc: "/gallery/Tower B/flat1.webp",
-  },
-  {
-    id: "tower-b-flat-2",
-    tower: "Tower B",
-    label: "Flat 2",
-    imageSrc: "/gallery/Tower B/flat2.webp",
-  },
-  {
-    id: "tower-b-flat-3",
-    tower: "Tower B",
-    label: "Flat 3",
-    imageSrc: "/gallery/Tower B/flat3.webp",
-  },
-  {
-    id: "tower-b-flat-4",
-    tower: "Tower B",
-    label: "Flat 4",
-    imageSrc: "/gallery/Tower B/flat4.webp",
-  },
-  {
-    id: "tower-b-flat-5",
-    tower: "Tower B",
-    label: "Flat 5",
-    imageSrc: "/gallery/Tower B/flat5.webp",
-  },
+ 
   {
     id: "tower-b-flat-6",
     tower: "Tower B",
