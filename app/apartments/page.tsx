@@ -20,35 +20,70 @@ import Sidebar, {
 
 interface FlatOption {
   id: string;
-  tower: "Tower A" | "Tower B";
+  tower: "Tower A" | "Tower B" | "Tower C";
   label: string;
   imageSrc: string;
   bhk?: string;
 }
-
-const TOWER_A_FLATS: FlatOption[] = [
-
-  {
-    id: "tower-a-flat-7",
-    tower: "Tower A",
-    label: "Refuge Area",
-    imageSrc: "/gallery/Tower C/flat7.webp",
-  },
-];
+ 
 
 const TOWER_B_FLATS: FlatOption[] = [
- 
-  {
+     {
     id: "tower-b-flat-6",
+    tower: "Tower B",
+    label: "Master Plan",
+    imageSrc: "/gallery/Tower B/flat1.webp",
+  },
+       {
+    id: "tower-b-flat-1",
+    tower: "Tower B",
+    label: "2 BHK",
+    imageSrc: "/gallery/Tower B/flat2.webp",
+  },
+       {
+    id: "tower-b-flat-2",
+    tower: "Tower B",
+    label: "3 BHK",
+    imageSrc: "/gallery/Tower B/flat3.webp",
+  },
+  {
+    id: "tower-b-refuge-area",
     tower: "Tower B",
     label: "Refuge Area",
     imageSrc: "/gallery/Tower B/flat6.webp",
   },
 ];
 
+const TOWER_C_FLATS: FlatOption[] = [
+       {
+    id: "tower-c-flat-6",
+    tower: "Tower C",
+    label: "Master Plan",
+    imageSrc: "/gallery/Tower C/flat1.webp",
+  },
+       {
+    id: "tower-c-flat-1",
+    tower: "Tower C",
+    label: "2 BHK",
+    imageSrc: "/gallery/Tower C/flat3.webp",
+  },
+       {
+    id: "tower-c-flat-2",
+    tower: "Tower C",
+    label: "3 BHK",
+    imageSrc: "/gallery/Tower C/flat2.webp",
+  },
+  {
+    id: "tower-c-refuge-area",
+    tower: "Tower C",
+    label: "Refuge Area",
+    imageSrc: "/gallery/Tower C/flat7.webp",
+  },
+];
+
 export default function ApartmentsPage() {
   const [selectedFlat, setSelectedFlat] = useState<FlatOption>(
-    TOWER_A_FLATS[0],
+    TOWER_B_FLATS[0],
   );
   const [expandedTowers, setExpandedTowers] = useState<Record<string, boolean>>(
     {
@@ -263,7 +298,7 @@ export default function ApartmentsPage() {
               <img
                 src={selectedFlat.imageSrc}
                 alt={`${selectedFlat.tower} - ${selectedFlat.label}`}
-                className="max-w-[85vw] max-h-[75vh] object-contain rounded-lg shadow-2xl pointer-events-none drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
+                className="max-w-[95vw] max-h-[95vh] object-contain rounded-lg shadow-2xl pointer-events-none drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
               />
             </div>
           </motion.div>
@@ -283,12 +318,12 @@ export default function ApartmentsPage() {
           title: "Apartments",
         }}
         sections={createSidebarSections([
-          {
-            id: "tower-b",
+             {
+            id: "tower-a",
             title: "Tower 2",
             isCollapsible: true,
-            isExpanded: !!expandedTowers["Tower B"],
-            onHeaderClick: () => toggleTowerAccordion("Tower B"),
+            isExpanded: !!expandedTowers["Tower A"],
+            onHeaderClick: () => toggleTowerAccordion("Tower A"),
             items: createSidebarItems(
               TOWER_B_FLATS.map((flat) => ({
                 id: flat.id,
@@ -300,13 +335,13 @@ export default function ApartmentsPage() {
             ),
           },
           {
-            id: "tower-a",
+            id: "tower-b",
             title: "Tower 3",
             isCollapsible: true,
-            isExpanded: !!expandedTowers["Tower A"],
-            onHeaderClick: () => toggleTowerAccordion("Tower A"),
+            isExpanded: !!expandedTowers["Tower B"],
+            onHeaderClick: () => toggleTowerAccordion("Tower B"),
             items: createSidebarItems(
-              TOWER_A_FLATS.map((flat) => ({
+              TOWER_C_FLATS.map((flat) => ({
                 id: flat.id,
                 label: flat.label,
                 icon: Home,
@@ -315,6 +350,7 @@ export default function ApartmentsPage() {
               })),
             ),
           },
+       
         ])}
       />
 
