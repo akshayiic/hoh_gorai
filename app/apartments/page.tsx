@@ -75,24 +75,19 @@ const towerFlats: Record<TowerKey, TowerBhkFlats> = {
     ],
     "3 BHK": [
       {
-        id: "t2-3bhk-1044",
-        label: "3BHK - 1044 sqft",
-        unitIds: ["unit-2"],
-      },
-      {
         id: "t2-3bhk-1033",
         label: "3BHK - 1033 sqft",
         unitIds: ["unit-4"],
+      },
+      {
+        id: "t2-3bhk-1044",
+        label: "3BHK - 1044 sqft",
+        unitIds: ["unit-2"],
       },
     ],
   },
   "Tower 3": {
     "2 BHK": [
-      {
-        id: "t3-2bhk-754",
-        label: "2BHK - 754 sqft",
-        unitIds: ["unit-6", "unit-7"],
-      },
       {
         id: "t3-2bhk-743",
         label: "2BHK - 743 sqft",
@@ -103,25 +98,30 @@ const towerFlats: Record<TowerKey, TowerBhkFlats> = {
         label: "2BHK - 749 sqft",
         unitIds: ["unit-2", "unit-3"],
       },
+      {
+        id: "t3-2bhk-754",
+        label: "2BHK - 754 sqft",
+        unitIds: ["unit-6", "unit-7"],
+      },
     ],
     "3 BHK": [
-      {
-        id: "t3-3bhk-1097",
-        label: "3BHK - 1097 sqft",
-        unitIds: ["unit-5"],
-      },
       {
         id: "t3-3bhk-1064",
         label: "3BHK - 1064 sqft",
         unitIds: ["unit-4"],
+      },
+      {
+        id: "t3-3bhk-1097",
+        label: "3BHK - 1097 sqft",
+        unitIds: ["unit-5"],
       },
     ],
   },
 };
 
 const towerSectionOrder: Record<TowerKey, ("3 BHK" | "2 BHK")[]> = {
-  "Tower 2": ["3 BHK", "2 BHK"],
-  "Tower 3": ["3 BHK", "2 BHK"],
+  "Tower 2": ["2 BHK", "3 BHK"],
+  "Tower 3": ["2 BHK", "3 BHK"],
 };
 
 const towerZoomMultipliers: Record<TowerKey, Record<string, number>> = {

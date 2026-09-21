@@ -472,7 +472,7 @@ export default function BalconyView() {
       </div>
 
       {/* SIDEBAR — floors (left) */}
-      {!isFullscreenActive && (
+      {/* {!isFullscreenActive && (
         <Sidebar
           isFullscreenActive={isFullscreenActive}
           side="left"
@@ -500,7 +500,7 @@ export default function BalconyView() {
             },
           ])}
         />
-      )}
+      )} */}
 
       {/* Tower Selection Buttons */}
       {!isFullscreenActive && (
