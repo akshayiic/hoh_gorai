@@ -576,12 +576,16 @@ export default function TowerFloorPlan({
     // it takes to drag the unit's (already scaled) centre onto the frame's.
     let multiplier = 1;
     if (Array.isArray(activeUnitId)) {
+      let found = false;
       for (const id of activeUnitId) {
-        if (unitZoomMultipliers[id] && unitZoomMultipliers[id] > multiplier) {
-          multiplier = unitZoomMultipliers[id];
+        if (unitZoomMultipliers[id] !== undefined) {
+          multiplier = found
+            ? Math.max(multiplier, unitZoomMultipliers[id])
+            : unitZoomMultipliers[id];
+          found = true;
         }
       }
-    } else if (activeUnitId && unitZoomMultipliers[activeUnitId]) {
+    } else if (activeUnitId && unitZoomMultipliers[activeUnitId] !== undefined) {
       multiplier = unitZoomMultipliers[activeUnitId];
     }
     const k =
@@ -1003,19 +1007,24 @@ export default function TowerFloorPlan({
                   const isActive = Array.isArray(activeUnitId)
                     ? activeUnitId.includes(unit.id)
                     : unit.id === activeUnitId;
+                  const isOverlayHidden = hiddenOverlayUnitIds?.includes(unit.id);
+                  const isMasked = !isOverlayHidden && !isActive;
 
                   return (
                     <path
                       key={unit.id}
                       d={unit.d}
-                      fill={isActive ? "rgba(206, 195, 174, 0.15)" : "transparent"}
+                      fill={isMasked ? "#CEC3AE" : "transparent"}
+                      fillOpacity={isMasked ? 0.7 : 0}
                       stroke={isActive ? "#CEC3AE" : "transparent"}
-                      strokeWidth={isActive ? 2 : 1}
+                      strokeWidth={isActive ? 2 : 0}
                       strokeDasharray={isActive ? "6 3" : undefined}
                       className={`transition-all duration-300 cursor-pointer ${
                         isActive
-                          ? "hover:fill-[#CEC3AE]/25"
-                          : "hover:fill-white/[0.08] hover:stroke-[#CEC3AE]/40"
+                          ? "cursor-zoom-out"
+                          : isOverlayHidden
+                          ? "hover:stroke-[#CEC3AE]/50 hover:stroke-[1px]"
+                          : "cursor-zoom-in hover:fill-opacity-40"
                       }`}
                       onClick={(event) => {
                         event.stopPropagation();

@@ -25,27 +25,25 @@ interface FlatItem {
   unitIds: string[];
 }
 
-interface TowerBhkFlats {
-  "2 BHK": FlatItem[];
-  "3 BHK": FlatItem[];
-}
+type BhkCategory = "3 BHK" | "2 BHK" | "Refuge";
+
+type TowerBhkFlats = Partial<Record<BhkCategory, FlatItem[]>>;
 
 const towerUnits: Record<TowerKey, TowerUnit[]> = {
   "Tower 2": [
     { id: "unit-1", flat: "02", type: "2 BHK", carpet: "729" },
-    { id: "unit-2", flat: "03", type: "3 BHK", carpet: "1044" },
-    { id: "unit-3", flat: "04", type: "2 BHK", carpet: "730" },
+    { id: "unit-2", flat: "03", type: "Refuge", carpet: "1044" },
+    { id: "unit-3", flat: "04", type: "3 BHK", carpet: "1044" },
     { id: "unit-4", flat: "05", type: "3 BHK", carpet: "1033" },
-    { id: "unit-5", flat: "01", type: "2 BHK", carpet: "729" },
+    { id: "unit-5", flat: "01", type: "2 BHK", carpet: "730" },
   ],
   "Tower 3": [
     { id: "unit-1", flat: "05", type: "2 BHK", carpet: "743" },
     { id: "unit-2", flat: "06", type: "2 BHK", carpet: "749" },
-    { id: "unit-3", flat: "07", type: "2 BHK", carpet: "749" },
-    { id: "unit-4", flat: "08", type: "3 BHK", carpet: "1064" },
-    { id: "unit-5", flat: "01", type: "3 BHK", carpet: "1097" },
-    { id: "unit-6", flat: "02", type: "2 BHK", carpet: "754" },
-    { id: "unit-7", flat: "03 & 04", type: "2 BHK", carpet: "754" },
+    { id: "unit-3", flat: "08", type: "Refuge", carpet: "1064" },
+    { id: "unit-4", flat: "01", type: "3 BHK", carpet: "1097" },
+    { id: "unit-5", flat: "02", type: "2 BHK", carpet: "754" },
+    { id: "unit-6", flat: "03 & 04", type: "2 BHK", carpet: "754" },
   ],
 };
 
@@ -55,8 +53,8 @@ const towerRotations: Record<TowerKey, number> = {
 };
 
 const towerPlans: Record<TowerKey, string> = {
-  "Tower 2": "/gallery/Tower B/tower-b.svg",
-  "Tower 3": "/gallery/Tower C/tower-c.svg",
+  "Tower 2": "/gallery/Tower B/tower-b-refuge.svg",
+  "Tower 3": "/gallery/Tower C/tower-c-refuge.svg",
 };
 
 const towerFlats: Record<TowerKey, TowerBhkFlats> = {
@@ -82,6 +80,13 @@ const towerFlats: Record<TowerKey, TowerBhkFlats> = {
       {
         id: "t2-3bhk-1044",
         label: "3BHK - 1044 sqft",
+        unitIds: ["unit-3"],
+      },
+    ],
+    Refuge: [
+      {
+        id: "t2-refuge-1044",
+        label: "Refuge Area",
         unitIds: ["unit-2"],
       },
     ],
@@ -96,46 +101,52 @@ const towerFlats: Record<TowerKey, TowerBhkFlats> = {
       {
         id: "t3-2bhk-749",
         label: "2BHK - 749 sqft",
-        unitIds: ["unit-2", "unit-3"],
+        unitIds: ["unit-2"],
       },
       {
         id: "t3-2bhk-754",
         label: "2BHK - 754 sqft",
-        unitIds: ["unit-6", "unit-7"],
+        unitIds: ["unit-5", "unit-6"],
       },
     ],
     "3 BHK": [
       {
-        id: "t3-3bhk-1064",
-        label: "3BHK - 1064 sqft",
-        unitIds: ["unit-4"],
-      },
-      {
         id: "t3-3bhk-1097",
         label: "3BHK - 1097 sqft",
-        unitIds: ["unit-5"],
+        unitIds: ["unit-4"],
+      },
+    ],
+    Refuge: [
+      {
+        id: "t3-refuge-1064",
+        label: "Refuge Area",
+        unitIds: ["unit-3"],
       },
     ],
   },
 };
 
-const towerSectionOrder: Record<TowerKey, ("3 BHK" | "2 BHK")[]> = {
-  "Tower 2": ["2 BHK", "3 BHK"],
-  "Tower 3": ["2 BHK", "3 BHK"],
+const towerSectionOrder: Record<TowerKey, BhkCategory[]> = {
+  "Tower 2": ["2 BHK", "3 BHK", "Refuge"],
+  "Tower 3": ["2 BHK", "3 BHK", "Refuge"],
 };
 
 const towerZoomMultipliers: Record<TowerKey, Record<string, number>> = {
   "Tower 2": {
     "unit-1": 1,
     "unit-5": 1,
+    "unit-2": 1,
+    "unit-3": 1,
+    "unit-4": 1,
   },
   "Tower 3": {
-    // 2 BHK - 754 sqft (unit-6, unit-7) — zoom in to fit both units centered
-    "unit-6": 1.2,
-    "unit-7": 1.2,
-    // 2 BHK - 749 sqft (unit-2, unit-3) — zoom in to fit both units centered
+    "unit-1": 1.2,
     "unit-2": 1.2,
-    "unit-3": 1.2,
+    "unit-3": 0.5,
+    "unit-4": 1.1,
+    // 2 BHK - 754 sqft (unit-5, unit-6) — zoom in to fit both units centered
+    "unit-5": 1.4,
+    "unit-6": 1.4,
   },
 };
 
@@ -188,10 +199,9 @@ export default function ApartmentsPage() {
       setActiveUnitIds(null);
       return;
     }
-    const allFlats = [
-      ...currentTowerFlats["2 BHK"],
-      ...currentTowerFlats["3 BHK"],
-    ];
+    const allFlats = Object.values(currentTowerFlats)
+      .filter((flats): flats is FlatItem[] => Array.isArray(flats))
+      .flat();
     const matchedFlat = allFlats.find((f) => f.unitIds.includes(unitId));
     if (!matchedFlat) {
       setActiveUnitIds([unitId]);
@@ -207,13 +217,16 @@ export default function ApartmentsPage() {
       setActiveUnitIds(null);
     } else {
       setActiveUnitIds(matchedFlat.unitIds);
-      const is2Bhk = currentTowerFlats["2 BHK"].some(
-        (f) => f.id === matchedFlat.id
-      );
-      setExpandedSections((prev) => ({
-        ...prev,
-        [is2Bhk ? "2-bhk" : "3-bhk"]: true,
-      }));
+      for (const [sectionKey, flats] of Object.entries(currentTowerFlats)) {
+        if (flats?.some((f) => f.id === matchedFlat.id)) {
+          const slug = sectionKey.toLowerCase().replace(/\s+/g, "-");
+          setExpandedSections((prev) => ({
+            ...prev,
+            [slug]: true,
+          }));
+          break;
+        }
+      }
     }
   };
 
@@ -269,6 +282,10 @@ export default function ApartmentsPage() {
           src={planSrc}
           rotation={rotation}
           activeUnitId={activeUnitIds}
+          hiddenOverlayUnitIds={
+            towerFlats[selectedTower]?.["Refuge"]?.flatMap((f) => f.unitIds) ??
+            []
+          }
           onSelectUnit={handleSelectUnit}
           resetKey={resetKey}
           unitZoomMultipliers={towerZoomMultipliers[selectedTower]}
@@ -300,15 +317,22 @@ export default function ApartmentsPage() {
         }}
         sections={createSidebarSections(
           towerSectionOrder[selectedTower].map((bhkKey) => {
-            const sectionId = bhkKey === "2 BHK" ? "2-bhk" : "3-bhk";
+            const sectionId = bhkKey.toLowerCase().replace(/\s+/g, "-");
+            const flats = currentTowerFlats[bhkKey] || [];
+            const isRefuge = bhkKey === "Refuge";
             return {
               id: sectionId,
-              title: bhkKey,
-              isCollapsible: true,
-              isExpanded: expandedSections[sectionId] ?? true,
-              onHeaderClick: () => toggleSection(sectionId),
+              title: isRefuge ? undefined : bhkKey,
+              isCollapsible: !isRefuge,
+              isExpanded: isRefuge ? true : expandedSections[sectionId] ?? true,
+              className: isRefuge
+                ? "mt-1 pt-1 border-t border-white/[0.08]"
+                : undefined,
+              onHeaderClick: isRefuge
+                ? undefined
+                : () => toggleSection(sectionId),
               items: createSidebarItems(
-                currentTowerFlats[bhkKey].map((flat) => ({
+                flats.map((flat) => ({
                   id: flat.id,
                   label: flat.label,
                   icon: Home,

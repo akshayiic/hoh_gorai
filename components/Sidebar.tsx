@@ -25,6 +25,7 @@ export interface SidebarSection {
   isCollapsible?: boolean;
   isExpanded?: boolean;
   onHeaderClick?: () => void;
+  className?: string;
 }
 
 interface SidebarIconProps {
@@ -269,7 +270,7 @@ export default function Sidebar({
                 }`}
               >
                 {sections.map((section, index) => (
-                  <div key={section.id}>
+                  <div key={section.id} className={section.className}>
                     {section.title &&
                       (section.isCollapsible ? (
                         <button
