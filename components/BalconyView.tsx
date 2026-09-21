@@ -2,32 +2,57 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  Layers,
   Maximize2,
   Minimize2,
+  Moon,
   Sun,
   Sunrise,
   Sunset,
 } from "lucide-react";
 import BottomNavbar from "@/components/BottomNavbar";
 import GlobalNavbar from "@/components/GlobalNavbar";
+import Sidebar, {
+  createSidebarSections,
+  createSidebarItems,
+} from "@/components/Sidebar";
 
-type TowerName = "Tower 2" | "Tower 3";
-
-const allTowersFloors: Record<
-  "morning" | "afternoon" | "evening",
-  Record<TowerName, { id: string; floor: number }[]>
-> = {
+const allTowersFloors = {
   morning: {
-    "Tower 2": [{ id: "5-48", floor: 48 }],
-    "Tower 3": [{ id: "5-48", floor: 48 }],
+    "Tower 2": [
+      { id: "10-38", floor: 38 },
+      { id: "4-43", floor: 43 },
+      { id: "5-48", floor: 48 },
+    ],
+    "Tower 3": [
+      { id: "10-38", floor: 38 },
+      { id: "6-43", floor: 43 },
+      { id: "5-48", floor: 48 },
+    ],
   },
   afternoon: {
-    "Tower 2": [{ id: "9-48", floor: 48 }],
-    "Tower 3": [{ id: "9-48", floor: 48 }],
+    "Tower 2": [
+      { id: "7-38", floor: 38 },
+      { id: "8-43", floor: 43 },
+      { id: "9-48", floor: 48 },
+    ],
+    "Tower 3": [
+      { id: "7-38", floor: 38 },
+      { id: "8-43", floor: 43 },
+      { id: "9-48", floor: 48 },
+    ],
   },
   evening: {
-    "Tower 2": [{ id: "9-48", floor: 48 }],
-    "Tower 3": [{ id: "9-48", floor: 48 }],
+    "Tower 2": [
+      { id: "7-38", floor: 38 },
+      { id: "8-43", floor: 43 },
+      { id: "9-48", floor: 48 },
+    ],
+    "Tower 3": [
+      { id: "7-38", floor: 38 },
+      { id: "8-43", floor: 43 },
+      { id: "9-48", floor: 48 },
+    ],
   },
 };
 
@@ -40,12 +65,25 @@ const timeOfDayOptions = [
 ] as const;
 
 // Marzipano pins a scene's first tile level in GPU memory for as long as the
-// scene exists, even when it isn't visible.
-const MAX_CACHED_SCENES = 12;
+// scene exists, even when it isn't visible. Keeping only a handful of scenes
+// alive at once (instead of all 96 tower/time/floor combinations) keeps that
+// pinned memory bounded so high-resolution tiles don't render as black boxes.
+const MAX_CACHED_SCENES = 6;
+
+const getFloorLabel = (floor: number | string) => {
+  if (typeof floor === "number") return `Floor ${floor}`;
+  const fLower = floor.toLowerCase();
+  if (fLower === "lmr") return "LMR";
+  if (fLower.startsWith("terac") || fLower.startsWith("terrac"))
+    return "Terrace";
+  return floor;
+};
 
 export default function BalconyView() {
-  const [selectedTower, setSelectedTower] = useState<TowerName>("Tower 2");
-  const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
+  const [selectedTower, setSelectedTower] = useState<"Tower 2" | "Tower 3">(
+    "Tower 2"
+  );
+  const [currentFloorIndex, setCurrentFloorIndex] = useState(2);
   const [selectedTime, setSelectedTime] = useState<
     "morning" | "afternoon" | "evening"
   >("morning");
@@ -53,7 +91,7 @@ export default function BalconyView() {
   const [isLoading, setIsLoading] = useState(true);
   const [hasRenderedOnce, setHasRenderedOnce] = useState(false);
   const [isFullscreenActive, setIsFullscreenActive] = useState(
-    () => typeof document !== "undefined" && !!document.fullscreenElement,
+    () => typeof document !== "undefined" && !!document.fullscreenElement
   );
   const viewerRef = useRef<any>(null);
   const panoRef = useRef<HTMLDivElement>(null);
@@ -62,7 +100,10 @@ export default function BalconyView() {
   const sceneOrderRef = useRef<string[]>([]);
 
   // URL prefix for tiles based on selected tower and time of day. Verified
-  // directly against https://assets.vestate.io/hiranandani-gorai/...
+  // directly against https://assets.vestate.io/hiranandani-gorai/... — the
+  // asset layout is inconsistent per time slot. Afternoon Tower 1 renders
+  // live under the hyphenated "Tower-1" folder; the unhyphenated "tower1"
+  // and "Tower 1" folders exist too but serve lower-quality/blurred renders.
   const getTowerPath = useCallback((tower: string, time: string) => {
     if (time === "morning") {
       if (tower === "Tower 1") return "tower1";
@@ -85,6 +126,8 @@ export default function BalconyView() {
   }, []);
 
   // Lazily creates (and caches) the scene for a given tower/time/floor combo.
+  // Scenes are created on demand instead of all 96 up front, and the cache is
+  // capped so only a handful of scenes stay pinned in GPU memory at once.
   const getOrCreateScene = useCallback(
     (sceneId: string, towerName: string, time: string) => {
       const Marzipano = marzipanoRef.current;
@@ -95,7 +138,9 @@ export default function BalconyView() {
       const allScenes = allScenesRef.current;
 
       if (allScenes[sceneKey]) {
-        sceneOrderRef.current = sceneOrderRef.current.filter((key) => key !== sceneKey);
+        sceneOrderRef.current = sceneOrderRef.current.filter(
+          (key) => key !== sceneKey
+        );
         sceneOrderRef.current.push(sceneKey);
         return allScenes[sceneKey];
       }
@@ -104,16 +149,9 @@ export default function BalconyView() {
       const scenePath = `${towerPath}/app-files/tiles/${sceneId}`;
       const baseUrl = `https://assets.vestate.io/hiranandani-gorai/${time}/${scenePath}`;
 
-      // Preload preview.jpg into browser cache immediately
-      if (typeof Image !== "undefined") {
-        const preloadImg = new Image();
-        preloadImg.crossOrigin = "anonymous";
-        preloadImg.src = `${baseUrl}/preview.jpg`;
-      }
-
       const source = Marzipano.ImageUrlSource.fromString(
         `${baseUrl}/{z}/{f}/{y}/{x}.jpg`,
-        { cubeMapPreviewUrl: `${baseUrl}/preview.jpg` },
+        { cubeMapPreviewUrl: `${baseUrl}/preview.jpg` }
       );
 
       const size = [
@@ -128,7 +166,7 @@ export default function BalconyView() {
 
       const limiter = Marzipano.RectilinearView.limit.traditional(
         3840,
-        (130 * Math.PI) / 180,
+        (130 * Math.PI) / 180
       );
 
       const initialView = {
@@ -150,7 +188,10 @@ export default function BalconyView() {
       allScenes[sceneKey] = sceneData;
       sceneOrderRef.current.push(sceneKey);
 
-      // Evict least-recently-used scenes beyond the cache cap.
+      // Evict least-recently-used scenes beyond the cache cap. Marzipano
+      // pins a scene's first tile level in GPU memory for its entire
+      // lifetime, so leaving all visited scenes alive is what was starving
+      // the high-resolution tiles of texture memory and rendering black.
       while (sceneOrderRef.current.length > MAX_CACHED_SCENES) {
         const evictKey = sceneOrderRef.current.shift();
         if (!evictKey || evictKey === sceneKey) continue;
@@ -163,30 +204,28 @@ export default function BalconyView() {
 
       return sceneData;
     },
-    [getTowerPath],
+    [getTowerPath]
   );
 
-  // Initialize the Marzipano Viewer once on mount with progressive rendering enabled.
+  // Initialize the Marzipano Viewer once on mount. Scenes are created lazily
+  // by getOrCreateScene as the user navigates, not all up front.
   useEffect(() => {
     let mounted = true;
     let viewer: any = null;
 
     const initializeMarzipano = async () => {
       try {
+        // Dynamic import of Marzipano (requires window/document)
         const Marzipano = (await import("marzipano")).default;
 
         if (!mounted || !panoRef.current) return;
 
         marzipanoRef.current = Marzipano;
 
-        // Create viewer instance with progressive rendering on the WebGL stage
-        // so fallback textures render seamlessly during high-res tile downloads
+        // Create viewer instance
         viewer = new Marzipano.Viewer(panoRef.current, {
           controls: {
             mouseViewMode: "drag",
-          },
-          stage: {
-            progressive: true,
           },
         });
 
@@ -212,121 +251,112 @@ export default function BalconyView() {
     };
   }, []);
 
-  // Handle scene switching. Activates the scene immediately behind the opaque loader
-  // and only fades the loader once Marzipano reports renderComplete with stable === true
-  // (guaranteeing that all visible tiles are loaded and drawn with zero black boxes).
+  // Handle scene switching. Rather than cutting instantly behind an opaque
+  // loader, this waits only for the tiny pinned fallback level (a handful of
+  // small tiles) to be ready and then lets Marzipano's own crossfade
+  // transition play — the same thing the working Svelte page gets for free
+  // by calling plain `scene.switchTo()`. Full-resolution tiles keep
+  // streaming in progressively after the crossfade, same as Marzipano's
+  // built-in behavior.
   useEffect(() => {
     if (!isViewerReady || !viewerRef.current) return;
 
     const towerFloors = allTowersFloors[selectedTime][selectedTower];
-    const currentFloor = currentFloorIndex < towerFloors.length
-      ? towerFloors[currentFloorIndex]
-      : towerFloors[0];
+    const currentFloor =
+      currentFloorIndex < towerFloors.length
+        ? towerFloors[currentFloorIndex]
+        : towerFloors[0];
     if (!currentFloor) return;
 
-    const sceneData = getOrCreateScene(currentFloor.id, selectedTower, selectedTime);
+    const sceneData = getOrCreateScene(
+      currentFloor.id,
+      selectedTower,
+      selectedTime
+    );
     if (!sceneData) return;
 
     let cancelled = false;
-    setIsLoading(true);
+    const layer = sceneData.scene.layer();
+    const textureStore = layer.textureStore();
+    const geometry = layer.geometry();
+    const level0Tiles =
+      geometry && geometry.levelList && geometry.levelList[0]
+        ? geometry.levelTiles(geometry.levelList[0])
+        : [];
 
-    const viewer = viewerRef.current;
-    const scene = sceneData.scene;
-    const layer = scene.layer();
-    const stage = viewer.stage();
+    const isFallbackReady = () =>
+      level0Tiles.length > 0 &&
+      level0Tiles.every((tile: any) => textureStore.query(tile).hasTexture);
 
-    // Switch scene immediately with 0 duration so the layer is attached to the stage
-    // and begins loading tiles and rendering behind the opaque black loader
-    scene.switchTo({ transitionDuration: 0 });
+    const activate = () => {
+      if (cancelled) return;
+      setIsLoading(false);
+      setHasRenderedOnce(true);
+      sceneData.scene.switchTo();
+    };
 
+    let pollInterval: ReturnType<typeof setInterval> | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     let settled = false;
 
-    const finishLoading = () => {
-      if (settled || cancelled) return;
+    const checkReady = () => {
+      if (settled || !isFallbackReady()) return;
       settled = true;
-      cleanup();
-      // Ensure two animation frames so the WebGL front buffer is completely presented
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (!cancelled) {
-            setIsLoading(false);
-            setHasRenderedOnce(true);
-          }
-        });
-      });
+      textureStore.removeEventListener("textureLoad", checkReady);
+      clearInterval(pollInterval);
+      clearTimeout(timeoutId);
+      activate();
     };
 
-    // stable === true means every single tile in the active camera viewport
-    // has been fully downloaded and painted on the canvas with zero missing tiles.
-    const handleRenderComplete = (stable: boolean) => {
-      if (stable) {
-        finishLoading();
-      }
-    };
-
-    layer.addEventListener("renderComplete", handleRenderComplete);
-    if (stage) {
-      stage.addEventListener("renderComplete", handleRenderComplete);
+    if (isFallbackReady()) {
+      settled = true;
+      activate();
+    } else {
+      setIsLoading(true);
+      textureStore.addEventListener("textureLoad", checkReady);
+      pollInterval = setInterval(checkReady, 100);
+      // Safety timeout so a slow connection doesn't block navigation forever.
+      timeoutId = setTimeout(() => {
+        settled = true;
+        textureStore.removeEventListener("textureLoad", checkReady);
+        clearInterval(pollInterval);
+        activate();
+      }, 4000);
     }
 
-    // Safety timeout: If connection is exceptionally slow, force whatever rendered frame
-    // is available after 10s so navigation is never permanently blocked.
-    const timeoutId = setTimeout(() => {
-      if (!settled && !cancelled) {
-        if (stage) {
-          try {
-            stage.render();
-          } catch {
-            // Ignore potential synchronous render error on timeout
-          }
-        }
-        finishLoading();
-      }
-    }, 10000);
-
-    const cleanup = () => {
-      layer.removeEventListener("renderComplete", handleRenderComplete);
-      if (stage) {
-        stage.removeEventListener("renderComplete", handleStageRenderComplete);
-      }
-      clearTimeout(timeoutId);
-    };
-
-    const handleStageRenderComplete = (stable: boolean) => {
-      if (stable) {
-        finishLoading();
-      }
-    };
-
-    // Warm the other tower's scene in the background so switching towers feels instant
+    // Warm the neighboring floors' fallback tiles in the background so
+    // clicking through the floor list (the common case) feels instant
+    // instead of triggering a fresh fetch every time.
     const prefetchTimer = setTimeout(() => {
-      if (cancelled) return;
-      const otherTower: TowerName =
-        selectedTower === "Tower 2" ? "Tower 3" : "Tower 2";
-      const otherFloor = allTowersFloors[selectedTime][otherTower]?.[0];
-      if (otherFloor) {
-        getOrCreateScene(otherFloor.id, otherTower, selectedTime);
-      }
-    }, 600);
+      [currentFloorIndex - 1, currentFloorIndex + 1].forEach((idx) => {
+        const neighbor = towerFloors[idx];
+        if (neighbor)
+          getOrCreateScene(neighbor.id, selectedTower, selectedTime);
+      });
+    }, 500);
 
     return () => {
       cancelled = true;
-      cleanup();
+      textureStore.removeEventListener("textureLoad", checkReady);
+      clearInterval(pollInterval);
+      clearTimeout(timeoutId);
       clearTimeout(prefetchTimer);
     };
-  }, [isViewerReady, selectedTower, currentFloorIndex, selectedTime, getOrCreateScene]);
+  }, [
+    isViewerReady,
+    selectedTower,
+    currentFloorIndex,
+    selectedTime,
+    getOrCreateScene,
+  ]);
 
-  const handleTimeChange = (time: "morning" | "afternoon" | "evening") => {
-    if (time === selectedTime) return;
-    setIsLoading(true);
-    setSelectedTime(time);
+  const switchFloor = (index: number) => {
+    setCurrentFloorIndex(index);
   };
 
-  const handleTowerChange = (tower: TowerName) => {
-    if (tower === selectedTower) return;
-    setIsLoading(true);
+  const handleTowerChange = (tower: "Tower 2" | "Tower 3") => {
     setSelectedTower(tower);
-    setCurrentFloorIndex(0);
+    setCurrentFloorIndex(2);
   };
 
   // Fullscreens `document.documentElement`, not this page's own div — that's
@@ -334,7 +364,9 @@ export default function BalconyView() {
   // (BottomNavbar links, etc) no longer forces an exit from fullscreen.
   const requestFullscreen = () => {
     if (document.fullscreenElement) return;
-    const target = document.documentElement as HTMLElement & { webkitRequestFullscreen?: () => void };
+    const target = document.documentElement as HTMLElement & {
+      webkitRequestFullscreen?: () => void;
+    };
     if (target.requestFullscreen) target.requestFullscreen().catch(() => {});
     else if (target.webkitRequestFullscreen) target.webkitRequestFullscreen();
   };
@@ -352,9 +384,11 @@ export default function BalconyView() {
   };
 
   useEffect(() => {
-    const onFullscreenChange = () => setIsFullscreenActive(!!document.fullscreenElement);
+    const onFullscreenChange = () =>
+      setIsFullscreenActive(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", onFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", onFullscreenChange);
   }, []);
 
   return (
@@ -386,7 +420,7 @@ export default function BalconyView() {
             timeOfDayOptions.map(({ id, label, icon: TimeIcon }) => (
               <button
                 key={id}
-                onClick={() => handleTimeChange(id)}
+                onClick={() => setSelectedTime(id)}
                 title={label}
                 aria-label={label}
                 className={`w-10 h-10 rounded-lg border flex items-center justify-center transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md ${
@@ -421,35 +455,53 @@ export default function BalconyView() {
           </button>
         </div>
 
-        {/* Full-screen panorama loader — 100% opaque black until scene is fully rendered, completely preventing black blocks */}
+        {/* Full-screen splash only before anything has ever rendered — there's
+            no prior frame to keep showing yet. */}
         <div
-          className={`absolute inset-0 flex flex-col items-center justify-center z-50 bg-black transition-opacity duration-300 ${
-            isLoading
+          className={`absolute inset-0 bg-black flex flex-col items-center justify-center z-50 ${
+            !hasRenderedOnce && isLoading
               ? "opacity-100 pointer-events-auto"
-              : "opacity-0 pointer-events-none"
+              : "opacity-0 pointer-events-none transition-opacity duration-500 ease-in-out"
           }`}
         >
-          <div className="flex flex-col items-center gap-4 text-center px-4">
-            <div className="relative w-14 h-14 phone-landscape:w-9 phone-landscape:h-9">
-              <div className="absolute inset-0 rounded-full border-4 border-white/10 phone-landscape:border-3" />
-              <div className="absolute inset-0 rounded-full border-4 border-t-[#C79A59] border-r-white animate-spin phone-landscape:border-3" />
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative w-14 h-14">
+              <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
+              <div className="absolute inset-0 rounded-full border-4 border-t-white animate-spin"></div>
             </div>
-            <div>
-              <div className="text-white text-sm font-semibold tracking-widest uppercase phone-landscape:text-xs">
-                Loading 360° Panorama
-              </div>
-              <div className="text-white/60 text-xs mt-1 font-medium phone-landscape:text-[10px]">
-                {selectedTower} • Floor 48 • {selectedTime.charAt(0).toUpperCase() + selectedTime.slice(1)}
-              </div>
+            <div className="text-white text-sm font-semibold tracking-widest uppercase animate-pulse">
+              Loading 360° Panorama
             </div>
           </div>
         </div>
+
+        {/* Once a scene has rendered at least once, subsequent floor/tower
+            switches keep the previous frame visible and only show a small
+            non-blocking indicator while the next scene's fallback warms up,
+            matching the Svelte page's instant-feeling switchTo(). */}
+        <div
+          className={`absolute bottom-40 right-7 z-50 flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 backdrop-blur-md transition-opacity duration-300 phone-landscape:bottom-24 phone-landscape:right-4 ${
+            hasRenderedOnce && isLoading ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <div className="relative h-4 w-4">
+            <div className="absolute inset-0 rounded-full border-2 border-white/20"></div>
+            <div className="absolute inset-0 rounded-full border-2 border-t-white animate-spin"></div>
+          </div>
+          <span className="text-xs font-semibold uppercase tracking-widest text-white">
+            Loading
+          </span>
+        </div>
       </div>
 
-      {/* Tower Selection Buttons — Tower 2 and Tower 3 only */}
+      {/* SIDEBAR — floors (left) hidden as requested */}
+
+      {/* Tower Selection Buttons */}
       {!isFullscreenActive && (
         <div className="absolute bottom-6 left-1/2 z-40 flex -translate-x-1/2 gap-2 phone-landscape:bottom-3 phone-landscape:gap-1">
-          {(["Tower 2", "Tower 3"] as const).map((tower) => (
+          {(
+            Object.keys(allTowersFloors.morning) as Array<"Tower 2" | "Tower 3">
+          ).map((tower) => (
             <button
               key={tower}
               onClick={() => handleTowerChange(tower)}
