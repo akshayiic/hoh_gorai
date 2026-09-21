@@ -19,52 +19,20 @@ import Sidebar, {
 
 const allTowersFloors = {
   morning: {
-    "Tower 2": [
-      { id: "10-38", floor: 38 },
-      { id: "4-43", floor: 43 },
-      { id: "5-48", floor: 48 },
-    ],
-    "Tower 3": [
-      { id: "10-38", floor: 38 },
-      { id: "6-43", floor: 43 },
-      { id: "5-48", floor: 48 },
-    ],
+    "Tower 2": [{ id: "5-48", floor: 48 }],
+    "Tower 3": [{ id: "5-48", floor: 48 }],
   },
   afternoon: {
-    "Tower 2": [
-      { id: "7-38", floor: 38 },
-      { id: "8-43", floor: 43 },
-      { id: "9-48", floor: 48 },
-    ],
-    "Tower 3": [
-      { id: "7-38", floor: 38 },
-      { id: "8-43", floor: 43 },
-      { id: "9-48", floor: 48 },
-    ],
+    "Tower 2": [{ id: "9-48", floor: 48 }],
+    "Tower 3": [{ id: "9-48", floor: 48 }],
   },
   evening: {
-    "Tower 2": [
-      { id: "7-38", floor: 38 },
-      { id: "8-43", floor: 43 },
-      { id: "9-48", floor: 48 },
-    ],
-    "Tower 3": [
-      { id: "7-38", floor: 38 },
-      { id: "8-43", floor: 43 },
-      { id: "9-48", floor: 48 },
-    ],
+    "Tower 2": [{ id: "9-48", floor: 48 }],
+    "Tower 3": [{ id: "9-48", floor: 48 }],
   },
   night: {
-    "Tower 2": [
-      { id: "7-38", floor: 38 },
-      { id: "8-43", floor: 43 },
-      { id: "9-48", floor: 48 },
-    ],
-    "Tower 3": [
-      { id: "7-38", floor: 38 },
-      { id: "8-43", floor: 43 },
-      { id: "9-48", floor: 48 },
-    ],
+    "Tower 2": [{ id: "9-48", floor: 48 }],
+    "Tower 3": [{ id: "9-48", floor: 48 }],
   },
 };
 
