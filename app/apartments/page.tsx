@@ -125,8 +125,34 @@ const towerSectionOrder: Record<TowerKey, ("3 BHK" | "2 BHK")[]> = {
 };
 
 const towerZoomMultipliers: Record<TowerKey, Record<string, number>> = {
-  "Tower 2": {},
-  "Tower 3": {},
+  "Tower 2": {
+    "unit-1": 1,
+    "unit-5": 1,
+  },
+  "Tower 3": {
+    // 2 BHK - 754 sqft (unit-6, unit-7) — zoom in to fit both units centered
+    "unit-6": 1.2,
+    "unit-7": 1.2,
+    // 2 BHK - 749 sqft (unit-2, unit-3) — zoom in to fit both units centered
+    "unit-2": 1.2,
+    "unit-3": 1.2,
+  },
+};
+
+const towerDefaultTransforms: Record<
+  TowerKey,
+  { scale: number; shiftX?: number; shiftY?: number; autoCenter?: boolean }
+> = {
+  "Tower 2": {
+    scale: 1,
+    shiftX: 0,
+    shiftY: 0,
+  },
+  "Tower 3": {
+    scale: 1.15,
+    autoCenter: true,
+    shiftX: 20,
+  },
 };
 
 const PLAN_FRAME =
@@ -246,6 +272,7 @@ export default function ApartmentsPage() {
           onSelectUnit={handleSelectUnit}
           resetKey={resetKey}
           unitZoomMultipliers={towerZoomMultipliers[selectedTower]}
+          defaultTransform={towerDefaultTransforms[selectedTower]}
           frameClassName={PLAN_FRAME}
         />
       </div>

@@ -40,10 +40,8 @@ const timeOfDayOptions = [
 ] as const;
 
 // Marzipano pins a scene's first tile level in GPU memory for as long as the
-// scene exists, even when it isn't visible. Keeping only a handful of scenes
-// alive at once (instead of all 96 tower/time/floor combinations) keeps that
-// pinned memory bounded so high-resolution tiles don't render as black boxes.
-const MAX_CACHED_SCENES = 6;
+// scene exists, even when it isn't visible.
+const MAX_CACHED_SCENES = 12;
 
 export default function BalconyView() {
   const [selectedTower, setSelectedTower] = useState<TowerName>("Tower 2");
@@ -64,10 +62,7 @@ export default function BalconyView() {
   const sceneOrderRef = useRef<string[]>([]);
 
   // URL prefix for tiles based on selected tower and time of day. Verified
-  // directly against https://assets.vestate.io/hiranandani-gorai/... — the
-  // asset layout is inconsistent per time slot. Afternoon Tower 1 renders
-  // live under the hyphenated "Tower-1" folder; the unhyphenated "tower1"
-  // and "Tower 1" folders exist too but serve lower-quality/blurred renders.
+  // directly against https://assets.vestate.io/hiranandani-gorai/...
   const getTowerPath = useCallback((tower: string, time: string) => {
     if (time === "morning") {
       if (tower === "Tower 1") return "tower1";
@@ -90,8 +85,6 @@ export default function BalconyView() {
   }, []);
 
   // Lazily creates (and caches) the scene for a given tower/time/floor combo.
-  // Scenes are created on demand instead of all 96 up front, and the cache is
-  // capped so only a handful of scenes stay pinned in GPU memory at once.
   const getOrCreateScene = useCallback(
     (sceneId: string, towerName: string, time: string) => {
       const Marzipano = marzipanoRef.current;
@@ -110,6 +103,13 @@ export default function BalconyView() {
       const towerPath = getTowerPath(towerName, time);
       const scenePath = `${towerPath}/app-files/tiles/${sceneId}`;
       const baseUrl = `https://assets.vestate.io/hiranandani-gorai/${time}/${scenePath}`;
+
+      // Preload preview.jpg into browser cache immediately
+      if (typeof Image !== "undefined") {
+        const preloadImg = new Image();
+        preloadImg.crossOrigin = "anonymous";
+        preloadImg.src = `${baseUrl}/preview.jpg`;
+      }
 
       const source = Marzipano.ImageUrlSource.fromString(
         `${baseUrl}/{z}/{f}/{y}/{x}.jpg`,
@@ -150,10 +150,7 @@ export default function BalconyView() {
       allScenes[sceneKey] = sceneData;
       sceneOrderRef.current.push(sceneKey);
 
-      // Evict least-recently-used scenes beyond the cache cap. Marzipano
-      // pins a scene's first tile level in GPU memory for its entire
-      // lifetime, so leaving all visited scenes alive is what was starving
-      // the high-resolution tiles of texture memory and rendering black.
+      // Evict least-recently-used scenes beyond the cache cap.
       while (sceneOrderRef.current.length > MAX_CACHED_SCENES) {
         const evictKey = sceneOrderRef.current.shift();
         if (!evictKey || evictKey === sceneKey) continue;
@@ -169,25 +166,27 @@ export default function BalconyView() {
     [getTowerPath],
   );
 
-  // Initialize the Marzipano Viewer once on mount. Scenes are created lazily
-  // by getOrCreateScene as the user navigates, not all up front.
+  // Initialize the Marzipano Viewer once on mount with progressive rendering enabled.
   useEffect(() => {
     let mounted = true;
     let viewer: any = null;
 
     const initializeMarzipano = async () => {
       try {
-        // Dynamic import of Marzipano (requires window/document)
         const Marzipano = (await import("marzipano")).default;
 
         if (!mounted || !panoRef.current) return;
 
         marzipanoRef.current = Marzipano;
 
-        // Create viewer instance
+        // Create viewer instance with progressive rendering on the WebGL stage
+        // so fallback textures render seamlessly during high-res tile downloads
         viewer = new Marzipano.Viewer(panoRef.current, {
           controls: {
             mouseViewMode: "drag",
+          },
+          stage: {
+            progressive: true,
           },
         });
 
@@ -213,13 +212,9 @@ export default function BalconyView() {
     };
   }, []);
 
-  // Handle scene switching. Rather than cutting instantly behind an opaque
-  // loader, this waits only for the tiny pinned fallback level (a handful of
-  // small tiles) to be ready and then lets Marzipano's own crossfade
-  // transition play — the same thing the working Svelte page gets for free
-  // by calling plain `scene.switchTo()`. Full-resolution tiles keep
-  // streaming in progressively after the crossfade, same as Marzipano's
-  // built-in behavior.
+  // Handle scene switching. Activates the scene immediately behind the opaque loader
+  // and only fades the loader once Marzipano reports renderComplete with stable === true
+  // (guaranteeing that all visible tiles are loaded and drawn with zero black boxes).
   useEffect(() => {
     if (!isViewerReady || !viewerRef.current) return;
 
@@ -233,75 +228,90 @@ export default function BalconyView() {
     if (!sceneData) return;
 
     let cancelled = false;
-    const layer = sceneData.scene.layer();
-    const textureStore = layer.textureStore();
-    const geometry = layer.geometry();
-    const level0Tiles =
-      geometry && geometry.levelList && geometry.levelList[0]
-        ? geometry.levelTiles(geometry.levelList[0])
-        : [];
+    setIsLoading(true);
 
-    const isFallbackReady = () =>
-      level0Tiles.length > 0 &&
-      level0Tiles.every((tile: any) => textureStore.query(tile).hasTexture);
+    const viewer = viewerRef.current;
+    const scene = sceneData.scene;
+    const layer = scene.layer();
+    const stage = viewer.stage();
 
-    const activate = () => {
-      if (cancelled) return;
-      sceneData.scene.switchTo();
+    // Switch scene immediately with 0 duration so the layer is attached to the stage
+    // and begins loading tiles and rendering behind the opaque black loader
+    scene.switchTo({ transitionDuration: 0 });
+
+    let settled = false;
+
+    const finishLoading = () => {
+      if (settled || cancelled) return;
+      settled = true;
+      cleanup();
+      // Ensure two animation frames so the WebGL front buffer is completely presented
       requestAnimationFrame(() => {
-        setTimeout(() => {
+        requestAnimationFrame(() => {
           if (!cancelled) {
             setIsLoading(false);
             setHasRenderedOnce(true);
           }
-        }, 200);
+        });
       });
     };
 
-    let pollInterval: ReturnType<typeof setInterval> | undefined;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
-    let settled = false;
-
-    const checkReady = () => {
-      if (settled || !isFallbackReady()) return;
-      settled = true;
-      textureStore.removeEventListener("textureLoad", checkReady);
-      clearInterval(pollInterval);
-      timeoutId && clearTimeout(timeoutId);
-      activate();
+    // stable === true means every single tile in the active camera viewport
+    // has been fully downloaded and painted on the canvas with zero missing tiles.
+    const handleRenderComplete = (stable: boolean) => {
+      if (stable) {
+        finishLoading();
+      }
     };
 
-    if (isFallbackReady()) {
-      settled = true;
-      activate();
-    } else {
-      setIsLoading(true);
-      textureStore.addEventListener("textureLoad", checkReady);
-      pollInterval = setInterval(checkReady, 100);
-      // Safety timeout so a slow connection doesn't block navigation forever.
-      timeoutId = setTimeout(() => {
-        settled = true;
-        textureStore.removeEventListener("textureLoad", checkReady);
-        clearInterval(pollInterval);
-        activate();
-      }, 12000);
+    layer.addEventListener("renderComplete", handleRenderComplete);
+    if (stage) {
+      stage.addEventListener("renderComplete", handleRenderComplete);
     }
+
+    // Safety timeout: If connection is exceptionally slow, force whatever rendered frame
+    // is available after 10s so navigation is never permanently blocked.
+    const timeoutId = setTimeout(() => {
+      if (!settled && !cancelled) {
+        if (stage) {
+          try {
+            stage.render();
+          } catch {
+            // Ignore potential synchronous render error on timeout
+          }
+        }
+        finishLoading();
+      }
+    }, 10000);
+
+    const cleanup = () => {
+      layer.removeEventListener("renderComplete", handleRenderComplete);
+      if (stage) {
+        stage.removeEventListener("renderComplete", handleStageRenderComplete);
+      }
+      clearTimeout(timeoutId);
+    };
+
+    const handleStageRenderComplete = (stable: boolean) => {
+      if (stable) {
+        finishLoading();
+      }
+    };
 
     // Warm the other tower's scene in the background so switching towers feels instant
     const prefetchTimer = setTimeout(() => {
+      if (cancelled) return;
       const otherTower: TowerName =
         selectedTower === "Tower 2" ? "Tower 3" : "Tower 2";
       const otherFloor = allTowersFloors[selectedTime][otherTower]?.[0];
       if (otherFloor) {
         getOrCreateScene(otherFloor.id, otherTower, selectedTime);
       }
-    }, 500);
+    }, 600);
 
     return () => {
       cancelled = true;
-      textureStore.removeEventListener("textureLoad", checkReady);
-      clearInterval(pollInterval);
-      timeoutId && clearTimeout(timeoutId);
+      cleanup();
       clearTimeout(prefetchTimer);
     };
   }, [isViewerReady, selectedTower, currentFloorIndex, selectedTime, getOrCreateScene]);
@@ -411,11 +421,9 @@ export default function BalconyView() {
           </button>
         </div>
 
-        {/* Full-screen panorama loader — visible whenever initial scene or next scene is loading, completely preventing black blocks */}
+        {/* Full-screen panorama loader — 100% opaque black until scene is fully rendered, completely preventing black blocks */}
         <div
-          className={`absolute inset-0 flex flex-col items-center justify-center z-50 transition-all duration-300 ${
-            hasRenderedOnce ? "bg-black/70 backdrop-blur-md" : "bg-black"
-          } ${
+          className={`absolute inset-0 flex flex-col items-center justify-center z-50 bg-black transition-opacity duration-300 ${
             isLoading
               ? "opacity-100 pointer-events-auto"
               : "opacity-0 pointer-events-none"

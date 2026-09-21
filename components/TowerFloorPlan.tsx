@@ -292,6 +292,13 @@ function loadPlan(src: string): Promise<TowerPlan> {
   return request;
 }
 
+export interface DefaultPlanTransform {
+  scale?: number;
+  shiftX?: number;
+  shiftY?: number;
+  autoCenter?: boolean;
+}
+
 interface TowerFloorPlanProps {
   /** Path to a tower export, e.g. `/gallery/Tower A/tower-a.svg`. */
   src: string;
@@ -322,6 +329,10 @@ interface TowerFloorPlanProps {
    */
   unitZoomMultipliers?: Record<string, number>;
   /**
+   * Default master-plan scale and translation offset when no unit is active.
+   */
+  defaultTransform?: DefaultPlanTransform;
+  /**
    * Optional key/counter that, when incremented, resets interactive pan/zoom back to initial scale.
    */
   resetKey?: number;
@@ -336,6 +347,7 @@ export default function TowerFloorPlan({
   hiddenOverlayUnitIds,
   onToggleUnit,
   unitZoomMultipliers = {},
+  defaultTransform,
   resetKey,
   frameClassName = "",
   className = "",
@@ -475,9 +487,71 @@ export default function TowerFloorPlan({
     return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
   }, [activeUnits]);
 
+  const allUnitsBox = useMemo(() => {
+    if (!plan || !plan.units.length) return null;
+    const minX = Math.min(...plan.units.map((u) => u.box.x));
+    const minY = Math.min(...plan.units.map((u) => u.box.y));
+    const maxX = Math.max(...plan.units.map((u) => u.box.x + u.box.w));
+    const maxY = Math.max(...plan.units.map((u) => u.box.y + u.box.h));
+    return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+  }, [plan]);
+
   const unitFrame = useMemo(() => {
-    if (!activeBox || !fit || !view)
-      return { transform: "none", scale: 1, tx: 0, ty: 0 };
+    if (!fit || !view) return { transform: "none", scale: 1, tx: 0, ty: 0 };
+
+    // When no unit is selected, apply default master-plan zoom and shift
+    if (!activeBox) {
+      if (
+        !defaultTransform ||
+        (!defaultTransform.scale &&
+          !defaultTransform.shiftX &&
+          !defaultTransform.shiftY &&
+          !defaultTransform.autoCenter)
+      ) {
+        return { transform: "none", scale: 1, tx: 0, ty: 0 };
+      }
+
+      const defaultScale = defaultTransform.scale ?? 1;
+      let tx = defaultTransform.shiftX ?? 0;
+      let ty = defaultTransform.shiftY ?? 0;
+
+      if (defaultTransform.autoCenter && allUnitsBox) {
+        const { scale, offX, offY } = fit;
+        const rawX =
+          rotation === 180 && plan
+            ? plan.width - (allUnitsBox.x + allUnitsBox.w)
+            : allUnitsBox.x;
+        const rawY =
+          rotation === 180 && plan
+            ? plan.height - (allUnitsBox.y + allUnitsBox.h)
+            : allUnitsBox.y;
+        const rectX = offX + rawX * scale;
+        const rectY = offY + rawY * scale;
+        const frame = frameRect ?? { x: 0, y: 0, w: size.w, h: size.h };
+
+        // Center the building footprint neatly in the available frame (right of sidebar)
+        const targetTx =
+          frame.x +
+          frame.w / 2 -
+          size.w / 2 -
+          (rectX + (allUnitsBox.w * scale) / 2 - size.w / 2) * defaultScale;
+        const targetTy =
+          frame.y +
+          frame.h / 2 -
+          size.h / 2 -
+          (rectY + (allUnitsBox.h * scale) / 2 - size.h / 2) * defaultScale;
+
+        tx = targetTx + (defaultTransform.shiftX ?? 0);
+        ty = targetTy + (defaultTransform.shiftY ?? 0);
+      }
+
+      return {
+        transform: `translate(${tx}px, ${ty}px) scale(${defaultScale})`,
+        scale: defaultScale,
+        tx,
+        ty,
+      };
+    }
 
     const { scale, offX, offY } = fit;
     const rectW = activeBox.w * scale;
@@ -500,13 +574,16 @@ export default function TowerFloorPlan({
 
     // Scaling happens about the container centre, so the translate is whatever
     // it takes to drag the unit's (already scaled) centre onto the frame's.
-    const firstId = Array.isArray(activeUnitId)
-      ? activeUnitId[0]
-      : activeUnitId;
-    const multiplier =
-      firstId && unitZoomMultipliers[firstId]
-        ? unitZoomMultipliers[firstId]
-        : 1;
+    let multiplier = 1;
+    if (Array.isArray(activeUnitId)) {
+      for (const id of activeUnitId) {
+        if (unitZoomMultipliers[id] && unitZoomMultipliers[id] > multiplier) {
+          multiplier = unitZoomMultipliers[id];
+        }
+      }
+    } else if (activeUnitId && unitZoomMultipliers[activeUnitId]) {
+      multiplier = unitZoomMultipliers[activeUnitId];
+    }
     const k =
       Math.min(frame.w / rectW, frame.h / rectH) * ZOOM_PADDING * multiplier;
     let tx =
@@ -551,6 +628,8 @@ export default function TowerFloorPlan({
     plan,
     activeUnitId,
     unitZoomMultipliers,
+    defaultTransform,
+    allUnitsBox,
   ]);
 
   const userZoom =
@@ -573,14 +652,20 @@ export default function TowerFloorPlan({
    * the middle, and reach it exactly at 1×.
    */
   const clampOffset = (x: number, y: number, scale: number) => {
-    const limit = (extent: number) =>
-      Math.max(0, ((unitFrame.scale * scale - 1) * extent) / 2);
+    const limitX = Math.max(
+      Math.abs(unitFrame.tx) * 1.5,
+      ((unitFrame.scale * scale - 1) * size.w) / 2,
+    );
+    const limitY = Math.max(
+      Math.abs(unitFrame.ty) * 1.5,
+      ((unitFrame.scale * scale - 1) * size.h) / 2,
+    );
     const clamp = (value: number, max: number) =>
       Math.min(Math.max(value, -max), max);
 
     return {
-      x: clamp(x + scale * unitFrame.tx, limit(size.w)) - scale * unitFrame.tx,
-      y: clamp(y + scale * unitFrame.ty, limit(size.h)) - scale * unitFrame.ty,
+      x: clamp(x + scale * unitFrame.tx, limitX) - scale * unitFrame.tx,
+      y: clamp(y + scale * unitFrame.ty, limitY) - scale * unitFrame.ty,
     };
   };
 
