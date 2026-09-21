@@ -58,11 +58,11 @@ export default function WelcomeExperience() {
   const activeStage = stage ?? "loading";
   const [progress, setProgress] = useState(0);
   const [isFullscreenActive, setIsFullscreenActive] = useState(
-    () => typeof document !== "undefined" && !!document.fullscreenElement,
+    () => typeof document !== "undefined" && !!document.fullscreenElement
   );
   const containerRef = useRef<HTMLDivElement>(null);
   const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(
-    null,
+    null
   );
   const twoFingerStartYRef = useRef<{ y: number; time: number } | null>(null);
 
@@ -194,7 +194,7 @@ export default function WelcomeExperience() {
       step++;
       const currentProgress = Math.min(
         Math.round((step / totalSteps) * 100),
-        100,
+        100
       );
       setProgress(currentProgress);
 
@@ -339,20 +339,6 @@ export default function WelcomeExperience() {
                   "radial-gradient(circle at center, rgba(193,140,71,.18), transparent 50%)",
               }}
             />
-
-            {/* Grid */}
-            <div className="absolute inset-0 pointer-events-none">
-              {/* Vertical */}
-              <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:60px_60px]" />
-
-              {/* Horizontal */}
-              <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:60px_60px]" />
-            </div>
-
-            {/* Center Cross Glow */}
-            <div className="absolute left-1/2 top-0 h-full w-px bg-gradient-to-b from-transparent via-white/20 to-transparent -translate-x-1/2" />
-            <div className="absolute top-1/2 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-y-1/2" />
-
             {/* Content */}
             <div className="relative z-10 flex h-full flex-col items-center justify-center text-center px-6">
               {/* CTA */}
