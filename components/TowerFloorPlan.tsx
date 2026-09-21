@@ -9,7 +9,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { ScanSearch } from "lucide-react";
 
 type UnitBox = { x: number; y: number; w: number; h: number };
 
@@ -305,11 +304,10 @@ interface TowerFloorPlanProps {
    */
   frameClassName?: string;
   /**
-   * Selected unit, as `unit-1`…`unit-N` numbered clockwise from the plan's
-   * top-left corner. Owned by the caller so the floor-plan pills and the
-   * sidebar list stay in step.
+   * Selected unit or units, as `unit-1`…`unit-N` or `["unit-1", "unit-5"]`.
+   * Owned by the caller so the floor-plan highlights and the sidebar list stay in step.
    */
-  activeUnitId?: string | null;
+  activeUnitId?: string | string[] | null;
   onSelectUnit?: (unitId: string | null) => void;
   /**
    * List of unit ids whose overlay should be hidden (revealing the unit).
@@ -319,6 +317,14 @@ interface TowerFloorPlanProps {
    * Called when a unit is clicked/toggled.
    */
   onToggleUnit?: (unitId: string) => void;
+  /**
+   * Per-unit zoom scale multiplier (e.g. { 'unit-1': 2.5 } for units with large bounding boxes).
+   */
+  unitZoomMultipliers?: Record<string, number>;
+  /**
+   * Optional key/counter that, when incremented, resets interactive pan/zoom back to initial scale.
+   */
+  resetKey?: number;
   className?: string;
 }
 
@@ -329,6 +335,8 @@ export default function TowerFloorPlan({
   onSelectUnit,
   hiddenOverlayUnitIds,
   onToggleUnit,
+  unitZoomMultipliers = {},
+  resetKey,
   frameClassName = "",
   className = "",
 }: TowerFloorPlanProps) {
@@ -340,10 +348,17 @@ export default function TowerFloorPlan({
   const clipId = `plan-clip-${useId().replace(/:/g, "")}`;
   const plan = planCache.get(src) ?? null;
   const [size, setSize] = useState({ w: 0, h: 0 });
+  const activeKey = useMemo(() => {
+    if (!activeUnitId) return null;
+    return Array.isArray(activeUnitId)
+      ? activeUnitId.slice().sort().join(",")
+      : activeUnitId;
+  }, [activeUnitId]);
+
   // Keyed by unit so selecting a different one starts from its own framing
   // again, without an effect having to reset it.
   const [zoomState, setZoomState] = useState({
-    unit: activeUnitId,
+    unit: activeKey,
     scale: 1,
     x: 0,
     y: 0,
@@ -364,7 +379,7 @@ export default function TowerFloorPlan({
   const draggedRef = useRef(false);
   // Where the zoom is heading, where it is right now, and the frame loop
   // closing the gap between them.
-  const zoomTargetRef = useRef({ unit: activeUnitId, scale: 1, x: 0, y: 0 });
+  const zoomTargetRef = useRef({ unit: activeKey, scale: 1, x: 0, y: 0 });
   const zoomLiveRef = useRef({ scale: 1, x: 0, y: 0 });
   const rafRef = useRef<number | null>(null);
   const lastFrameRef = useRef(0);
@@ -445,24 +460,36 @@ export default function TowerFloorPlan({
     });
   }, [size.w, size.h, frameClassName]);
 
-  const activeUnit =
-    plan?.units.find((unit) => unit.id === activeUnitId) ?? null;
+  const activeUnits = useMemo(() => {
+    if (!plan || !activeUnitId) return [];
+    const ids = Array.isArray(activeUnitId) ? activeUnitId : [activeUnitId];
+    return plan.units.filter((unit) => ids.includes(unit.id));
+  }, [plan, activeUnitId]);
+
+  const activeBox = useMemo(() => {
+    if (!activeUnits.length) return null;
+    const minX = Math.min(...activeUnits.map((u) => u.box.x));
+    const minY = Math.min(...activeUnits.map((u) => u.box.y));
+    const maxX = Math.max(...activeUnits.map((u) => u.box.x + u.box.w));
+    const maxY = Math.max(...activeUnits.map((u) => u.box.y + u.box.h));
+    return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+  }, [activeUnits]);
 
   const unitFrame = useMemo(() => {
-    if (!activeUnit || !fit || !view)
+    if (!activeBox || !fit || !view)
       return { transform: "none", scale: 1, tx: 0, ty: 0 };
 
     const { scale, offX, offY } = fit;
-    const rectW = activeUnit.box.w * scale;
-    const rectH = activeUnit.box.h * scale;
+    const rectW = activeBox.w * scale;
+    const rectH = activeBox.h * scale;
     const rawX =
       rotation === 180 && plan
-        ? plan.width - (activeUnit.box.x + activeUnit.box.w)
-        : activeUnit.box.x;
+        ? plan.width - (activeBox.x + activeBox.w)
+        : activeBox.x;
     const rawY =
       rotation === 180 && plan
-        ? plan.height - (activeUnit.box.y + activeUnit.box.h)
-        : activeUnit.box.y;
+        ? plan.height - (activeBox.y + activeBox.h)
+        : activeBox.y;
     const rectX = offX + rawX * scale;
     const rectY = offY + rawY * scale;
 
@@ -473,7 +500,15 @@ export default function TowerFloorPlan({
 
     // Scaling happens about the container centre, so the translate is whatever
     // it takes to drag the unit's (already scaled) centre onto the frame's.
-    const k = Math.min(frame.w / rectW, frame.h / rectH) * ZOOM_PADDING;
+    const firstId = Array.isArray(activeUnitId)
+      ? activeUnitId[0]
+      : activeUnitId;
+    const multiplier =
+      firstId && unitZoomMultipliers[firstId]
+        ? unitZoomMultipliers[firstId]
+        : 1;
+    const k =
+      Math.min(frame.w / rectW, frame.h / rectH) * ZOOM_PADDING * multiplier;
     let tx =
       frame.x + frame.w / 2 - size.w / 2 - (rectX + rectW / 2 - size.w / 2) * k;
     let ty =
@@ -506,14 +541,24 @@ export default function TowerFloorPlan({
       tx,
       ty,
     };
-  }, [activeUnit, fit, frameRect, size, view, rotation, plan]);
+  }, [
+    activeBox,
+    fit,
+    frameRect,
+    size,
+    view,
+    rotation,
+    plan,
+    activeUnitId,
+    unitZoomMultipliers,
+  ]);
 
   const userZoom =
-    zoomState.unit === activeUnitId
+    zoomState.unit === activeKey
       ? zoomState
       : // A fresh unit starts from its own framing, easing on the same curve as
         // the plan so the two move as one.
-        { unit: activeUnitId, scale: 1, x: 0, y: 0, ms: ZOOM_MS };
+        { unit: activeKey, scale: 1, x: 0, y: 0, ms: ZOOM_MS };
   // How far the content may be dragged before its edge would pull inside the
   // frame, given everything scaling it right now.
   const panLimit = (extent: number) =>
@@ -579,9 +624,15 @@ export default function TowerFloorPlan({
   ) => {
     stopChasing();
     zoomLiveRef.current = next;
-    zoomTargetRef.current = { unit: activeUnitId, ...next };
-    setZoomState({ unit: activeUnitId, ...next, ms });
+    zoomTargetRef.current = { unit: activeKey, ...next };
+    setZoomState({ unit: activeKey, ...next, ms });
   };
+
+  useEffect(() => {
+    if (resetKey !== undefined && resetKey > 0) {
+      commitZoom({ scale: 1, x: 0, y: 0 }, ZOOM_MS);
+    }
+  }, [resetKey]);
 
   // Driven by requestAnimationFrame, which hands us the frame's timestamp — no
   // need to read a clock ourselves.
@@ -594,7 +645,7 @@ export default function TowerFloorPlan({
     lastFrameRef.current = now;
 
     const target = zoomTargetRef.current;
-    if (target.unit !== activeUnitId) {
+    if (target.unit !== activeKey) {
       rafRef.current = null;
       return;
     }
@@ -617,7 +668,7 @@ export default function TowerFloorPlan({
     zoomLiveRef.current = applied;
     // ms 0: the loop is doing the animating, frame by frame, so everything
     // reading this (pills, the page's backdrop) stays exactly in step.
-    setZoomState({ unit: activeUnitId, ...applied, ms: 0 });
+    setZoomState({ unit: activeKey, ...applied, ms: 0 });
     rafRef.current = settled ? null : requestAnimationFrame(chaseTarget);
   };
 
@@ -634,12 +685,12 @@ export default function TowerFloorPlan({
     // Steps accumulate on the target, not on what's drawn: a fast scroll piles
     // up distance rather than speed.
     const from =
-      zoomTargetRef.current.unit === activeUnitId
+      zoomTargetRef.current.unit === activeKey
         ? zoomTargetRef.current
         : { scale: 1, x: 0, y: 0 };
 
     zoomTargetRef.current = {
-      unit: activeUnitId,
+      unit: activeKey,
       ...zoomAbout(
         from,
         from.scale * Math.exp(-event.deltaY * WHEEL_ZOOM_STEP),
@@ -864,30 +915,23 @@ export default function TowerFloorPlan({
                 )}
 
                 {plan.units.map((unit) => {
-                  const isActive = unit.id === activeUnitId;
-                  const isOverlayHidden =
-                    isActive ||
-                    (hiddenOverlayUnitIds
-                      ? hiddenOverlayUnitIds.includes(unit.id)
-                      : false);
+                  const isActive = Array.isArray(activeUnitId)
+                    ? activeUnitId.includes(unit.id)
+                    : unit.id === activeUnitId;
 
                   return (
                     <path
                       key={unit.id}
                       d={unit.d}
-                      fill="#CEC3AE"
-                      // A selected unit sheds its overlay entirely — that's the
-                      // "upper layer" coming off — but stays hit-testable so
-                      // clicking it again backs out to the full floor.
-                      // Plain fade with no delay: the same transition carries the
-                      // hover dimming, which has to stay immediate.
-                      className={`transition-opacity duration-300 ${
-                        isOverlayHidden
-                          ? "cursor-zoom-out opacity-0"
-                          : "cursor-zoom-in opacity-70 hover:opacity-40"
+                      fill={isActive ? "rgba(206, 195, 174, 0.15)" : "transparent"}
+                      stroke={isActive ? "#CEC3AE" : "transparent"}
+                      strokeWidth={isActive ? 2 : 1}
+                      strokeDasharray={isActive ? "6 3" : undefined}
+                      className={`transition-all duration-300 cursor-pointer ${
+                        isActive
+                          ? "hover:fill-[#CEC3AE]/25"
+                          : "hover:fill-white/[0.08] hover:stroke-[#CEC3AE]/40"
                       }`}
-                      // Stops the click reaching the <svg>'s own handler, which
-                      // would immediately back out again.
                       onClick={(event) => {
                         event.stopPropagation();
                         if (wasDrag()) return;
@@ -915,97 +959,6 @@ export default function TowerFloorPlan({
           frameClassName || "absolute inset-0"
         }`}
       />
-
-      {/* Unit pills stay anchored to their units through every zoom. The layer
-          carries the visitor's own pan/zoom (no animation, so the counter-scale
-          below cancels it exactly), while each anchor's left/top animates on the
-          same curve as the unit framing — which moves points linearly in the
-          eased progress, so a pill stays glued to its unit the whole way. */}
-      {plan && fit && (
-        <div
-          className="pointer-events-none absolute inset-0 z-10"
-          style={{
-            transform: `translate(${userZoom.x}px, ${userZoom.y}px) scale(${userZoom.scale})`,
-            transformOrigin: "center",
-            transitionProperty: "transform",
-            transitionDuration: `${userZoom.ms}ms`,
-            transitionTimingFunction: ZOOM_EASE,
-          }}
-        >
-          {plan.units.map((unit) => {
-            const isActive = unit.id === activeUnitId;
-            const isOverlayHidden =
-              isActive ||
-              (hiddenOverlayUnitIds
-                ? hiddenOverlayUnitIds.includes(unit.id)
-                : false);
-            const unitCenterX =
-              rotation === 180
-                ? plan.width - (unit.box.x + unit.box.w / 2)
-                : unit.box.x + unit.box.w / 2;
-            const unitCenterY =
-              rotation === 180
-                ? plan.height - (unit.box.y + unit.box.h / 2)
-                : unit.box.y + unit.box.h / 2;
-            const anchorX = fit.offX + unitCenterX * fit.scale;
-            const anchorY = fit.offY + unitCenterY * fit.scale;
-
-            return (
-              <div
-                key={unit.id}
-                className="absolute"
-                style={{
-                  left:
-                    size.w / 2 +
-                    (anchorX - size.w / 2) * unitFrame.scale +
-                    unitFrame.tx,
-                  top:
-                    size.h / 2 +
-                    (anchorY - size.h / 2) * unitFrame.scale +
-                    unitFrame.ty,
-                  transition: `left ${ZOOM_MS}ms ${ZOOM_EASE}, top ${ZOOM_MS}ms ${ZOOM_EASE}`,
-                }}
-              >
-                <button
-                  onClick={() => {
-                    if (!wasDrag()) {
-                      if (onSelectUnit) {
-                        onSelectUnit(isActive ? null : unit.id);
-                      } else if (onToggleUnit) {
-                        onToggleUnit(unit.id);
-                      }
-                    }
-                  }}
-                  // The unit being viewed keeps its pill exactly where it sits
-                  // on the plan — dimmed and inert rather than moved or hidden.
-                  disabled={isActive}
-                  style={{
-                    // Centres the pill on its anchor and holds it at a constant
-                    // screen size however far the plan is magnified.
-                    transform: `translate(-50%, -50%) scale(${1 / userZoom.scale})`,
-                    transformOrigin: "center",
-                    transitionProperty:
-                      "transform, opacity, background-color, color",
-                    transitionDuration: `${userZoom.ms}ms, ${CHROME_FADE_MS}ms, 150ms, 150ms`,
-                    transitionTimingFunction: `${ZOOM_EASE}, ease-out, ease-out, ease-out`,
-                  }}
-                  className={`flex lg:mt-4 sm:mt-0 items-center gap-2 whitespace-nowrap rounded-full border border-white/10 bg-black/80 px-3 h-8 text-[12px] font-medium text-white shadow-lg backdrop-blur-md phone-landscape:h-[18px] phone-landscape:gap-0 phone-landscape:px-1.5 phone-landscape:text-[8px] phone-landscape:font-semibold phone-landscape:tracking-tight ${
-                    isActive
-                      ? "pointer-events-none cursor-default opacity-40"
-                      : "pointer-events-auto cursor-pointer opacity-100 hover:bg-black hover:text-[#C79A59]"
-                  }`}
-                >
-                  <ScanSearch
-                    size={14}
-                    className="shrink-0 phone-landscape:hidden"
-                  />
-                  <span>{unit.label}</span>
-                </button>
-              </div>
-            );
-          })}
-        </div>
-      )}
 
       {!plan && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">

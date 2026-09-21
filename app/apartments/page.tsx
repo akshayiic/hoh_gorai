@@ -1,222 +1,210 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import {
-  Building2,
-  Maximize2,
-  Minimize2,
-  ZoomIn,
-  ZoomOut,
-  RotateCcw,
-  Home,
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
+import { Building2, Home, Maximize2, Minimize2 } from "lucide-react";
 import GlobalNavbar from "@/components/GlobalNavbar";
 import BottomNavbar from "@/components/BottomNavbar";
 import Sidebar, {
-  createSidebarSections,
   createSidebarItems,
+  createSidebarSections,
 } from "@/components/Sidebar";
+import TowerFloorPlan from "@/components/TowerFloorPlan";
 
-interface FlatOption {
+type TowerKey = "Tower 2" | "Tower 3";
+
+interface TowerUnit {
   id: string;
-  tower: "Tower A" | "Tower B" | "Tower C";
-  label: string;
-  imageSrc: string;
-  bhk?: string;
+  flat: string;
+  type: string;
+  carpet: string;
 }
- 
 
-const TOWER_B_FLATS: FlatOption[] = [
-     {
-    id: "tower-b-flat-6",
-    tower: "Tower B",
-    label: "Master Plan",
-    imageSrc: "/gallery/Tower B/tower2.png",
-  },
-       {
-    id: "tower-b-flat-1",
-    tower: "Tower B",
-    label: "2 BHK",
-    imageSrc: "/gallery/Tower B/flat4.webp",
-  },
-       {
-    id: "tower-b-flat-2",
-    tower: "Tower B",
-    label: "3 BHK",
-    imageSrc: "/gallery/Tower B/flat5.webp",
-  },
-  {
-    id: "tower-b-refuge-area",
-    tower: "Tower B",
-    label: "Refuge Area",
-    imageSrc: "/gallery/Tower B/flat6.webp",
-  },
-];
+interface FlatItem {
+  id: string;
+  label: string;
+  unitIds: string[];
+}
 
-const TOWER_C_FLATS: FlatOption[] = [
-       {
-    id: "tower-c-flat-6",
-    tower: "Tower C",
-    label: "Master Plan",
-    imageSrc: "/gallery/Tower C/tower3.png",
+interface TowerBhkFlats {
+  "2 BHK": FlatItem[];
+  "3 BHK": FlatItem[];
+}
+
+const towerUnits: Record<TowerKey, TowerUnit[]> = {
+  "Tower 2": [
+    { id: "unit-1", flat: "02", type: "2 BHK", carpet: "729" },
+    { id: "unit-2", flat: "03", type: "3 BHK", carpet: "1044" },
+    { id: "unit-3", flat: "04", type: "2 BHK", carpet: "730" },
+    { id: "unit-4", flat: "05", type: "3 BHK", carpet: "1033" },
+    { id: "unit-5", flat: "01", type: "2 BHK", carpet: "729" },
+  ],
+  "Tower 3": [
+    { id: "unit-1", flat: "05", type: "2 BHK", carpet: "743" },
+    { id: "unit-2", flat: "06", type: "2 BHK", carpet: "749" },
+    { id: "unit-3", flat: "07", type: "2 BHK", carpet: "749" },
+    { id: "unit-4", flat: "08", type: "3 BHK", carpet: "1064" },
+    { id: "unit-5", flat: "01", type: "3 BHK", carpet: "1097" },
+    { id: "unit-6", flat: "02", type: "2 BHK", carpet: "754" },
+    { id: "unit-7", flat: "03 & 04", type: "2 BHK", carpet: "754" },
+  ],
+};
+
+const towerRotations: Record<TowerKey, number> = {
+  "Tower 2": 0,
+  "Tower 3": 0,
+};
+
+const towerPlans: Record<TowerKey, string> = {
+  "Tower 2": "/gallery/Tower B/tower-b.svg",
+  "Tower 3": "/gallery/Tower C/tower-c.svg",
+};
+
+const towerFlats: Record<TowerKey, TowerBhkFlats> = {
+  "Tower 2": {
+    "2 BHK": [
+      {
+        id: "t2-2bhk-729",
+        label: "2BHK - 729 sqft",
+        unitIds: ["unit-1"],
+      },
+      {
+        id: "t2-2bhk-730",
+        label: "2BHK - 730 sqft",
+        unitIds: ["unit-5"],
+      },
+    ],
+    "3 BHK": [
+      {
+        id: "t2-3bhk-1044",
+        label: "3BHK - 1044 sqft",
+        unitIds: ["unit-2"],
+      },
+      {
+        id: "t2-3bhk-1033",
+        label: "3BHK - 1033 sqft",
+        unitIds: ["unit-4"],
+      },
+    ],
   },
-       {
-    id: "tower-c-flat-1",
-    tower: "Tower C",
-    label: "2 BHK",
-    imageSrc: "/gallery/Tower C/flat5.webp",
+  "Tower 3": {
+    "2 BHK": [
+      {
+        id: "t3-2bhk-754",
+        label: "2BHK - 754 sqft",
+        unitIds: ["unit-6", "unit-7"],
+      },
+      {
+        id: "t3-2bhk-743",
+        label: "2BHK - 743 sqft",
+        unitIds: ["unit-1"],
+      },
+      {
+        id: "t3-2bhk-749",
+        label: "2BHK - 749 sqft",
+        unitIds: ["unit-2", "unit-3"],
+      },
+    ],
+    "3 BHK": [
+      {
+        id: "t3-3bhk-1097",
+        label: "3BHK - 1097 sqft",
+        unitIds: ["unit-5"],
+      },
+      {
+        id: "t3-3bhk-1064",
+        label: "3BHK - 1064 sqft",
+        unitIds: ["unit-4"],
+      },
+    ],
   },
-       {
-    id: "tower-c-flat-2",
-    tower: "Tower C",
-    label: "3 BHK",
-    imageSrc: "/gallery/Tower C/flat6.webp",
-  },
-  {
-    id: "tower-c-refuge-area",
-    tower: "Tower C",
-    label: "Refuge Area",
-    imageSrc: "/gallery/Tower C/flat7.webp",
-  },
-];
+};
+
+const towerSectionOrder: Record<TowerKey, ("2 BHK" | "3 BHK")[]> = {
+  "Tower 2": ["2 BHK", "3 BHK"],
+  "Tower 3": ["3 BHK", "2 BHK"],
+};
+
+const towerZoomMultipliers: Record<TowerKey, Record<string, number>> = {
+  "Tower 2": {},
+  "Tower 3": {},
+};
+
+const PLAN_FRAME =
+  "absolute top-[80px] bottom-[72px] left-4 lg:left-[270px] right-4 lg:right-8 phone-landscape:top-14 phone-landscape:bottom-14 phone-landscape:left-[170px] phone-landscape:right-4";
 
 export default function ApartmentsPage() {
-  const [selectedFlat, setSelectedFlat] = useState<FlatOption>(
-    TOWER_B_FLATS[0],
-  );
-  const [expandedTowers, setExpandedTowers] = useState<Record<string, boolean>>(
-    {
-      "Tower A": true,
-      "Tower B": false,
-    },
-  );
+  const [selectedTower, setSelectedTower] = useState<TowerKey>("Tower 2");
+  const [activeUnitIds, setActiveUnitIds] = useState<string[] | null>(null);
+  const [expandedSections, setExpandedSections] = useState<
+    Record<string, boolean>
+  >({
+    "2-bhk": true,
+    "3-bhk": true,
+  });
+  const [resetKey, setResetKey] = useState<number>(0);
   const [isFullscreenActive, setIsFullscreenActive] = useState(
-    () => typeof document !== "undefined" && !!document.fullscreenElement,
+    () => typeof document !== "undefined" && !!document.fullscreenElement
   );
 
-  // Pan and Zoom state
-  const [scale, setScale] = useState(1);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartRef = useRef({ x: 0, y: 0 });
-  const posStartRef = useRef({ x: 0, y: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
-  const touchStartDistRef = useRef<number | null>(null);
-  const touchStartScaleRef = useRef<number>(1);
+  const planSrc = towerPlans[selectedTower];
+  const rotation = towerRotations[selectedTower];
+  const currentTowerFlats = towerFlats[selectedTower];
 
-  const toggleTowerAccordion = (tower: "Tower A" | "Tower B") => {
-    setExpandedTowers((prev) => ({
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections((prev) => ({
       ...prev,
-      [tower]: !prev[tower],
+      [sectionId]: !prev[sectionId],
     }));
   };
 
-  const handleSelectFlat = (flat: FlatOption) => {
-    setSelectedFlat(flat);
-    setScale(1);
-    setPosition({ x: 0, y: 0 });
-  };
+  const handleSelectUnit = (unitId: string | null) => {
+    if (!unitId) {
+      setActiveUnitIds(null);
+      return;
+    }
+    const allFlats = [
+      ...currentTowerFlats["2 BHK"],
+      ...currentTowerFlats["3 BHK"],
+    ];
+    const matchedFlat = allFlats.find((f) => f.unitIds.includes(unitId));
+    if (!matchedFlat) {
+      setActiveUnitIds([unitId]);
+      return;
+    }
 
-  const resetZoom = useCallback(() => {
-    setScale(1);
-    setPosition({ x: 0, y: 0 });
-  }, []);
+    const isAlreadyActive =
+      activeUnitIds !== null &&
+      activeUnitIds.length === matchedFlat.unitIds.length &&
+      matchedFlat.unitIds.every((id) => activeUnitIds.includes(id));
 
-  const handleZoomIn = () => {
-    setScale((prev) => Math.min(prev + 0.3, 3.5));
-  };
-
-  const handleZoomOut = () => {
-    setScale((prev) => {
-      const next = Math.max(prev - 0.3, 1);
-      if (next === 1) setPosition({ x: 0, y: 0 });
-      return next;
-    });
-  };
-
-  // Mouse wheel zoom
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const delta = e.deltaY * -0.002;
-    setScale((prev) => {
-      const next = Math.min(Math.max(prev + delta, 1), 3.5);
-      if (next === 1) setPosition({ x: 0, y: 0 });
-      return next;
-    });
-  };
-
-  // Drag to pan (Mouse)
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (scale <= 1) return;
-    setIsDragging(true);
-    dragStartRef.current = { x: e.clientX, y: e.clientY };
-    posStartRef.current = { ...position };
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging || scale <= 1) return;
-    const dx = e.clientX - dragStartRef.current.x;
-    const dy = e.clientY - dragStartRef.current.y;
-    setPosition({
-      x: posStartRef.current.x + dx,
-      y: posStartRef.current.y + dy,
-    });
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  // Touch drag and pinch-to-zoom
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1 && scale > 1) {
-      setIsDragging(true);
-      dragStartRef.current = {
-        x: e.touches[0].clientX,
-        y: e.touches[0].clientY,
-      };
-      posStartRef.current = { ...position };
-    } else if (e.touches.length === 2) {
-      setIsDragging(false);
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY,
+    if (isAlreadyActive) {
+      setActiveUnitIds(null);
+    } else {
+      setActiveUnitIds(matchedFlat.unitIds);
+      const is2Bhk = currentTowerFlats["2 BHK"].some(
+        (f) => f.id === matchedFlat.id
       );
-      touchStartDistRef.current = dist;
-      touchStartScaleRef.current = scale;
+      setExpandedSections((prev) => ({
+        ...prev,
+        [is2Bhk ? "2-bhk" : "3-bhk"]: true,
+      }));
     }
   };
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 1 && isDragging && scale > 1) {
-      const dx = e.touches[0].clientX - dragStartRef.current.x;
-      const dy = e.touches[0].clientY - dragStartRef.current.y;
-      setPosition({
-        x: posStartRef.current.x + dx,
-        y: posStartRef.current.y + dy,
-      });
-    } else if (e.touches.length === 2 && touchStartDistRef.current !== null) {
-      const dist = Math.hypot(
-        e.touches[0].clientX - e.touches[1].clientX,
-        e.touches[0].clientY - e.touches[1].clientY,
-      );
-      const factor = dist / touchStartDistRef.current;
-      const next = Math.min(
-        Math.max(touchStartScaleRef.current * factor, 1),
-        3.5,
-      );
-      setScale(next);
-      if (next === 1) setPosition({ x: 0, y: 0 });
-    }
+  const handleSelectFlat = (flat: FlatItem) => {
+    const isAlreadyActive =
+      activeUnitIds !== null &&
+      activeUnitIds.length === flat.unitIds.length &&
+      flat.unitIds.every((id) => activeUnitIds.includes(id));
+
+    setActiveUnitIds(isAlreadyActive ? null : flat.unitIds);
   };
 
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-    touchStartDistRef.current = null;
+  const isFlatActive = (flat: FlatItem) => {
+    if (!activeUnitIds) return false;
+    return flat.unitIds.some((id) => activeUnitIds.includes(id));
   };
 
-  // Fullscreen
   const requestFullscreen = () => {
     if (document.fullscreenElement) return;
     const target = document.documentElement as HTMLElement & {
@@ -247,172 +235,106 @@ export default function ApartmentsPage() {
   }, []);
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[#111618] select-none">
-      {/* Blurred Background Layout Image */}
-      <div
-        className="absolute inset-0 bg-cover bg-center pointer-events-none scale-105 filter blur-md"
-        style={{
-          backgroundImage: `url('/gallery/hoh_layout.webp')`,
-        }}
-      />
-      {/* Dark Overlay with subtle gradient */}
-      <div className="absolute inset-0 bg-black/55 pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/40 pointer-events-none" />
-
-      {/* Main Image Viewport with Pan and Zoom */}
-      <div
-        ref={containerRef}
-        onWheel={handleWheel}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        className={`absolute inset-0 flex items-center justify-center p-6 lg:pl-[300px] lg:pr-16 pt-16 pb-20 phone-landscape:pl-[190px] phone-landscape:pt-10 phone-landscape:pb-14 ${
-          scale > 1
-            ? isDragging
-              ? "cursor-grabbing"
-              : "cursor-grab"
-            : "cursor-default"
-        }`}
-      >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={selectedFlat.imageSrc}
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.98 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            className="w-full h-full flex items-center justify-center"
-          >
-            <div
-              style={{
-                transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale})`,
-                transition: isDragging ? "none" : "transform 0.15s ease-out",
-                transformOrigin: "center center",
-              }}
-              className="max-w-full max-h-full flex items-center justify-center"
-            >
-              <img
-                src={selectedFlat.imageSrc}
-                alt={`${selectedFlat.tower} - ${selectedFlat.label}`}
-                className="max-w-[95vw] max-h-[95vh] object-contain rounded-lg shadow-2xl pointer-events-none drop-shadow-[0_20px_50px_rgba(0,0,0,0.8)]"
-              />
-            </div>
-          </motion.div>
-        </AnimatePresence>
+    <div className="relative h-screen w-screen overflow-hidden bg-black">
+      {/* Floorplan Area — full-bleed clean master layout */}
+      <div className="absolute inset-0 phone-landscape:touch-none">
+        <TowerFloorPlan
+          key={`${planSrc}-${rotation}`}
+          src={planSrc}
+          rotation={rotation}
+          activeUnitId={activeUnitIds}
+          onSelectUnit={handleSelectUnit}
+          resetKey={resetKey}
+          unitZoomMultipliers={towerZoomMultipliers[selectedTower]}
+          frameClassName={PLAN_FRAME}
+        />
       </div>
 
-      {/* Global Navbar */}
-      <GlobalNavbar currentPage="apartments" showRERA={false} />
+      {/* Global Navbar with Go Back and Reset (Show Master Plan) */}
+      <GlobalNavbar
+        currentPage="apartments"
+        showRERA={false}
+        showReset={true}
+        onReset={() => {
+          setActiveUnitIds(null);
+          setResetKey((k) => k + 1);
+        }}
+        resetTitle="Show Master Plan"
+        resetLabel="Reset"
+      />
 
-      {/* Sidebar with Accordions for Tower A and Tower B */}
+      {/* Sidebar — 2 BHK & 3 BHK collapsible accordions with Explore Inventory subtitle above Apartments */}
       <Sidebar
         isFullscreenActive={isFullscreenActive}
-        width="w-[260px] phone-landscape:w-[170px]"
+        width="w-[230px] phone-landscape:w-[155px]"
         header={{
           icon: Building2,
-          subtitle: "Floor Plans",
-          title: "Apartments",
+          title: "Explore Inventory",
         }}
-        sections={createSidebarSections([
-             {
-            id: "tower-a",
-            title: "Tower 2",
-            isCollapsible: true,
-            isExpanded: !!expandedTowers["Tower A"],
-            onHeaderClick: () => toggleTowerAccordion("Tower A"),
-            items: createSidebarItems(
-              TOWER_B_FLATS.map((flat) => ({
-                id: flat.id,
-                label: flat.label,
-                icon: Home,
-                onClick: () => handleSelectFlat(flat),
-                isActive: selectedFlat.id === flat.id,
-              })),
-            ),
-          },
-          {
-            id: "tower-b",
-            title: "Tower 3",
-            isCollapsible: true,
-            isExpanded: !!expandedTowers["Tower B"],
-            onHeaderClick: () => toggleTowerAccordion("Tower B"),
-            items: createSidebarItems(
-              TOWER_C_FLATS.map((flat) => ({
-                id: flat.id,
-                label: flat.label,
-                icon: Home,
-                onClick: () => handleSelectFlat(flat),
-                isActive: selectedFlat.id === flat.id,
-              })),
-            ),
-          },
-       
-        ])}
+        sections={createSidebarSections(
+          towerSectionOrder[selectedTower].map((bhkKey) => {
+            const sectionId = bhkKey === "2 BHK" ? "2-bhk" : "3-bhk";
+            return {
+              id: sectionId,
+              title: bhkKey,
+              isCollapsible: true,
+              isExpanded: expandedSections[sectionId] ?? true,
+              onHeaderClick: () => toggleSection(sectionId),
+              items: createSidebarItems(
+                currentTowerFlats[bhkKey].map((flat) => ({
+                  id: flat.id,
+                  label: flat.label,
+                  icon: Home,
+                  onClick: () => handleSelectFlat(flat),
+                  isActive: isFlatActive(flat),
+                }))
+              ),
+            };
+          })
+        )}
       />
 
-      {/* Right Controls (Zoom In, Zoom Out, Reset, Fullscreen) */}
-      <div className="absolute right-6 bottom-32 z-20 flex flex-col gap-2 phone-landscape:right-4 phone-landscape:bottom-14 phone-landscape:gap-1.5">
-        <button
-          type="button"
-          onClick={handleZoomIn}
-          className="w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
-          title="Zoom In"
-        >
-          <ZoomIn
-            size={18}
+      {/* Fullscreen toggle */}
+      <button
+        onClick={toggleFullscreen}
+        className="absolute right-6 bottom-32 z-20 w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
+        title={isFullscreenActive ? "Exit Fullscreen" : "Enter Fullscreen"}
+      >
+        {isFullscreenActive ? (
+          <Minimize2
+            size={20}
             className="phone-landscape:w-3.5 phone-landscape:h-3.5"
           />
-        </button>
-        <button
-          type="button"
-          onClick={handleZoomOut}
-          className="w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
-          title="Zoom Out"
-        >
-          <ZoomOut
-            size={18}
+        ) : (
+          <Maximize2
+            size={20}
             className="phone-landscape:w-3.5 phone-landscape:h-3.5"
           />
-        </button>
-        {scale > 1 && (
-          <button
-            type="button"
-            onClick={resetZoom}
-            className="w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-[#C79A59] flex items-center justify-center hover:bg-black/70 transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
-            title="Reset Zoom"
-          >
-            <RotateCcw
-              size={18}
-              className="phone-landscape:w-3.5 phone-landscape:h-3.5"
-            />
-          </button>
         )}
-        <button
-          type="button"
-          onClick={toggleFullscreen}
-          className="w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
-          title={isFullscreenActive ? "Exit Fullscreen" : "Enter Fullscreen"}
-        >
-          {isFullscreenActive ? (
-            <Minimize2
-              size={18}
-              className="phone-landscape:w-3.5 phone-landscape:h-3.5"
-            />
-          ) : (
-            <Maximize2
-              size={18}
-              className="phone-landscape:w-3.5 phone-landscape:h-3.5"
-            />
-          )}
-        </button>
-      </div>
+      </button>
 
       {/* Bottom Navigation */}
       <BottomNavbar activeItem="apartments" />
+
+      {/* Towers — Only Tower 2 and Tower 3 */}
+      <div className="absolute bottom-6 left-1/2 z-40 flex -translate-x-1/2 gap-2 phone-landscape:bottom-3 phone-landscape:gap-1">
+        {(Object.keys(towerUnits) as TowerKey[]).map((tower) => (
+          <button
+            key={tower}
+            onClick={() => {
+              setSelectedTower(tower);
+              setActiveUnitIds(null);
+            }}
+            className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition cursor-pointer duration-200 phone-landscape:px-3 phone-landscape:h-6 phone-landscape:text-[9px] phone-landscape:rounded-md ${
+              selectedTower === tower
+                ? "bg-white text-black border-transparent"
+                : "bg-black/40 text-white border-white/10 backdrop-blur-md hover:bg-black/60 hover:border-white/20"
+            }`}
+          >
+            {tower}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

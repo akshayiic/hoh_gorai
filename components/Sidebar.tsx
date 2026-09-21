@@ -273,8 +273,9 @@ export default function Sidebar({
                     {section.title &&
                       (section.isCollapsible ? (
                         <button
+                          type="button"
                           onClick={section.onHeaderClick}
-                          className="w-full flex items-center justify-between px-4 text-[14px] font-semibold text-[#E2E2E2] cursor-pointer hover:text-white transition-colors text-left phone-landscape:px-3 phone-landscape:text-[11px] phone-landscape:mb-1"
+                          className="w-full flex items-center justify-between px-4 py-1.5 mb-1 text-[14px] font-semibold text-[#E2E2E2] cursor-pointer hover:text-white transition-colors text-left phone-landscape:px-3 phone-landscape:py-0.5 phone-landscape:text-[11px] phone-landscape:mb-0.5"
                         >
                           <span>{section.title}</span>
                           <span

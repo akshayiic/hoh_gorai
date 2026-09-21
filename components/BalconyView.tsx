@@ -2,57 +2,32 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  Layers,
   Maximize2,
   Minimize2,
-  Moon,
   Sun,
   Sunrise,
   Sunset,
 } from "lucide-react";
 import BottomNavbar from "@/components/BottomNavbar";
 import GlobalNavbar from "@/components/GlobalNavbar";
-import Sidebar, {
-  createSidebarSections,
-  createSidebarItems,
-} from "@/components/Sidebar";
 
-const allTowersFloors = {
+type TowerName = "Tower 2" | "Tower 3";
+
+const allTowersFloors: Record<
+  "morning" | "afternoon" | "evening",
+  Record<TowerName, { id: string; floor: number }[]>
+> = {
   morning: {
-    "Tower 1": [
-      { id: "1-38", floor: 38 },
-      { id: "0-43", floor: 43 },
-      { id: "4-48", floor: 48 },
-    ],
-    "Tower 2": [
-      { id: "10-38", floor: 38 },
-      { id: "4-43", floor: 43 },
-      { id: "5-48", floor: 48 },
-    ],
+    "Tower 2": [{ id: "5-48", floor: 48 }],
+    "Tower 3": [{ id: "5-48", floor: 48 }],
   },
   afternoon: {
-    "Tower 1": [
-      { id: "7-38", floor: 38 },
-      { id: "8-43", floor: 43 },
-      { id: "9-48", floor: 48 },
-    ],
-    "Tower 2": [
-      { id: "7-38", floor: 38 },
-      { id: "8-43", floor: 43 },
-      { id: "9-48", floor: 48 },
-    ],
+    "Tower 2": [{ id: "9-48", floor: 48 }],
+    "Tower 3": [{ id: "9-48", floor: 48 }],
   },
   evening: {
-    "Tower 1": [
-      { id: "7-38", floor: 38 },
-      { id: "8-43", floor: 43 },
-      { id: "9-48", floor: 48 },
-    ],
-    "Tower 2": [
-      { id: "7-38", floor: 38 },
-      { id: "8-43", floor: 43 },
-      { id: "9-48", floor: 48 },
-    ],
+    "Tower 2": [{ id: "9-48", floor: 48 }],
+    "Tower 3": [{ id: "9-48", floor: 48 }],
   },
 };
 
@@ -70,18 +45,8 @@ const timeOfDayOptions = [
 // pinned memory bounded so high-resolution tiles don't render as black boxes.
 const MAX_CACHED_SCENES = 6;
 
-const getFloorLabel = (floor: number | string) => {
-  if (typeof floor === "number") return `Floor ${floor}`;
-  const fLower = floor.toLowerCase();
-  if (fLower === "lmr") return "LMR";
-  if (fLower.startsWith("terac") || fLower.startsWith("terrac")) return "Terrace";
-  return floor;
-};
-
 export default function BalconyView() {
-  const [selectedTower, setSelectedTower] = useState<"Tower 1" | "Tower 2">(
-    "Tower 1",
-  );
+  const [selectedTower, setSelectedTower] = useState<TowerName>("Tower 2");
   const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
   const [selectedTime, setSelectedTime] = useState<
     "morning" | "afternoon" | "evening"
@@ -316,30 +281,26 @@ export default function BalconyView() {
       }, 4000);
     }
 
-    // Warm the neighboring floors' fallback tiles in the background so
-    // clicking through the floor list (the common case) feels instant
-    // instead of triggering a fresh fetch every time.
+    // Warm the other tower's scene in the background so switching towers feels instant
     const prefetchTimer = setTimeout(() => {
-      [currentFloorIndex - 1, currentFloorIndex + 1].forEach((idx) => {
-        const neighbor = towerFloors[idx];
-        if (neighbor) getOrCreateScene(neighbor.id, selectedTower, selectedTime);
-      });
+      const otherTower: TowerName =
+        selectedTower === "Tower 2" ? "Tower 3" : "Tower 2";
+      const otherFloor = allTowersFloors[selectedTime][otherTower]?.[0];
+      if (otherFloor) {
+        getOrCreateScene(otherFloor.id, otherTower, selectedTime);
+      }
     }, 500);
 
     return () => {
       cancelled = true;
       textureStore.removeEventListener("textureLoad", checkReady);
       clearInterval(pollInterval);
-      clearTimeout(timeoutId);
+      timeoutId && clearTimeout(timeoutId);
       clearTimeout(prefetchTimer);
     };
   }, [isViewerReady, selectedTower, currentFloorIndex, selectedTime, getOrCreateScene]);
 
-  const switchFloor = (index: number) => {
-    setCurrentFloorIndex(index);
-  };
-
-  const handleTowerChange = (tower: "Tower 1" | "Tower 2") => {
+  const handleTowerChange = (tower: TowerName) => {
     setSelectedTower(tower);
     setCurrentFloorIndex(0);
   };
@@ -475,47 +436,14 @@ export default function BalconyView() {
         </div>
       </div>
 
-      {/* SIDEBAR — floors (left) */}
-      {!isFullscreenActive && (
-        <Sidebar
-          isFullscreenActive={isFullscreenActive}
-          side="left"
-          width="w-[170px] phone-landscape:w-[120px]"
-          activeItemRounded
-          compact
-          visibleItemCount={5}
-          header={{
-            icon: Layers,
-            title: "Floors",
-          }}
-          sections={createSidebarSections([
-            {
-              id: "floors",
-              items: createSidebarItems(
-                allTowersFloors[selectedTime][selectedTower].map(
-                  (floorData, index) => ({
-                    id: `${selectedTime}_${floorData.id}`,
-                    label: getFloorLabel(floorData.floor),
-                    onClick: () => switchFloor(index),
-                    isActive: currentFloorIndex === index,
-                  }),
-                ),
-              ),
-            },
-          ])}
-        />
-      )}
-
-      {/* Tower Selection Buttons */}
+      {/* Tower Selection Buttons — Tower 2 and Tower 3 only */}
       {!isFullscreenActive && (
         <div className="absolute bottom-6 left-1/2 z-40 flex -translate-x-1/2 gap-2 phone-landscape:bottom-3 phone-landscape:gap-1">
-          {(
-            Object.keys(allTowersFloors.morning) as Array<"Tower 1" | "Tower 2">
-          ).map((tower) => (
+          {(["Tower 2", "Tower 3"] as const).map((tower) => (
             <button
               key={tower}
               onClick={() => handleTowerChange(tower)}
-              className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition cursor-pointer  duration-200 phone-landscape:px-3 phone-landscape:h-6 phone-landscape:text-[9px] phone-landscape:rounded-md ${
+              className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition cursor-pointer duration-200 phone-landscape:px-3 phone-landscape:h-6 phone-landscape:text-[9px] phone-landscape:rounded-md ${
                 selectedTower === tower
                   ? "bg-white text-black border-transparent"
                   : "bg-black/40 text-white border-white/10 backdrop-blur-md hover:bg-black/60 hover:border-white/20"
