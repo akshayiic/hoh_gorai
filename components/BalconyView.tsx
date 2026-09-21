@@ -54,6 +54,18 @@ const allTowersFloors = {
       { id: "9-48", floor: 48 },
     ],
   },
+  night: {
+    "Tower 2": [
+      { id: "7-38", floor: 38 },
+      { id: "8-43", floor: 43 },
+      { id: "9-48", floor: 48 },
+    ],
+    "Tower 3": [
+      { id: "7-38", floor: 38 },
+      { id: "8-43", floor: 43 },
+      { id: "9-48", floor: 48 },
+    ],
+  },
 };
 
 // Time-of-day switcher, rendered as an icon row next to the fullscreen
@@ -62,6 +74,7 @@ const timeOfDayOptions = [
   { id: "morning", label: "Morning", icon: Sunrise },
   { id: "afternoon", label: "Afternoon", icon: Sun },
   { id: "evening", label: "Evening", icon: Sunset },
+  { id: "night", label: "Night", icon: Moon },
 ] as const;
 
 // Marzipano pins a scene's first tile level in GPU memory for as long as the
@@ -83,9 +96,9 @@ export default function BalconyView() {
   const [selectedTower, setSelectedTower] = useState<"Tower 2" | "Tower 3">(
     "Tower 2"
   );
-  const [currentFloorIndex, setCurrentFloorIndex] = useState(2);
+  const [currentFloorIndex, setCurrentFloorIndex] = useState(0);
   const [selectedTime, setSelectedTime] = useState<
-    "morning" | "afternoon" | "evening"
+    "morning" | "afternoon" | "evening" | "night"
   >("morning");
   const [isViewerReady, setIsViewerReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -106,23 +119,19 @@ export default function BalconyView() {
   // and "Tower 1" folders exist too but serve lower-quality/blurred renders.
   const getTowerPath = useCallback((tower: string, time: string) => {
     if (time === "morning") {
-      if (tower === "Tower 1") return "tower1";
       if (tower === "Tower 2") return "tower2";
       if (tower === "Tower 3") return "tower3";
     } else if (time === "afternoon") {
-      if (tower === "Tower 1") return "Tower-1";
       if (tower === "Tower 2") return "Tower 2";
       if (tower === "Tower 3") return "Tower 3";
     } else if (time === "evening") {
-      if (tower === "Tower 1") return "TOWER 1";
       if (tower === "Tower 2") return "TOWER 2";
       if (tower === "Tower 3") return "TOWER 3";
     } else {
-      if (tower === "Tower 1") return "Tower 1";
       if (tower === "Tower 2") return "Tower 2";
       if (tower === "Tower 3") return "Tower 3";
     }
-    return "tower1";
+    return "tower2";
   }, []);
 
   // Lazily creates (and caches) the scene for a given tower/time/floor combo.
@@ -356,7 +365,7 @@ export default function BalconyView() {
 
   const handleTowerChange = (tower: "Tower 2" | "Tower 3") => {
     setSelectedTower(tower);
-    setCurrentFloorIndex(2);
+    setCurrentFloorIndex(0);
   };
 
   // Fullscreens `document.documentElement`, not this page's own div — that's
@@ -494,7 +503,36 @@ export default function BalconyView() {
         </div>
       </div>
 
-      {/* SIDEBAR — floors (left) hidden as requested */}
+      {/* SIDEBAR — floors (left) */}
+      {!isFullscreenActive && (
+        <Sidebar
+          isFullscreenActive={isFullscreenActive}
+          side="left"
+          width="w-[170px] phone-landscape:w-[120px]"
+          activeItemRounded
+          compact
+          visibleItemCount={5}
+          header={{
+            icon: Layers,
+            title: "Floors",
+          }}
+          sections={createSidebarSections([
+            {
+              id: "floors",
+              items: createSidebarItems(
+                allTowersFloors[selectedTime][selectedTower].map(
+                  (floorData, index) => ({
+                    id: `${selectedTime}_${floorData.id}`,
+                    label: getFloorLabel(floorData.floor),
+                    onClick: () => switchFloor(index),
+                    isActive: currentFloorIndex === index,
+                  })
+                )
+              ),
+            },
+          ])}
+        />
+      )}
 
       {/* Tower Selection Buttons */}
       {!isFullscreenActive && (
@@ -505,7 +543,7 @@ export default function BalconyView() {
             <button
               key={tower}
               onClick={() => handleTowerChange(tower)}
-              className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition cursor-pointer duration-200 phone-landscape:px-3 phone-landscape:h-6 phone-landscape:text-[9px] phone-landscape:rounded-md ${
+              className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition cursor-pointer  duration-200 phone-landscape:px-3 phone-landscape:h-6 phone-landscape:text-[9px] phone-landscape:rounded-md ${
                 selectedTower === tower
                   ? "bg-white text-black border-transparent"
                   : "bg-black/40 text-white border-white/10 backdrop-blur-md hover:bg-black/60 hover:border-white/20"
