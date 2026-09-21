@@ -42,7 +42,6 @@ const timeOfDayOptions = [
   { id: "morning", label: "Morning", icon: Sunrise },
   { id: "afternoon", label: "Afternoon", icon: Sun },
   { id: "evening", label: "Evening", icon: Sunset },
-  { id: "night", label: "Night", icon: Moon },
 ] as const;
 
 // Marzipano pins a scene's first tile level in GPU memory for as long as the

@@ -365,7 +365,7 @@ const categoryDisplayNames: Record<string, string> = {
 function toTitleCase(str: string): string {
   return str.replace(
     /\w\S*/g,
-    (word) => word.charAt(0).toUpperCase() + word.slice(1),
+    (word) => word.charAt(0).toUpperCase() + word.slice(1)
   );
 }
 
@@ -409,7 +409,7 @@ function formatDistanceForCard(dist: string) {
 
 interface LocationExplorerProps {
   onNavigate?: (
-    view: "location" | "balcony" | "apartments" | "amenities",
+    view: "location" | "balcony" | "apartments" | "amenities"
   ) => void;
 }
 
@@ -418,21 +418,21 @@ export default function LocationExplorer({
 }: LocationExplorerProps) {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState(
-    "Education Institutes",
+    "Education Institutes"
   );
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showRoutePanel, setShowRoutePanel] = useState(false);
   const [originAddress, setOriginAddress] = useState(
-    "Gorai Bluecrest, Borivali West, Mumbai",
+    "Gorai Bluecrest, Borivali West, Mumbai"
   );
   const [destinationAddress, setDestinationAddress] = useState("");
   const [isCleanView, setIsCleanView] = useState(false);
   const [isFullscreenActive, setIsFullscreenActive] = useState(
-    () => typeof document !== "undefined" && !!document.fullscreenElement,
+    () => typeof document !== "undefined" && !!document.fullscreenElement
   );
 
   const [selectedLocation, setSelectedLocation] = useState<LocationItem | null>(
-    null,
+    null
   );
   const [activeRoute, setActiveRoute] = useState<{
     distance: string;
@@ -456,7 +456,7 @@ export default function LocationExplorer({
   const selectedLocationRef = useRef<LocationItem | null>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(
-    null,
+    null
   );
   const twoFingerStartYRef = useRef<{ y: number; time: number } | null>(null);
 
@@ -707,7 +707,7 @@ export default function LocationExplorer({
           if (!screenPos) return null;
 
           const textEl = el.querySelector(
-            ".luxury-label-text-wrapper",
+            ".luxury-label-text-wrapper"
           ) as HTMLDivElement;
 
           // Temporarily remove hidden-label to get correct size if it is currently hidden
@@ -747,7 +747,7 @@ export default function LocationExplorer({
         .filter((info): info is NonNullable<typeof info> => info !== null);
 
       markerInfos.sort(
-        (a, b) => (b.isSelected ? 1 : 0) - (a.isSelected ? 1 : 0),
+        (a, b) => (b.isSelected ? 1 : 0) - (a.isSelected ? 1 : 0)
       );
 
       // Geometry & Collision Helpers
@@ -757,7 +757,7 @@ export default function LocationExplorer({
         px: number,
         py: number,
         qx: number,
-        qy: number,
+        qy: number
       ) => (qx - ox) * (py - oy) - (px - ox) * (qy - oy);
 
       const segmentsIntersect = (
@@ -768,7 +768,7 @@ export default function LocationExplorer({
         cx: number,
         cy: number,
         dx: number,
-        dy: number,
+        dy: number
       ) => {
         const d1 = cross(cx, cy, dx, dy, ax, ay);
         const d2 = cross(cx, cy, dx, dy, bx, by);
@@ -786,7 +786,7 @@ export default function LocationExplorer({
         x2: number,
         y2: number,
         rect: { left: number; right: number; top: number; bottom: number },
-        padding = 3,
+        padding = 3
       ) => {
         const rL = rect.left - padding;
         const rR = rect.right + padding;
@@ -821,7 +821,7 @@ export default function LocationExplorer({
         y2: number,
         cx: number,
         cy: number,
-        r: number,
+        r: number
       ) => {
         const dx = x2 - x1;
         const dy = y2 - y1;
@@ -832,7 +832,7 @@ export default function LocationExplorer({
         }
         const t = Math.max(
           0,
-          Math.min(1, ((cx - x1) * dx + (cy - y1) * dy) / lenSq),
+          Math.min(1, ((cx - x1) * dx + (cy - y1) * dy) / lenSq)
         );
         const closestX = x1 + t * dx;
         const closestY = y1 + t * dy;
@@ -844,7 +844,7 @@ export default function LocationExplorer({
       const checkOverlap = (
         r1: { left: number; right: number; top: number; bottom: number },
         r2: { left: number; right: number; top: number; bottom: number },
-        padding = 4,
+        padding = 4
       ) => {
         return !(
           r1.right + padding < r2.left ||
@@ -858,7 +858,7 @@ export default function LocationExplorer({
         cx: number,
         cy: number,
         r: number,
-        rect: { left: number; right: number; top: number; bottom: number },
+        rect: { left: number; right: number; top: number; bottom: number }
       ) => {
         const closestX = Math.max(rect.left, Math.min(cx, rect.right));
         const closestY = Math.max(rect.top, Math.min(cy, rect.bottom));
@@ -875,7 +875,7 @@ export default function LocationExplorer({
         c2X: number,
         c2Y: number,
         r2: number,
-        padding = 4,
+        padding = 4
       ) => {
         const dx = c1X - c2X;
         const dy = c1Y - c2Y;
@@ -897,7 +897,7 @@ export default function LocationExplorer({
         offsetX: number,
         offsetY: number,
         styleIdx: number,
-        seedStr: string,
+        seedStr: string
       ): Array<{ x1: number; y1: number; x2: number; y2: number }> => {
         const dotRadius = 3.5;
         const circleGap = 1.5;
@@ -985,7 +985,7 @@ export default function LocationExplorer({
         offsetY: number,
         pos: string,
         W_lbl: number,
-        H_lbl: number,
+        H_lbl: number
       ) => {
         const badgeCenterX = x + offsetX;
         const badgeCenterY = y + offsetY;
@@ -1025,7 +1025,7 @@ export default function LocationExplorer({
         cx: number,
         cy: number,
         W_lbl: number,
-        H_lbl: number,
+        H_lbl: number
       ) => {
         return {
           left: cx - W_lbl,
@@ -1058,10 +1058,10 @@ export default function LocationExplorer({
         if (distToHome < 160) {
           markerCandidateAngles = [...candidateBaseAngles].sort((a, b) => {
             const diffA = Math.abs(
-              ((((a - angleAwayFromHome) % 360) + 540) % 360) - 180,
+              ((((a - angleAwayFromHome) % 360) + 540) % 360) - 180
             );
             const diffB = Math.abs(
-              ((((b - angleAwayFromHome) % 360) + 540) % 360) - 180,
+              ((((b - angleAwayFromHome) % 360) + 540) % 360) - 180
             );
             return diffA - diffB;
           });
@@ -1069,13 +1069,19 @@ export default function LocationExplorer({
 
         const initialAngleRad = (angleAwayFromHome * Math.PI) / 180;
         let bestPosition = "Right";
-        let bestOffsetX = distToHome < 160 ? Math.round((R + 30) * Math.cos(initialAngleRad)) : R + 24;
-        let bestOffsetY = distToHome < 160 ? Math.round((R + 30) * Math.sin(initialAngleRad)) : -18;
+        let bestOffsetX =
+          distToHome < 160
+            ? Math.round((R + 30) * Math.cos(initialAngleRad))
+            : R + 24;
+        let bestOffsetY =
+          distToHome < 160
+            ? Math.round((R + 30) * Math.sin(initialAngleRad))
+            : -18;
         let bestLocalSegments = computeConnectorSegments(
           bestOffsetX,
           bestOffsetY,
           0,
-          `${info.title}|default`,
+          `${info.title}|default`
         );
         let found = false;
 
@@ -1134,7 +1140,7 @@ export default function LocationExplorer({
                 homeScreenPos.x,
                 homeScreenPos.y,
                 homeR,
-                6,
+                6
               )
             ) {
               continue;
@@ -1147,7 +1153,7 @@ export default function LocationExplorer({
                 candidateCircleX,
                 candidateCircleY,
                 R + 4,
-                logoOverlayRect,
+                logoOverlayRect
               )
             ) {
               continue;
@@ -1164,7 +1170,7 @@ export default function LocationExplorer({
                   resolvedLabels[k].circleX,
                   resolvedLabels[k].circleY,
                   R,
-                  8,
+                  8
                 )
               ) {
                 circleOverlaps = true;
@@ -1185,7 +1191,7 @@ export default function LocationExplorer({
                   markerInfos[k].x,
                   markerInfos[k].y,
                   4,
-                  6,
+                  6
                 )
               ) {
                 dotOverlaps = true;
@@ -1201,7 +1207,7 @@ export default function LocationExplorer({
                 offsetX,
                 offsetY,
                 0,
-                `${info.title}|fallback`,
+                `${info.title}|fallback`
               );
             }
 
@@ -1212,7 +1218,7 @@ export default function LocationExplorer({
                 offsetX,
                 offsetY,
                 styleIdx,
-                `${info.title}|${aIdx}|${sIdx}`,
+                `${info.title}|${aIdx}|${sIdx}`
               );
               const absSegments = localSegments.map((s) => ({
                 x1: info.x + s.x1,
@@ -1227,8 +1233,12 @@ export default function LocationExplorer({
                 // If POI dot is inside home marker perimeter, line must travel outward away from home marker
                 const lineMovesAway = absSegments.every(
                   (s) =>
-                    Math.hypot(s.x2 - homeScreenPos.x, s.y2 - homeScreenPos.y) >=
-                    Math.hypot(s.x1 - homeScreenPos.x, s.y1 - homeScreenPos.y) - 1,
+                    Math.hypot(
+                      s.x2 - homeScreenPos.x,
+                      s.y2 - homeScreenPos.y
+                    ) >=
+                    Math.hypot(s.x1 - homeScreenPos.x, s.y1 - homeScreenPos.y) -
+                      1
                 );
                 if (!lineMovesAway) {
                   lineCollides = true;
@@ -1242,8 +1252,8 @@ export default function LocationExplorer({
                     s.y2,
                     homeScreenPos.x,
                     homeScreenPos.y,
-                    homeR + 2,
-                  ),
+                    homeR + 2
+                  )
                 )
               ) {
                 lineCollides = true;
@@ -1258,8 +1268,8 @@ export default function LocationExplorer({
                     s.x2,
                     s.y2,
                     logoOverlayRect,
-                    4,
-                  ),
+                    4
+                  )
                 )
               ) {
                 lineCollides = true;
@@ -1276,8 +1286,8 @@ export default function LocationExplorer({
                         s.y2,
                         markerInfos[k].x,
                         markerInfos[k].y,
-                        4,
-                      ),
+                        4
+                      )
                     )
                   ) {
                     lineCollides = true;
@@ -1297,8 +1307,8 @@ export default function LocationExplorer({
                         s.y2,
                         resolvedLabels[k].circleX,
                         resolvedLabels[k].circleY,
-                        R + 2,
-                      ),
+                        R + 2
+                      )
                     )
                   ) {
                     lineCollides = true;
@@ -1315,9 +1325,9 @@ export default function LocationExplorer({
                           sB.x1,
                           sB.y1,
                           sB.x2,
-                          sB.y2,
-                        ),
-                      ),
+                          sB.y2
+                        )
+                      )
                     )
                   ) {
                     lineCollides = true;
@@ -1339,31 +1349,17 @@ export default function LocationExplorer({
                       "Left",
                     ]
                   : offsetX <= -10
-                    ? [
-                        "Left",
-                        "Top",
-                        "Bottom",
-                        "TopLeft",
-                        "BottomLeft",
-                        "Right",
-                      ]
-                    : offsetY < 0
-                      ? [
-                          "Top",
-                          "Right",
-                          "Left",
-                          "TopRight",
-                          "TopLeft",
-                          "Bottom",
-                        ]
-                      : [
-                          "Bottom",
-                          "Right",
-                          "Left",
-                          "BottomRight",
-                          "BottomLeft",
-                          "Top",
-                        ];
+                  ? ["Left", "Top", "Bottom", "TopLeft", "BottomLeft", "Right"]
+                  : offsetY < 0
+                  ? ["Top", "Right", "Left", "TopRight", "TopLeft", "Bottom"]
+                  : [
+                      "Bottom",
+                      "Right",
+                      "Left",
+                      "BottomRight",
+                      "BottomLeft",
+                      "Top",
+                    ];
 
               for (
                 let pIdx = 0;
@@ -1378,7 +1374,7 @@ export default function LocationExplorer({
                   offsetY,
                   pos,
                   W_lbl,
-                  H_lbl,
+                  H_lbl
                 );
                 const candidateRect = getLabelRect(cx, cy, W_lbl, H_lbl);
 
@@ -1398,7 +1394,7 @@ export default function LocationExplorer({
                     homeScreenPos.x,
                     homeScreenPos.y,
                     homeR + 4,
-                    candidateRect,
+                    candidateRect
                   )
                 ) {
                   continue;
@@ -1421,7 +1417,7 @@ export default function LocationExplorer({
                       markerInfos[k].x,
                       markerInfos[k].y,
                       6,
-                      candidateRect,
+                      candidateRect
                     )
                   ) {
                     labelHitsDot = true;
@@ -1446,7 +1442,7 @@ export default function LocationExplorer({
                       resolvedLabels[k].circleX,
                       resolvedLabels[k].circleY,
                       R + 4,
-                      candidateRect,
+                      candidateRect
                     )
                   ) {
                     labelCollides = true;
@@ -1457,7 +1453,7 @@ export default function LocationExplorer({
                       candidateCircleX,
                       candidateCircleY,
                       R + 4,
-                      resolvedLabels[k].rect,
+                      resolvedLabels[k].rect
                     )
                   ) {
                     labelCollides = true;
@@ -1471,8 +1467,8 @@ export default function LocationExplorer({
                         s.x2,
                         s.y2,
                         candidateRect,
-                        3,
-                      ),
+                        3
+                      )
                     )
                   ) {
                     labelCollides = true;
@@ -1487,8 +1483,8 @@ export default function LocationExplorer({
                           s.x2,
                           s.y2,
                           resolvedLabels[k].rect,
-                          3,
-                        ),
+                          3
+                        )
                       )
                     ) {
                       labelCollides = true;
@@ -1526,7 +1522,7 @@ export default function LocationExplorer({
                 bestOffsetX,
                 bestOffsetY,
                 0,
-                `${info.title}|selected_fallback`,
+                `${info.title}|selected_fallback`
               );
             }
             bestPosition = "Right";
@@ -1550,7 +1546,7 @@ export default function LocationExplorer({
           bestOffsetY,
           bestPosition,
           W_lbl,
-          H_lbl,
+          H_lbl
         );
         const finalRect = getLabelRect(finalCx, finalCy, W_lbl, H_lbl);
 
@@ -1571,10 +1567,10 @@ export default function LocationExplorer({
         });
 
         const circleEl = info.el.querySelector(
-          ".luxury-marker-circle",
+          ".luxury-marker-circle"
         ) as HTMLDivElement;
         const pathEl = info.el.querySelector(
-          ".luxury-leader-path",
+          ".luxury-leader-path"
         ) as SVGPathElement;
 
         if (hidden) {
@@ -1635,7 +1631,7 @@ export default function LocationExplorer({
   // Update Category Markers when category changes (created once per category)
   const updateCategoryMarkers = (
     map: google.maps.Map | null,
-    category: string,
+    category: string
   ) => {
     if (!map) return;
 
@@ -1648,7 +1644,7 @@ export default function LocationExplorer({
     if (!category) return;
 
     const catData = infrastructure.current.find(
-      (item) => item.title === category,
+      (item) => item.title === category
     );
     if (!catData) return;
 
@@ -1680,7 +1676,7 @@ export default function LocationExplorer({
       // 2. Create SVG and path programmatically (700x700 canvas)
       const svgEl = document.createElementNS(
         "http://www.w3.org/2000/svg",
-        "svg",
+        "svg"
       );
       svgEl.setAttribute("class", "luxury-leader-svg");
       svgEl.setAttribute("width", "700");
@@ -1690,7 +1686,7 @@ export default function LocationExplorer({
 
       const pathEl = document.createElementNS(
         "http://www.w3.org/2000/svg",
-        "path",
+        "path"
       );
       pathEl.setAttribute("class", "luxury-leader-path");
       pathEl.setAttribute("fill", "none");
@@ -1851,7 +1847,7 @@ export default function LocationExplorer({
   function handleShowRoute(
     destCoordinates: { lat: number; lng: number },
     destName: string,
-    originCoords = GoraiBluecrestLocation,
+    originCoords = GoraiBluecrestLocation
   ) {
     const map = mapRef.current;
     if (!map) {
@@ -1916,7 +1912,11 @@ export default function LocationExplorer({
         if (isCloseLocation || isVibgyor) {
           google.maps.event.addListenerOnce(map, "idle", () => {
             const currentZoom = map.getZoom() ?? 15;
-            const targetMinZoom = isVibgyor ? 17 : distanceMeters < 800 ? 16.5 : 15.5;
+            const targetMinZoom = isVibgyor
+              ? 17
+              : distanceMeters < 800
+              ? 16.5
+              : 15.5;
             if (currentZoom < targetMinZoom) {
               map.setZoom(targetMinZoom);
             }
@@ -1934,7 +1934,7 @@ export default function LocationExplorer({
 
   function animateRouteDrawing(
     map: google.maps.Map,
-    coordinates: [number, number][],
+    coordinates: [number, number][]
   ) {
     let currentIndex = 0;
     const animationSpeed = 0.8;
@@ -1963,7 +1963,7 @@ export default function LocationExplorer({
       "width: 8px; height: 8px; border-radius: 50%; background: #ffffff; border: 2px solid #E5C158; transform: translate(-50%, -50%);";
     const headMarker = createDomOverlay(
       { lat: coordinates[0][1], lng: coordinates[0][0] },
-      headEl,
+      headEl
     );
     headMarker.setMap(map);
     routeHeadMarkerRef.current = headMarker;
@@ -1971,7 +1971,7 @@ export default function LocationExplorer({
     const animate = () => {
       const nextIndex = Math.min(
         currentIndex + animationSpeed,
-        coordinates.length,
+        coordinates.length
       );
       const segmentCoordinates = coordinates.slice(0, nextIndex);
       const segmentLatLng = segmentCoordinates.map(([lng, lat]) => ({
@@ -2007,10 +2007,14 @@ export default function LocationExplorer({
       setIsRouteLoading(true);
       Promise.all([
         fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(originAddress)}`,
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            originAddress
+          )}`
         ).then((r) => r.json()),
         fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(destinationAddress)}`,
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+            destinationAddress
+          )}`
         ).then((r) => r.json()),
       ])
         .then(([originData, destData]) => {
@@ -2026,7 +2030,7 @@ export default function LocationExplorer({
             handleShowRoute(dest, destinationAddress, orig);
           } else {
             alert(
-              "Could not find one or both locations. Please try more specific addresses.",
+              "Could not find one or both locations. Please try more specific addresses."
             );
             setIsRouteLoading(false);
           }
@@ -2119,7 +2123,6 @@ export default function LocationExplorer({
             />
           )}
         </button>
-
         <div className="flex flex-col gap-2 luxury-zoom-control phone-landscape:gap-1.5">
           <button
             onClick={() => {
@@ -2179,7 +2182,7 @@ export default function LocationExplorer({
                   icon: item.icon,
                   onClick: () => handleCategoryChange(item.title),
                   isActive: selectedCategory === item.title,
-                })),
+                }))
               ),
             },
           ])}
@@ -2206,7 +2209,7 @@ export default function LocationExplorer({
                 {selectedLocation
                   ? parseLocationName(
                       selectedLocation.title,
-                      selectedLocation.name,
+                      selectedLocation.name
                     ).title
                   : ""}
               </h3>
@@ -2227,8 +2230,8 @@ export default function LocationExplorer({
                         ? activeRoute.duration
                         : parseLocationName(
                             selectedLocation.title,
-                            selectedLocation.name,
-                          ).duration,
+                            selectedLocation.name
+                          ).duration
                     )}
                   </p>
                 </div>
@@ -2243,8 +2246,8 @@ export default function LocationExplorer({
                         ? activeRoute.distance
                         : parseLocationName(
                             selectedLocation.title,
-                            selectedLocation.name,
-                          ).distance,
+                            selectedLocation.name
+                          ).distance
                     )}
                   </p>
                 </div>
