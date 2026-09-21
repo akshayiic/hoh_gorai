@@ -247,9 +247,15 @@ export default function BalconyView() {
 
     const activate = () => {
       if (cancelled) return;
-      setIsLoading(false);
-      setHasRenderedOnce(true);
       sceneData.scene.switchTo();
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          if (!cancelled) {
+            setIsLoading(false);
+            setHasRenderedOnce(true);
+          }
+        }, 200);
+      });
     };
 
     let pollInterval: ReturnType<typeof setInterval> | undefined;
@@ -261,7 +267,7 @@ export default function BalconyView() {
       settled = true;
       textureStore.removeEventListener("textureLoad", checkReady);
       clearInterval(pollInterval);
-      clearTimeout(timeoutId);
+      timeoutId && clearTimeout(timeoutId);
       activate();
     };
 
@@ -278,7 +284,7 @@ export default function BalconyView() {
         textureStore.removeEventListener("textureLoad", checkReady);
         clearInterval(pollInterval);
         activate();
-      }, 4000);
+      }, 12000);
     }
 
     // Warm the other tower's scene in the background so switching towers feels instant
@@ -300,7 +306,15 @@ export default function BalconyView() {
     };
   }, [isViewerReady, selectedTower, currentFloorIndex, selectedTime, getOrCreateScene]);
 
+  const handleTimeChange = (time: "morning" | "afternoon" | "evening") => {
+    if (time === selectedTime) return;
+    setIsLoading(true);
+    setSelectedTime(time);
+  };
+
   const handleTowerChange = (tower: TowerName) => {
+    if (tower === selectedTower) return;
+    setIsLoading(true);
     setSelectedTower(tower);
     setCurrentFloorIndex(0);
   };
@@ -362,7 +376,7 @@ export default function BalconyView() {
             timeOfDayOptions.map(({ id, label, icon: TimeIcon }) => (
               <button
                 key={id}
-                onClick={() => setSelectedTime(id)}
+                onClick={() => handleTimeChange(id)}
                 title={label}
                 aria-label={label}
                 className={`w-10 h-10 rounded-lg border flex items-center justify-center transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md ${
@@ -397,42 +411,30 @@ export default function BalconyView() {
           </button>
         </div>
 
-        {/* Full-screen splash only before anything has ever rendered — there's
-            no prior frame to keep showing yet. */}
+        {/* Full-screen panorama loader — visible whenever initial scene or next scene is loading, completely preventing black blocks */}
         <div
-          className={`absolute inset-0 bg-black flex flex-col items-center justify-center z-50 ${
-            !hasRenderedOnce && isLoading
+          className={`absolute inset-0 flex flex-col items-center justify-center z-50 transition-all duration-300 ${
+            hasRenderedOnce ? "bg-black/70 backdrop-blur-md" : "bg-black"
+          } ${
+            isLoading
               ? "opacity-100 pointer-events-auto"
-              : "opacity-0 pointer-events-none transition-opacity duration-500 ease-in-out"
+              : "opacity-0 pointer-events-none"
           }`}
         >
-          <div className="flex flex-col items-center gap-4">
-            <div className="relative w-14 h-14">
-              <div className="absolute inset-0 rounded-full border-4 border-white/10"></div>
-              <div className="absolute inset-0 rounded-full border-4 border-t-white animate-spin"></div>
+          <div className="flex flex-col items-center gap-4 text-center px-4">
+            <div className="relative w-14 h-14 phone-landscape:w-9 phone-landscape:h-9">
+              <div className="absolute inset-0 rounded-full border-4 border-white/10 phone-landscape:border-3" />
+              <div className="absolute inset-0 rounded-full border-4 border-t-[#C79A59] border-r-white animate-spin phone-landscape:border-3" />
             </div>
-            <div className="text-white text-sm font-semibold tracking-widest uppercase animate-pulse">
-              Loading 360° Panorama
+            <div>
+              <div className="text-white text-sm font-semibold tracking-widest uppercase phone-landscape:text-xs">
+                Loading 360° Panorama
+              </div>
+              <div className="text-white/60 text-xs mt-1 font-medium phone-landscape:text-[10px]">
+                {selectedTower} • Floor 48 • {selectedTime.charAt(0).toUpperCase() + selectedTime.slice(1)}
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Once a scene has rendered at least once, subsequent floor/tower
-            switches keep the previous frame visible and only show a small
-            non-blocking indicator while the next scene's fallback warms up,
-            matching the Svelte page's instant-feeling switchTo(). */}
-        <div
-          className={`absolute bottom-40 right-7 z-50 flex items-center gap-2 rounded-full bg-black/60 px-4 py-2 backdrop-blur-md transition-opacity duration-300 phone-landscape:bottom-24 phone-landscape:right-4 ${
-            hasRenderedOnce && isLoading ? "opacity-100" : "opacity-0"
-          }`}
-        >
-          <div className="relative h-4 w-4">
-            <div className="absolute inset-0 rounded-full border-2 border-white/20"></div>
-            <div className="absolute inset-0 rounded-full border-2 border-t-white animate-spin"></div>
-          </div>
-          <span className="text-xs font-semibold uppercase tracking-widest text-white">
-            Loading
-          </span>
         </div>
       </div>
 

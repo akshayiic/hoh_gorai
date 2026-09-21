@@ -119,8 +119,8 @@ const towerFlats: Record<TowerKey, TowerBhkFlats> = {
   },
 };
 
-const towerSectionOrder: Record<TowerKey, ("2 BHK" | "3 BHK")[]> = {
-  "Tower 2": ["2 BHK", "3 BHK"],
+const towerSectionOrder: Record<TowerKey, ("3 BHK" | "2 BHK")[]> = {
+  "Tower 2": ["3 BHK", "2 BHK"],
   "Tower 3": ["3 BHK", "2 BHK"],
 };
 
