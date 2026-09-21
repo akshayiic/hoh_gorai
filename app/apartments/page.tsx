@@ -1,16 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Building2, Home, Maximize2, Minimize2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import {
+  Building2,
+  Home,
+  Maximize2,
+  Minimize2,
+  Plus,
+  Minus,
+} from "lucide-react";
 import GlobalNavbar from "@/components/GlobalNavbar";
 import BottomNavbar from "@/components/BottomNavbar";
 import Sidebar, {
   createSidebarItems,
   createSidebarSections,
 } from "@/components/Sidebar";
-import TowerFloorPlan from "@/components/TowerFloorPlan";
+import TowerFloorPlan, {
+  TowerFloorPlanHandle,
+} from "@/components/TowerFloorPlan";
 
-type TowerKey = "Tower 2" | "Tower 3";
+type TowerKey = "Master Layout" | "Tower 2" | "Tower 3";
 
 interface TowerUnit {
   id: string;
@@ -30,6 +39,7 @@ type BhkCategory = "3 BHK" | "2 BHK" | "Refuge";
 type TowerBhkFlats = Partial<Record<BhkCategory, FlatItem[]>>;
 
 const towerUnits: Record<TowerKey, TowerUnit[]> = {
+  "Master Layout": [],
   "Tower 2": [
     { id: "unit-1", flat: "02", type: "2 BHK", carpet: "729" },
     { id: "unit-2", flat: "03", type: "Refuge", carpet: "1044" },
@@ -48,16 +58,19 @@ const towerUnits: Record<TowerKey, TowerUnit[]> = {
 };
 
 const towerRotations: Record<TowerKey, number> = {
+  "Master Layout": 0,
   "Tower 2": 0,
   "Tower 3": 0,
 };
 
 const towerPlans: Record<TowerKey, string> = {
+  "Master Layout": "/gallery/Tower A/tower1.svg",
   "Tower 2": "/gallery/Tower B/tower-b-refuge.svg",
   "Tower 3": "/gallery/Tower C/tower-c-refuge.svg",
 };
 
 const towerFlats: Record<TowerKey, TowerBhkFlats> = {
+  "Master Layout": {},
   "Tower 2": {
     "2 BHK": [
       {
@@ -127,11 +140,13 @@ const towerFlats: Record<TowerKey, TowerBhkFlats> = {
 };
 
 const towerSectionOrder: Record<TowerKey, BhkCategory[]> = {
+  "Master Layout": [],
   "Tower 2": ["2 BHK", "3 BHK", "Refuge"],
   "Tower 3": ["2 BHK", "3 BHK", "Refuge"],
 };
 
 const towerZoomMultipliers: Record<TowerKey, Record<string, number>> = {
+  "Master Layout": {},
   "Tower 2": {
     "unit-1": 1,
     "unit-5": 1,
@@ -154,6 +169,11 @@ const towerDefaultTransforms: Record<
   TowerKey,
   { scale: number; shiftX?: number; shiftY?: number; autoCenter?: boolean }
 > = {
+  "Master Layout": {
+    scale: 1,
+    shiftX: 0,
+    shiftY: 0,
+  },
   "Tower 2": {
     scale: 1,
     shiftX: 0,
@@ -170,6 +190,7 @@ const PLAN_FRAME =
   "absolute top-[80px] bottom-[72px] left-4 lg:left-[270px] right-4 lg:right-8 phone-landscape:top-14 phone-landscape:bottom-14 phone-landscape:left-[170px] phone-landscape:right-4";
 
 export default function ApartmentsPage() {
+  const planRef = useRef<TowerFloorPlanHandle>(null);
   const [selectedTower, setSelectedTower] = useState<TowerKey>("Tower 2");
   const [activeUnitIds, setActiveUnitIds] = useState<string[] | null>(null);
   const [expandedSections, setExpandedSections] = useState<
@@ -178,6 +199,7 @@ export default function ApartmentsPage() {
     "2-bhk": true,
     "3-bhk": true,
   });
+  const [isPlanInteracted, setIsPlanInteracted] = useState(false);
   const [resetKey, setResetKey] = useState<number>(0);
   const [isFullscreenActive, setIsFullscreenActive] = useState(
     () => typeof document !== "undefined" && !!document.fullscreenElement
@@ -278,9 +300,11 @@ export default function ApartmentsPage() {
       {/* Floorplan Area — full-bleed clean master layout */}
       <div className="absolute inset-0 phone-landscape:touch-none">
         <TowerFloorPlan
+          ref={planRef}
           key={`${planSrc}-${rotation}`}
           src={planSrc}
           rotation={rotation}
+          fitMode={selectedTower === "Master Layout" ? "contain" : "cover"}
           activeUnitId={activeUnitIds}
           hiddenOverlayUnitIds={
             towerFlats[selectedTower]?.["Refuge"]?.flatMap((f) => f.unitIds) ??
@@ -288,6 +312,7 @@ export default function ApartmentsPage() {
           }
           onSelectUnit={handleSelectUnit}
           resetKey={resetKey}
+          onPlanInteractedChange={setIsPlanInteracted}
           unitZoomMultipliers={towerZoomMultipliers[selectedTower]}
           defaultTransform={towerDefaultTransforms[selectedTower]}
           frameClassName={PLAN_FRAME}
@@ -298,16 +323,20 @@ export default function ApartmentsPage() {
       <GlobalNavbar
         currentPage="apartments"
         showRERA={false}
-        showReset={true}
+        showReset={
+          (activeUnitIds !== null && activeUnitIds.length > 0) ||
+          isPlanInteracted
+        }
         onReset={() => {
           setActiveUnitIds(null);
+          setIsPlanInteracted(false);
           setResetKey((k) => k + 1);
         }}
         resetTitle="Show Master Plan"
         resetLabel="Reset"
       />
 
-      {/* Sidebar — 2 BHK & 3 BHK collapsible accordions with Explore Inventory subtitle above Apartments */}
+      {/* Sidebar */}
       <Sidebar
         isFullscreenActive={isFullscreenActive}
         width="w-[230px] phone-landscape:w-[155px]"
@@ -315,59 +344,63 @@ export default function ApartmentsPage() {
           icon: Building2,
           title: "Explore Inventory",
         }}
-        sections={createSidebarSections(
-          towerSectionOrder[selectedTower].map((bhkKey) => {
-            const sectionId = bhkKey.toLowerCase().replace(/\s+/g, "-");
-            const flats = currentTowerFlats[bhkKey] || [];
-            const isRefuge = bhkKey === "Refuge";
-            return {
-              id: sectionId,
-              title: isRefuge ? undefined : bhkKey,
-              isCollapsible: !isRefuge,
-              isExpanded: isRefuge ? true : expandedSections[sectionId] ?? true,
-              className: isRefuge
-                ? "mt-1 pt-1 border-t border-white/[0.08]"
-                : undefined,
-              onHeaderClick: isRefuge
-                ? undefined
-                : () => toggleSection(sectionId),
-              items: createSidebarItems(
-                flats.map((flat) => ({
-                  id: flat.id,
-                  label: flat.label,
-                  icon: Home,
-                  onClick: () => handleSelectFlat(flat),
-                  isActive: isFlatActive(flat),
-                }))
-              ),
-            };
-          })
-        )}
+        sections={
+          selectedTower === "Master Layout"
+            ? createSidebarSections([
+                {
+                  id: "master-layout-section",
+                  items: createSidebarItems([
+                    {
+                      id: "master-layout-opt",
+                      label: "Master Layout",
+                      icon: Home,
+                      isActive: true,
+                      onClick: () => {
+                        setActiveUnitIds(null);
+                        setIsPlanInteracted(false);
+                        setResetKey((k) => k + 1);
+                      },
+                    },
+                  ]),
+                },
+              ])
+            : createSidebarSections(
+                towerSectionOrder[selectedTower].map((bhkKey) => {
+                  const sectionId = bhkKey.toLowerCase().replace(/\s+/g, "-");
+                  const flats = currentTowerFlats[bhkKey] || [];
+                  const isRefuge = bhkKey === "Refuge";
+                  return {
+                    id: sectionId,
+                    title: isRefuge ? undefined : bhkKey,
+                    isCollapsible: !isRefuge,
+                    isExpanded: isRefuge
+                      ? true
+                      : expandedSections[sectionId] ?? true,
+                    className: isRefuge
+                      ? "mt-1 pt-1 border-t border-white/[0.08]"
+                      : undefined,
+                    onHeaderClick: isRefuge
+                      ? undefined
+                      : () => toggleSection(sectionId),
+                    items: createSidebarItems(
+                      flats.map((flat) => ({
+                        id: flat.id,
+                        label: flat.label,
+                        icon: Home,
+                        onClick: () => handleSelectFlat(flat),
+                        isActive: isFlatActive(flat),
+                      }))
+                    ),
+                  };
+                })
+              )
+        }
       />
-
-      {/* Fullscreen toggle */}
-      <button
-        onClick={toggleFullscreen}
-        className="absolute right-6 bottom-32 z-20 w-10 h-10 rounded-lg bg-black/45 backdrop-blur-md border border-white/10 text-white flex items-center justify-center hover:bg-black/70 hover:text-[#C79A59] transition shadow-lg cursor-pointer phone-landscape:w-7 phone-landscape:h-7 phone-landscape:rounded-md"
-        title={isFullscreenActive ? "Exit Fullscreen" : "Enter Fullscreen"}
-      >
-        {isFullscreenActive ? (
-          <Minimize2
-            size={20}
-            className="phone-landscape:w-3.5 phone-landscape:h-3.5"
-          />
-        ) : (
-          <Maximize2
-            size={20}
-            className="phone-landscape:w-3.5 phone-landscape:h-3.5"
-          />
-        )}
-      </button>
 
       {/* Bottom Navigation */}
       <BottomNavbar activeItem="apartments" />
 
-      {/* Towers — Only Tower 2 and Tower 3 */}
+      {/* Towers */}
       <div className="absolute bottom-6 left-1/2 z-40 flex -translate-x-1/2 gap-2 phone-landscape:bottom-3 phone-landscape:gap-1">
         {(Object.keys(towerUnits) as TowerKey[]).map((tower) => (
           <button
@@ -375,6 +408,8 @@ export default function ApartmentsPage() {
             onClick={() => {
               setSelectedTower(tower);
               setActiveUnitIds(null);
+              setIsPlanInteracted(false);
+              setResetKey((k) => k + 1);
             }}
             className={`rounded-lg px-6 h-8 text-xs font-bold uppercase tracking-wider border transition cursor-pointer duration-200 phone-landscape:px-3 phone-landscape:h-6 phone-landscape:text-[9px] phone-landscape:rounded-md ${
               selectedTower === tower

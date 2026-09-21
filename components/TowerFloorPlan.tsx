@@ -1,14 +1,22 @@
 "use client";
 
 import {
+  forwardRef,
   useEffect,
   useId,
+  useImperativeHandle,
   useLayoutEffect,
   useMemo,
   useReducer,
   useRef,
   useState,
 } from "react";
+
+export interface TowerFloorPlanHandle {
+  zoomIn: () => void;
+  zoomOut: () => void;
+  resetZoom: () => void;
+}
 
 type UnitBox = { x: number; y: number; w: number; h: number };
 
@@ -26,6 +34,8 @@ interface PlanImage {
   height: number;
   /** Maps the image's own pixels into plan coordinates. */
   matrix: number[];
+  /** Optional transform on the rect element (e.g. rotate) */
+  rectTransform?: string | null;
 }
 
 interface TowerPlan {
@@ -40,6 +50,8 @@ interface TowerPlan {
   sheet: PlanImage | null;
   /** The building silhouette the sheet is cut to, as a path `d`. */
   sheetClip: string | null;
+  /** All floor-plan render sheets if the SVG contains multiple masked groups */
+  sheets?: Array<{ image: PlanImage; clip: string | null }>;
   units: Unit[];
 }
 
@@ -63,7 +75,7 @@ const ZOOM_EASE = "cubic-bezier(0.4, 0.15, 0.6, 0.85)";
 // magnify, drag to move around. Limits are expressed on the *combined* scale,
 // so from a framed unit the visitor can zoom back out to the whole floor as
 // well as further in.
-const MIN_EFFECTIVE_ZOOM = 1;
+const MIN_EFFECTIVE_ZOOM = 0.4;
 const MAX_EFFECTIVE_ZOOM = 8;
 // Wheeling sets a target; the rendered zoom then chases it on its own, easing by
 // a fixed fraction of the remaining distance each frame. Because the *rate* is
@@ -186,6 +198,7 @@ function parsePlan(svgText: string): TowerPlan {
       href,
       width: Number(image?.getAttribute("width")) || width,
       height: Number(image?.getAttribute("height")) || height,
+      rectTransform: rect.getAttribute("transform") || null,
       matrix: placeInBox(
         parseTransform(use?.getAttribute("transform") ?? null),
         Number(rect.getAttribute("x")) || 0,
@@ -198,17 +211,30 @@ function parsePlan(svgText: string): TowerPlan {
 
   // The sheet is the patterned rect inside the masked group; the backdrop is
   // the other one, painted across the whole canvas.
-  const masked = root.querySelector("g[mask]");
-  const sheetRect = masked?.querySelector("rect") ?? null;
+  const maskedGroups = Array.from(root.querySelectorAll("g[mask]"));
+  const allSheetRects = maskedGroups
+    .map((g) => g.querySelector("rect"))
+    .filter(Boolean) as Element[];
+
   const backdropRect =
     Array.from(root.querySelectorAll("rect")).find(
-      (el) => el !== sheetRect && urlId(el.getAttribute("fill")),
+      (el) => !allSheetRects.includes(el) && urlId(el.getAttribute("fill")),
     ) ?? null;
 
-  const sheetClip =
-    byId(urlId(masked?.getAttribute("mask") ?? null))
-      ?.querySelector("path")
-      ?.getAttribute("d") ?? null;
+  const sheets = maskedGroups
+    .map((g) => {
+      const rect = g.querySelector("rect");
+      const img = imageFor(rect);
+      const clip =
+        byId(urlId(g.getAttribute("mask") ?? null))
+          ?.querySelector("path")
+          ?.getAttribute("d") ?? null;
+      return img ? { image: img, clip } : null;
+    })
+    .filter((s): s is { image: PlanImage; clip: string | null } => s !== null);
+
+  const sheetRect = allSheetRects[0] ?? null;
+  const sheetClip = sheets[0]?.clip ?? null;
 
   // The wash is a plain black rect over the aerial. (Figma also writes a
   // <foreignObject> backdrop-filter blur beside it; at 2.5px across a 4096-wide
@@ -256,6 +282,7 @@ function parsePlan(svgText: string): TowerPlan {
     wash,
     sheet: imageFor(sheetRect),
     sheetClip,
+    sheets,
     units: ordered.map((u, i) => ({
       id: `unit-${i + 1}`,
       label: `Unit ${i + 1}`,
@@ -337,21 +364,34 @@ interface TowerFloorPlanProps {
    */
   resetKey?: number;
   className?: string;
+  onPlanInteractedChange?: (isInteracted: boolean) => void;
+  /**
+   * How the floorplan SVG fits its container when at 1x.
+   * "cover": fills the screen edge-to-edge (default for Tower 2 & 3).
+   * "contain": fits the full SVG viewBox without any edge cropping (preserves original padding as in Master Layout).
+   */
+  fitMode?: "cover" | "contain";
 }
 
-export default function TowerFloorPlan({
-  src,
-  rotation = 0,
-  activeUnitId = null,
-  onSelectUnit,
-  hiddenOverlayUnitIds,
-  onToggleUnit,
-  unitZoomMultipliers = {},
-  defaultTransform,
-  resetKey,
-  frameClassName = "",
-  className = "",
-}: TowerFloorPlanProps) {
+const TowerFloorPlan = forwardRef<TowerFloorPlanHandle, TowerFloorPlanProps>(
+  function TowerFloorPlan(
+    {
+      src,
+      rotation = 0,
+      activeUnitId = null,
+      onSelectUnit,
+      hiddenOverlayUnitIds,
+      onToggleUnit,
+      unitZoomMultipliers = {},
+      defaultTransform,
+      resetKey,
+      onPlanInteractedChange,
+      frameClassName = "",
+      className = "",
+      fitMode = "cover",
+    },
+    ref,
+  ) {
   // The parse cache is the source of truth, read straight through during render
   // so a cached export shows immediately — including right after a tower switch.
   // The reducer exists only to re-render once a fetch lands.
@@ -376,6 +416,13 @@ export default function TowerFloorPlan({
     y: 0,
     ms: 0,
   });
+
+  useEffect(() => {
+    const isInteracted =
+      zoomState.scale !== 1 || zoomState.x !== 0 || zoomState.y !== 0;
+    onPlanInteractedChange?.(isInteracted);
+  }, [zoomState.scale, zoomState.x, zoomState.y, onPlanInteractedChange]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   // The clear area a selected unit is framed in, in container pixels.
@@ -441,19 +488,21 @@ export default function TowerFloorPlan({
     };
   }, [plan]);
 
-  // Maps viewBox coordinates to container pixels. The export carries its own
-  // backdrop and fills the screen, so this covers rather than fits: the scene
-  // is scaled to the *larger* of the two ratios and the overflow runs off the
-  // edges, leaving no letterbox bar for the page to paint behind.
+  // Maps viewBox coordinates to container pixels.
+  // In "cover" mode (Tower 2 & 3), it scales to the larger ratio to fill the screen edge-to-edge.
+  // In "contain" mode (Master Layout), it scales to the smaller ratio to fit the full scene without any edge cropping.
   const fit = useMemo(() => {
     if (!view || !size.w || !size.h) return null;
-    const scale = Math.max(size.w / view.w, size.h / view.h);
+    const scale =
+      fitMode === "contain"
+        ? Math.min(size.w / view.w, size.h / view.h)
+        : Math.max(size.w / view.w, size.h / view.h);
     return {
       scale,
       offX: (size.w - view.w * scale) / 2 - view.x * scale,
       offY: (size.h - view.h * scale) / 2 - view.y * scale,
     };
-  }, [view, size]);
+  }, [view, size, fitMode]);
 
   // Position, not size, is what matters here, and ResizeObserver reports only
   // the latter — so the frame is re-read whenever the container resizes, which
@@ -488,12 +537,29 @@ export default function TowerFloorPlan({
   }, [activeUnits]);
 
   const allUnitsBox = useMemo(() => {
-    if (!plan || !plan.units.length) return null;
-    const minX = Math.min(...plan.units.map((u) => u.box.x));
-    const minY = Math.min(...plan.units.map((u) => u.box.y));
-    const maxX = Math.max(...plan.units.map((u) => u.box.x + u.box.w));
-    const maxY = Math.max(...plan.units.map((u) => u.box.y + u.box.h));
-    return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+    if (!plan) return null;
+    if (plan.units.length > 0) {
+      const minX = Math.min(...plan.units.map((u) => u.box.x));
+      const minY = Math.min(...plan.units.map((u) => u.box.y));
+      const maxX = Math.max(...plan.units.map((u) => u.box.x + u.box.w));
+      const maxY = Math.max(...plan.units.map((u) => u.box.y + u.box.h));
+      return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+    }
+    if (plan.sheets && plan.sheets.length > 0 && typeof document !== "undefined") {
+      const clips = plan.sheets.map((s) => s.clip).filter(Boolean) as string[];
+      if (clips.length > 0) {
+        const boxes = measureUnitBoxes(clips, plan.viewBox);
+        const valid = boxes.filter((b) => b.w > 0 && b.h > 0);
+        if (valid.length > 0) {
+          const minX = Math.min(...valid.map((b) => b.x));
+          const minY = Math.min(...valid.map((b) => b.y));
+          const maxX = Math.max(...valid.map((b) => b.x + b.w));
+          const maxY = Math.max(...valid.map((b) => b.y + b.h));
+          return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+        }
+      }
+    }
+    return null;
   }, [plan]);
 
   const unitFrame = useMemo(() => {
@@ -642,27 +708,21 @@ export default function TowerFloorPlan({
       : // A fresh unit starts from its own framing, easing on the same curve as
         // the plan so the two move as one.
         { unit: activeKey, scale: 1, x: 0, y: 0, ms: ZOOM_MS };
-  // How far the content may be dragged before its edge would pull inside the
-  // frame, given everything scaling it right now.
+  // Allow panning freely across the scene
   const panLimit = (extent: number) =>
-    Math.max(0, ((unitFrame.scale * userZoom.scale - 1) * extent) / 2);
+    Math.max(extent * 0.5, ((unitFrame.scale * userZoom.scale - 1) * extent) / 2);
 
-  /**
-   * The visitor's offset and the unit framing's own translate compose as
-   * `user + userScale * unitTranslate`, so the limits have to be applied to
-   * that sum. Clamping the visitor's offset alone left the sheet hanging off
-   * centre when they zoomed back out: the scale unwound but the framing's
-   * translate stayed. Clamping the sum makes zooming out walk the plan back to
-   * the middle, and reach it exactly at 1×.
-   */
   const clampOffset = (x: number, y: number, scale: number) => {
+    const effectiveScale = unitFrame.scale * scale;
     const limitX = Math.max(
-      Math.abs(unitFrame.tx) * 1.5,
-      ((unitFrame.scale * scale - 1) * size.w) / 2,
+      size.w * 0.7,
+      Math.abs(unitFrame.tx) * 2,
+      Math.abs(effectiveScale - 1) * size.w * 0.6 + size.w * 0.4,
     );
     const limitY = Math.max(
-      Math.abs(unitFrame.ty) * 1.5,
-      ((unitFrame.scale * scale - 1) * size.h) / 2,
+      size.h * 0.7,
+      Math.abs(unitFrame.ty) * 2,
+      Math.abs(effectiveScale - 1) * size.h * 0.6 + size.h * 0.4,
     );
     const clamp = (value: number, max: number) =>
       Math.min(Math.max(value, -max), max);
@@ -717,6 +777,36 @@ export default function TowerFloorPlan({
     setZoomState({ unit: activeKey, ...next, ms });
   };
 
+  useImperativeHandle(
+    ref,
+    () => ({
+      zoomIn: () => {
+        const from =
+          zoomTargetRef.current.unit === activeKey
+            ? zoomTargetRef.current
+            : { scale: 1, x: 0, y: 0 };
+        commitZoom(
+          zoomAbout(from, from.scale * 1.35, size.w / 2, size.h / 2),
+          250,
+        );
+      },
+      zoomOut: () => {
+        const from =
+          zoomTargetRef.current.unit === activeKey
+            ? zoomTargetRef.current
+            : { scale: 1, x: 0, y: 0 };
+        commitZoom(
+          zoomAbout(from, from.scale / 1.35, size.w / 2, size.h / 2),
+          250,
+        );
+      },
+      resetZoom: () => {
+        commitZoom({ scale: 1, x: 0, y: 0 }, ZOOM_MS);
+      },
+    }),
+    [activeKey, size.w, size.h],
+  );
+
   useEffect(() => {
     if (resetKey !== undefined && resetKey > 0) {
       commitZoom({ scale: 1, x: 0, y: 0 }, ZOOM_MS);
@@ -769,35 +859,50 @@ export default function TowerFloorPlan({
     };
   };
 
-  const onWheel = (event: React.WheelEvent<HTMLDivElement>) => {
-    const point = localPoint(event);
-    // Steps accumulate on the target, not on what's drawn: a fast scroll piles
-    // up distance rather than speed.
-    const from =
-      zoomTargetRef.current.unit === activeKey
-        ? zoomTargetRef.current
-        : { scale: 1, x: 0, y: 0 };
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
 
-    zoomTargetRef.current = {
-      unit: activeKey,
-      ...zoomAbout(
-        from,
-        from.scale * Math.exp(-event.deltaY * WHEEL_ZOOM_STEP),
-        point.x,
-        point.y,
-      ),
-    };
-    zoomLiveRef.current = {
-      scale: userZoom.scale,
-      x: userZoom.x,
-      y: userZoom.y,
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const point = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      };
+
+      const from =
+        zoomTargetRef.current.unit === activeKey
+          ? zoomTargetRef.current
+          : { scale: 1, x: 0, y: 0 };
+
+      // Pinch on trackpad has event.ctrlKey = true
+      const step = event.ctrlKey ? WHEEL_ZOOM_STEP * 2.5 : WHEEL_ZOOM_STEP;
+
+      zoomTargetRef.current = {
+        unit: activeKey,
+        ...zoomAbout(
+          from,
+          from.scale * Math.exp(-event.deltaY * step),
+          point.x,
+          point.y,
+        ),
+      };
+      zoomLiveRef.current = {
+        scale: userZoom.scale,
+        x: userZoom.x,
+        y: userZoom.y,
+      };
+
+      if (rafRef.current === null) {
+        lastFrameRef.current = 0;
+        rafRef.current = requestAnimationFrame(chaseTarget);
+      }
     };
 
-    if (rafRef.current === null) {
-      lastFrameRef.current = 0;
-      rafRef.current = requestAnimationFrame(chaseTarget);
-    }
-  };
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    return () => el.removeEventListener("wheel", handleWheel);
+  }, [activeKey, userZoom.scale, userZoom.x, userZoom.y]);
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     const pointers = pointersRef.current;
@@ -864,8 +969,6 @@ export default function TowerFloorPlan({
       event.currentTarget.setPointerCapture(event.pointerId);
     }
 
-    if (panLimit(size.w) === 0 && panLimit(size.h) === 0) return; // nothing to move
-
     commitZoom(
       {
         scale: userZoom.scale,
@@ -898,12 +1001,11 @@ export default function TowerFloorPlan({
 
   const resetUserZoom = () => commitZoom({ scale: 1, x: 0, y: 0 }, ZOOM_MS);
 
-  const canPan = panLimit(size.w) > 0 || panLimit(size.h) > 0;
+  const canPan = true;
 
   return (
     <div
       ref={containerRef}
-      onWheel={onWheel}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endPointer}
@@ -942,7 +1044,9 @@ export default function TowerFloorPlan({
           {plan && (
             <svg
               viewBox={plan.viewBox}
-              preserveAspectRatio="xMidYMid slice"
+              preserveAspectRatio={
+                fitMode === "contain" ? "xMidYMid meet" : "xMidYMid slice"
+              }
               className="h-full w-full"
               // Clicking the scene — aerial, wash or sheet alike — backs out to
               // the whole floor. The unit outlines below stop their own clicks.
@@ -969,13 +1073,15 @@ export default function TowerFloorPlan({
                 }
               >
                 {plan.backdrop && (
-                  <image
-                    href={plan.backdrop.href}
-                    width={plan.backdrop.width}
-                    height={plan.backdrop.height}
-                    transform={`matrix(${plan.backdrop.matrix.join(" ")})`}
-                    preserveAspectRatio="none"
-                  />
+                  <g transform={plan.backdrop.rectTransform || undefined}>
+                    <image
+                      href={plan.backdrop.href}
+                      width={plan.backdrop.width}
+                      height={plan.backdrop.height}
+                      transform={`matrix(${plan.backdrop.matrix.join(" ")})`}
+                      preserveAspectRatio="none"
+                    />
+                  </g>
                 )}
 
                 {plan.wash > 0 && (
@@ -991,17 +1097,45 @@ export default function TowerFloorPlan({
                   sits on the group so it is measured in plan coordinates, as the
                   export's mask was, rather than in the image's own transformed
                   space. */}
-                {plan.sheet && (
-                  <g clipPath={plan.sheetClip ? `url(#${clipId})` : undefined}>
-                    <image
-                      href={plan.sheet.href}
-                      width={plan.sheet.width}
-                      height={plan.sheet.height}
-                      transform={`matrix(${plan.sheet.matrix.join(" ")})`}
-                      preserveAspectRatio="none"
-                    />
-                  </g>
-                )}
+                {plan.sheets && plan.sheets.length > 0
+                  ? plan.sheets.map((s, idx) => {
+                      const sClipId = `${clipId}-sheet-${idx}`;
+                      return (
+                        <g key={idx}>
+                          {s.clip && (
+                            <defs>
+                              <clipPath id={sClipId}>
+                                <path d={s.clip} />
+                              </clipPath>
+                            </defs>
+                          )}
+                          <g clipPath={s.clip ? `url(#${sClipId})` : undefined}>
+                            <g transform={s.image.rectTransform || undefined}>
+                              <image
+                                href={s.image.href}
+                                width={s.image.width}
+                                height={s.image.height}
+                                transform={`matrix(${s.image.matrix.join(" ")})`}
+                                preserveAspectRatio="none"
+                              />
+                            </g>
+                          </g>
+                        </g>
+                      );
+                    })
+                  : plan.sheet && (
+                      <g clipPath={plan.sheetClip ? `url(#${clipId})` : undefined}>
+                        <g transform={plan.sheet.rectTransform || undefined}>
+                          <image
+                            href={plan.sheet.href}
+                            width={plan.sheet.width}
+                            height={plan.sheet.height}
+                            transform={`matrix(${plan.sheet.matrix.join(" ")})`}
+                            preserveAspectRatio="none"
+                          />
+                        </g>
+                      </g>
+                    )}
 
                 {plan.units.map((unit) => {
                   const isActive = Array.isArray(activeUnitId)
@@ -1067,4 +1201,6 @@ export default function TowerFloorPlan({
       )}
     </div>
   );
-}
+});
+
+export default TowerFloorPlan;

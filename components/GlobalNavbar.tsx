@@ -79,22 +79,6 @@ export default function GlobalNavbar({
   return (
     <>
       <div className="font-app absolute right-6 top-6 z-20 flex items-start gap-2 phone-landscape:right-4 phone-landscape:top-3 phone-landscape:gap-1.5">
-        {/* Back Button (Visible if there is history and not on /location, or if on /location, or if on /apartments) */}
-        {((history.length > 1 && currentPage !== "location") ||
-          currentPage === "location" ||
-          currentPage === "apartments") && (
-          <button
-            onClick={handleGoBack}
-            className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 px-5 py-2.5 text-[14px] font-medium text-[#E2E2E2] backdrop-blur-md hover:bg-[#2C3437]/85 hover:text-white transition duration-200 cursor-pointer flex items-center gap-1.5 shadow-lg phone-landscape:px-2.5 phone-landscape:py-1.5 phone-landscape:text-[10px] phone-landscape:rounded-[6px]"
-          >
-            <img
-              src="/icons/back.svg"
-              alt="Logo"
-              className="h-3 w-3 object-contain phone-landscape:h-2 phone-landscape:w-2"
-            />
-            {currentPage === "location" ? "Go Home" : "Go Back"}
-          </button>
-        )}
         {showReset && onReset && (
           <button
             onClick={onReset}
@@ -110,6 +94,22 @@ export default function GlobalNavbar({
               className="phone-landscape:w-3.5 phone-landscape:h-3.5"
             />
             {resetLabel && <span>{resetLabel}</span>}
+          </button>
+        )}
+        {/* Back Button (Visible if there is history and not on /location, or if on /location, or if on /apartments) */}
+        {((history.length > 1 && currentPage !== "location") ||
+          currentPage === "location" ||
+          currentPage === "apartments") && (
+          <button
+            onClick={handleGoBack}
+            className="rounded-[10px] border border-[#40484B]/70 bg-[#2C3437]/65 px-5 py-2.5 text-[14px] font-medium text-[#E2E2E2] backdrop-blur-md hover:bg-[#2C3437]/85 hover:text-white transition duration-200 cursor-pointer flex items-center gap-1.5 shadow-lg phone-landscape:px-2.5 phone-landscape:py-1.5 phone-landscape:text-[10px] phone-landscape:rounded-[6px]"
+          >
+            <img
+              src="/icons/back.svg"
+              alt="Logo"
+              className="h-3 w-3 object-contain phone-landscape:h-2 phone-landscape:w-2"
+            />
+            {currentPage === "location" ? "Go Home" : "Go Back"}
           </button>
         )}
       </div>
