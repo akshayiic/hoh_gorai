@@ -191,7 +191,7 @@ const PLAN_FRAME =
 
 export default function ApartmentsPage() {
   const planRef = useRef<TowerFloorPlanHandle>(null);
-  const [selectedTower, setSelectedTower] = useState<TowerKey>("Tower 2");
+  const [selectedTower, setSelectedTower] = useState<TowerKey>("Master Layout");
   const [activeUnitIds, setActiveUnitIds] = useState<string[] | null>(null);
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
