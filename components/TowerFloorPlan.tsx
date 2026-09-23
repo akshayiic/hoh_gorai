@@ -76,7 +76,7 @@ const ZOOM_EASE = "cubic-bezier(0.4, 0.15, 0.6, 0.85)";
 // so from a framed unit the visitor can zoom back out to the whole floor as
 // well as further in.
 const MIN_EFFECTIVE_ZOOM = 0.4;
-const MAX_EFFECTIVE_ZOOM = 8;
+const MAX_EFFECTIVE_ZOOM = 14;
 // Wheeling sets a target; the rendered zoom then chases it on its own, easing by
 // a fixed fraction of the remaining distance each frame. Because the *rate* is
 // what's bounded, spinning the wheel fast only pushes the target further away —
@@ -420,6 +420,7 @@ const TowerFloorPlan = forwardRef<TowerFloorPlanHandle, TowerFloorPlanProps>(
     ms: 0,
   });
 
+
   useEffect(() => {
     const isInteracted =
       zoomState.scale !== 1 || zoomState.x !== 0 || zoomState.y !== 0;
@@ -705,6 +706,7 @@ const TowerFloorPlan = forwardRef<TowerFloorPlanHandle, TowerFloorPlanProps>(
     defaultTransform,
     allUnitsBox,
   ]);
+
 
   const userZoom =
     zoomState.unit === activeKey
@@ -1028,7 +1030,7 @@ const TowerFloorPlan = forwardRef<TowerFloorPlanHandle, TowerFloorPlanProps>(
         style={{
           transform: `translate(${userZoom.x}px, ${userZoom.y}px) scale(${userZoom.scale})`,
           transformOrigin: "center",
-          willChange: "transform",
+          willChange: "auto",
           transitionProperty: "transform",
           transitionDuration: `${userZoom.ms}ms`,
           transitionTimingFunction: ZOOM_EASE,
@@ -1039,7 +1041,7 @@ const TowerFloorPlan = forwardRef<TowerFloorPlanHandle, TowerFloorPlanProps>(
           style={{
             transform: unitFrame.transform,
             transformOrigin: "center",
-            willChange: "transform",
+            willChange: "auto",
             transitionProperty: "transform",
             transitionDuration: `${ZOOM_MS}ms`,
             transitionTimingFunction: ZOOM_EASE,
@@ -1052,6 +1054,8 @@ const TowerFloorPlan = forwardRef<TowerFloorPlanHandle, TowerFloorPlanProps>(
                 fitMode === "contain" ? "xMidYMid meet" : "xMidYMid slice"
               }
               className="h-full w-full"
+              shapeRendering="geometricPrecision"
+              textRendering="geometricPrecision"
               // Clicking the scene — aerial, wash or sheet alike — backs out to
               // the whole floor. The unit outlines below stop their own clicks.
               onClick={() => {
@@ -1084,6 +1088,7 @@ const TowerFloorPlan = forwardRef<TowerFloorPlanHandle, TowerFloorPlanProps>(
                       height={plan.backdrop.height}
                       transform={`matrix(${plan.backdrop.matrix.join(" ")})`}
                       preserveAspectRatio="none"
+                      imageRendering="optimizeQuality"
                     />
                   </g>
                 )}
@@ -1121,6 +1126,7 @@ const TowerFloorPlan = forwardRef<TowerFloorPlanHandle, TowerFloorPlanProps>(
                                 height={s.image.height}
                                 transform={`matrix(${s.image.matrix.join(" ")})`}
                                 preserveAspectRatio="none"
+                                imageRendering="optimizeQuality"
                               />
                             </g>
                           </g>
@@ -1136,6 +1142,7 @@ const TowerFloorPlan = forwardRef<TowerFloorPlanHandle, TowerFloorPlanProps>(
                             height={plan.sheet.height}
                             transform={`matrix(${plan.sheet.matrix.join(" ")})`}
                             preserveAspectRatio="none"
+                            imageRendering="optimizeQuality"
                           />
                         </g>
                       </g>

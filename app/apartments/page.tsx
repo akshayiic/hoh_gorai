@@ -63,10 +63,7 @@ const towerRotations: Record<TowerKey, number> = {
   "Tower 3": 0,
 };
 
-const towerPlans: Record<
-  TowerKey,
-  { standard: string; refuge: string }
-> = {
+const towerPlans: Record<TowerKey, { standard: string; refuge: string }> = {
   "Master Layout": {
     standard: "/gallery/Tower A/tower1.svg",
     refuge: "/gallery/Tower A/tower1.svg",
@@ -251,31 +248,30 @@ const towerZoomMultipliers: Record<
       "unit-4": 1,
     },
     refuge: {
-      "unit-1": 1,
-      "unit-5": 1,
-      "unit-2": 1,
-      "unit-3": 1,
-      "unit-4": 1,
+      "unit-1": 1.3,
+      "unit-5": 1.3,
+      "unit-2": 1.3,
+      "unit-3": 1.0,
+      "unit-4": 1.3,
     },
   },
   "Tower 3": {
     standard: {
-      "unit-1": 1.2,
-      "unit-2": 1.2,
-      "unit-3": 1.2,
-      "unit-4": 1.1,
-      "unit-5": 1.1,
-      "unit-6": 1.2,
-      "unit-7": 1.2,
+      "unit-1": 1.25,
+      "unit-2": 1.25,
+      "unit-3": 1.25,
+      "unit-4": 1.25,
+      "unit-5": 1.15,
+      "unit-6": 1.15,
+      "unit-7": 1.15,
     },
     refuge: {
-      "unit-1": 1.2,
-      "unit-2": 1.2,
+      "unit-1": 1.25,
+      "unit-2": 1.25,
       "unit-3": 0.5,
-      "unit-4": 1.1,
-      // 2 BHK - 754 sqft (unit-5, unit-6) — zoom in to fit both units centered
-      "unit-5": 1.4,
-      "unit-6": 1.4,
+      "unit-4": 1.25,
+      "unit-5": 1.25,
+      "unit-6": 1.25,
     },
   },
 };
