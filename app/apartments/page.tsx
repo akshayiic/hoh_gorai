@@ -65,8 +65,8 @@ const towerRotations: Record<TowerKey, number> = {
 
 const towerPlans: Record<TowerKey, { standard: string; refuge: string }> = {
   "Master Layout": {
-    standard: "/gallery/Tower A/tower1.svg",
-    refuge: "/gallery/Tower A/tower1.svg",
+    standard: "/gallery/Tower A/master-layout.svg",
+    refuge: "/gallery/Tower A/master-layout.svg",
   },
   "Tower 2": {
     standard: "/gallery/Tower B/tower-b.svg",
