@@ -291,9 +291,9 @@ const towerDefaultTransforms: Record<
     shiftY: 0,
   },
   "Tower 3": {
-    scale: 1.15,
+    scale: 1.39,
     autoCenter: true,
-    shiftX: -80,
+    shiftX: 0,
   },
 };
 
