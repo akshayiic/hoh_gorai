@@ -63,13 +63,100 @@ const towerRotations: Record<TowerKey, number> = {
   "Tower 3": 0,
 };
 
-const towerPlans: Record<TowerKey, string> = {
-  "Master Layout": "/gallery/Tower A/tower1.svg",
-  "Tower 2": "/gallery/Tower B/tower-b-refuge.svg",
-  "Tower 3": "/gallery/Tower C/tower-c-refuge.svg",
+const towerPlans: Record<
+  TowerKey,
+  { standard: string; refuge: string }
+> = {
+  "Master Layout": {
+    standard: "/gallery/Tower A/tower1.svg",
+    refuge: "/gallery/Tower A/tower1.svg",
+  },
+  "Tower 2": {
+    standard: "/gallery/Tower B/tower-b.svg",
+    refuge: "/gallery/Tower B/tower-b-refuge.svg",
+  },
+  "Tower 3": {
+    standard: "/gallery/Tower C/tower-c.svg",
+    refuge: "/gallery/Tower C/tower-c-refuge.svg",
+  },
 };
 
-const towerFlats: Record<TowerKey, TowerBhkFlats> = {
+const towerStandardFlats: Record<TowerKey, TowerBhkFlats> = {
+  "Master Layout": {},
+  "Tower 2": {
+    "2 BHK": [
+      {
+        id: "t2-2bhk-729",
+        label: "2BHK - 729 sqft",
+        unitIds: ["unit-1"],
+      },
+      {
+        id: "t2-2bhk-730",
+        label: "2BHK - 730 sqft",
+        unitIds: ["unit-5"],
+      },
+    ],
+    "3 BHK": [
+      {
+        id: "t2-3bhk-1033",
+        label: "3BHK - 1033 sqft",
+        unitIds: ["unit-4"],
+      },
+      {
+        id: "t2-3bhk-1044",
+        label: "3BHK - 1044 sqft",
+        unitIds: ["unit-2", "unit-3"],
+      },
+    ],
+    Refuge: [
+      {
+        id: "t2-refuge-1044",
+        label: "Refuge Area",
+        unitIds: ["unit-2"],
+      },
+    ],
+  },
+  "Tower 3": {
+    "2 BHK": [
+      {
+        id: "t3-2bhk-743",
+        label: "2BHK - 743 sqft",
+        unitIds: ["unit-1"],
+      },
+      {
+        id: "t3-2bhk-749",
+        label: "2BHK - 749 sqft",
+        unitIds: ["unit-2", "unit-3"],
+      },
+      {
+        id: "t3-2bhk-754",
+        label: "2BHK - 754 sqft",
+        unitIds: ["unit-6", "unit-7"],
+      },
+    ],
+    "3 BHK": [
+      {
+        id: "t3-3bhk-1064",
+        label: "3BHK - 1064 sqft",
+        unitIds: ["unit-4"],
+      },
+      {
+        id: "t3-3bhk-1097",
+        label: "3BHK - 1097 sqft",
+        unitIds: ["unit-5"],
+      },
+    ],
+    Refuge: [
+      {
+        id: "t3-refuge-1064",
+        label: "Refuge Area",
+        unitIds: ["unit-3"],
+      },
+    ],
+  },
+};
+
+const towerRefugeFlats: Record<TowerKey, TowerBhkFlats> = {
   "Master Layout": {},
   "Tower 2": {
     "2 BHK": [
@@ -124,6 +211,11 @@ const towerFlats: Record<TowerKey, TowerBhkFlats> = {
     ],
     "3 BHK": [
       {
+        id: "t3-3bhk-1064",
+        label: "3BHK - 1064 sqft",
+        unitIds: ["unit-3"],
+      },
+      {
         id: "t3-3bhk-1097",
         label: "3BHK - 1097 sqft",
         unitIds: ["unit-4"],
@@ -145,23 +237,46 @@ const towerSectionOrder: Record<TowerKey, BhkCategory[]> = {
   "Tower 3": ["2 BHK", "3 BHK", "Refuge"],
 };
 
-const towerZoomMultipliers: Record<TowerKey, Record<string, number>> = {
-  "Master Layout": {},
+const towerZoomMultipliers: Record<
+  TowerKey,
+  { standard: Record<string, number>; refuge: Record<string, number> }
+> = {
+  "Master Layout": { standard: {}, refuge: {} },
   "Tower 2": {
-    "unit-1": 1,
-    "unit-5": 1,
-    "unit-2": 1,
-    "unit-3": 1,
-    "unit-4": 1,
+    standard: {
+      "unit-1": 1,
+      "unit-5": 1,
+      "unit-2": 1,
+      "unit-3": 1,
+      "unit-4": 1,
+    },
+    refuge: {
+      "unit-1": 1,
+      "unit-5": 1,
+      "unit-2": 1,
+      "unit-3": 1,
+      "unit-4": 1,
+    },
   },
   "Tower 3": {
-    "unit-1": 1.2,
-    "unit-2": 1.2,
-    "unit-3": 0.5,
-    "unit-4": 1.1,
-    // 2 BHK - 754 sqft (unit-5, unit-6) — zoom in to fit both units centered
-    "unit-5": 1.4,
-    "unit-6": 1.4,
+    standard: {
+      "unit-1": 1.2,
+      "unit-2": 1.2,
+      "unit-3": 1.2,
+      "unit-4": 1.1,
+      "unit-5": 1.1,
+      "unit-6": 1.2,
+      "unit-7": 1.2,
+    },
+    refuge: {
+      "unit-1": 1.2,
+      "unit-2": 1.2,
+      "unit-3": 0.5,
+      "unit-4": 1.1,
+      // 2 BHK - 754 sqft (unit-5, unit-6) — zoom in to fit both units centered
+      "unit-5": 1.4,
+      "unit-6": 1.4,
+    },
   },
 };
 
@@ -193,6 +308,7 @@ export default function ApartmentsPage() {
   const planRef = useRef<TowerFloorPlanHandle>(null);
   const [selectedTower, setSelectedTower] = useState<TowerKey>("Master Layout");
   const [activeUnitIds, setActiveUnitIds] = useState<string[] | null>(null);
+  const [selectedFlatId, setSelectedFlatId] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<
     Record<string, boolean>
   >({
@@ -205,9 +321,24 @@ export default function ApartmentsPage() {
     () => typeof document !== "undefined" && !!document.fullscreenElement
   );
 
-  const planSrc = towerPlans[selectedTower];
+  const isRefugeSelected =
+    selectedFlatId !== null && selectedFlatId.includes("refuge");
+
+  const planSrc = isRefugeSelected
+    ? towerPlans[selectedTower].refuge
+    : towerPlans[selectedTower].standard;
   const rotation = towerRotations[selectedTower];
-  const currentTowerFlats = towerFlats[selectedTower];
+  const currentTowerFlats = isRefugeSelected
+    ? towerRefugeFlats[selectedTower]
+    : towerStandardFlats[selectedTower];
+  const currentZoomMultipliers = isRefugeSelected
+    ? towerZoomMultipliers[selectedTower].refuge
+    : towerZoomMultipliers[selectedTower].standard;
+  const currentHiddenOverlayUnitIds = isRefugeSelected
+    ? selectedTower === "Tower 2"
+      ? ["unit-2"]
+      : ["unit-3"]
+    : [];
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections((prev) => ({
@@ -219,6 +350,7 @@ export default function ApartmentsPage() {
   const handleSelectUnit = (unitId: string | null) => {
     if (!unitId) {
       setActiveUnitIds(null);
+      setSelectedFlatId(null);
       return;
     }
     const allFlats = Object.values(currentTowerFlats)
@@ -227,17 +359,17 @@ export default function ApartmentsPage() {
     const matchedFlat = allFlats.find((f) => f.unitIds.includes(unitId));
     if (!matchedFlat) {
       setActiveUnitIds([unitId]);
+      setSelectedFlatId(null);
       return;
     }
 
-    const isAlreadyActive =
-      activeUnitIds !== null &&
-      activeUnitIds.length === matchedFlat.unitIds.length &&
-      matchedFlat.unitIds.every((id) => activeUnitIds.includes(id));
+    const isAlreadyActive = selectedFlatId === matchedFlat.id;
 
     if (isAlreadyActive) {
       setActiveUnitIds(null);
+      setSelectedFlatId(null);
     } else {
+      setSelectedFlatId(matchedFlat.id);
       setActiveUnitIds(matchedFlat.unitIds);
       for (const [sectionKey, flats] of Object.entries(currentTowerFlats)) {
         if (flats?.some((f) => f.id === matchedFlat.id)) {
@@ -253,15 +385,27 @@ export default function ApartmentsPage() {
   };
 
   const handleSelectFlat = (flat: FlatItem) => {
-    const isAlreadyActive =
-      activeUnitIds !== null &&
-      activeUnitIds.length === flat.unitIds.length &&
-      flat.unitIds.every((id) => activeUnitIds.includes(id));
+    const isAlreadyActive = selectedFlatId === flat.id;
 
-    setActiveUnitIds(isAlreadyActive ? null : flat.unitIds);
+    if (isAlreadyActive) {
+      setActiveUnitIds(null);
+      setSelectedFlatId(null);
+    } else {
+      const willBeRefuge = flat.id.includes("refuge");
+      const targetFlats = (
+        willBeRefuge ? towerRefugeFlats : towerStandardFlats
+      )[selectedTower];
+      const allTargetFlats = Object.values(targetFlats)
+        .filter((flats): flats is FlatItem[] => Array.isArray(flats))
+        .flat();
+      const matched = allTargetFlats.find((f) => f.id === flat.id);
+      setSelectedFlatId(flat.id);
+      setActiveUnitIds(matched ? matched.unitIds : flat.unitIds);
+    }
   };
 
   const isFlatActive = (flat: FlatItem) => {
+    if (selectedFlatId) return selectedFlatId === flat.id;
     if (!activeUnitIds) return false;
     return flat.unitIds.some((id) => activeUnitIds.includes(id));
   };
@@ -306,16 +450,14 @@ export default function ApartmentsPage() {
           rotation={rotation}
           fitMode={selectedTower === "Master Layout" ? "contain" : "cover"}
           activeUnitId={activeUnitIds}
-          hiddenOverlayUnitIds={
-            towerFlats[selectedTower]?.["Refuge"]?.flatMap((f) => f.unitIds) ??
-            []
-          }
+          hiddenOverlayUnitIds={currentHiddenOverlayUnitIds}
           onSelectUnit={handleSelectUnit}
           resetKey={resetKey}
           onPlanInteractedChange={setIsPlanInteracted}
-          unitZoomMultipliers={towerZoomMultipliers[selectedTower]}
+          unitZoomMultipliers={currentZoomMultipliers}
           defaultTransform={towerDefaultTransforms[selectedTower]}
           frameClassName={PLAN_FRAME}
+          disableUnitZoom={isRefugeSelected}
         />
       </div>
 
@@ -324,11 +466,13 @@ export default function ApartmentsPage() {
         currentPage="apartments"
         showRERA={false}
         showReset={
+          selectedFlatId !== null ||
           (activeUnitIds !== null && activeUnitIds.length > 0) ||
           isPlanInteracted
         }
         onReset={() => {
           setActiveUnitIds(null);
+          setSelectedFlatId(null);
           setIsPlanInteracted(false);
           setResetKey((k) => k + 1);
         }}
@@ -357,6 +501,7 @@ export default function ApartmentsPage() {
                       isActive: true,
                       onClick: () => {
                         setActiveUnitIds(null);
+                        setSelectedFlatId(null);
                         setIsPlanInteracted(false);
                         setResetKey((k) => k + 1);
                       },
@@ -408,6 +553,7 @@ export default function ApartmentsPage() {
             onClick={() => {
               setSelectedTower(tower);
               setActiveUnitIds(null);
+              setSelectedFlatId(null);
               setIsPlanInteracted(false);
               setResetKey((k) => k + 1);
             }}

@@ -371,6 +371,8 @@ interface TowerFloorPlanProps {
    * "contain": fits the full SVG viewBox without any edge cropping (preserves original padding as in Master Layout).
    */
   fitMode?: "cover" | "contain";
+  /** If true, selecting a unit will not zoom the camera into the unit's bounding box. */
+  disableUnitZoom?: boolean;
 }
 
 const TowerFloorPlan = forwardRef<TowerFloorPlanHandle, TowerFloorPlanProps>(
@@ -389,6 +391,7 @@ const TowerFloorPlan = forwardRef<TowerFloorPlanHandle, TowerFloorPlanProps>(
       frameClassName = "",
       className = "",
       fitMode = "cover",
+      disableUnitZoom = false,
     },
     ref,
   ) {
@@ -565,8 +568,8 @@ const TowerFloorPlan = forwardRef<TowerFloorPlanHandle, TowerFloorPlanProps>(
   const unitFrame = useMemo(() => {
     if (!fit || !view) return { transform: "none", scale: 1, tx: 0, ty: 0 };
 
-    // When no unit is selected, apply default master-plan zoom and shift
-    if (!activeBox) {
+    // When no unit is selected or unit zoom is disabled, apply default master-plan zoom and shift
+    if (!activeBox || disableUnitZoom) {
       if (
         !defaultTransform ||
         (!defaultTransform.scale &&
@@ -690,6 +693,7 @@ const TowerFloorPlan = forwardRef<TowerFloorPlanHandle, TowerFloorPlanProps>(
     };
   }, [
     activeBox,
+    disableUnitZoom,
     fit,
     frameRect,
     size,
@@ -1137,41 +1141,46 @@ const TowerFloorPlan = forwardRef<TowerFloorPlanHandle, TowerFloorPlanProps>(
                       </g>
                     )}
 
-                {plan.units.map((unit) => {
-                  const isActive = Array.isArray(activeUnitId)
-                    ? activeUnitId.includes(unit.id)
-                    : unit.id === activeUnitId;
-                  const isOverlayHidden = hiddenOverlayUnitIds?.includes(unit.id);
-                  const isMasked = !isOverlayHidden && !isActive;
+                {(() => {
+                  const hasSelection = Array.isArray(activeUnitId)
+                    ? activeUnitId.length > 0
+                    : Boolean(activeUnitId);
 
-                  return (
-                    <path
-                      key={unit.id}
-                      d={unit.d}
-                      fill={isMasked ? "#CEC3AE" : "transparent"}
-                      fillOpacity={isMasked ? 0.7 : 0}
-                      stroke={isActive ? "#CEC3AE" : "transparent"}
-                      strokeWidth={isActive ? 2 : 0}
-                      strokeDasharray={isActive ? "6 3" : undefined}
-                      className={`transition-all duration-300 cursor-pointer ${
-                        isActive
-                          ? "cursor-zoom-out"
-                          : isOverlayHidden
-                          ? "hover:stroke-[#CEC3AE]/50 hover:stroke-[1px]"
-                          : "cursor-zoom-in hover:fill-opacity-40"
-                      }`}
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        if (wasDrag()) return;
-                        if (onSelectUnit) {
-                          onSelectUnit(isActive ? null : unit.id);
-                        } else if (onToggleUnit) {
-                          onToggleUnit(unit.id);
-                        }
-                      }}
-                    />
-                  );
-                })}
+                  return plan.units.map((unit) => {
+                    const isActive = Array.isArray(activeUnitId)
+                      ? activeUnitId.includes(unit.id)
+                      : unit.id === activeUnitId;
+                    const isOverlayHidden =
+                      hiddenOverlayUnitIds?.includes(unit.id);
+                    const isMasked =
+                      hasSelection && !isOverlayHidden && !isActive;
+
+                    return (
+                      <path
+                        key={unit.id}
+                        d={unit.d}
+                        fill="#CEC3AE"
+                        fillOpacity={isMasked ? 0.7 : 0}
+                        className={`transition-all duration-300 cursor-pointer ${
+                          isActive
+                            ? "cursor-zoom-out"
+                            : isOverlayHidden
+                            ? "hover:stroke-[#CEC3AE]/50 hover:stroke-[1px]"
+                            : "cursor-zoom-in hover:fill-opacity-40"
+                        }`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          if (wasDrag()) return;
+                          if (onSelectUnit) {
+                            onSelectUnit(isActive ? null : unit.id);
+                          } else if (onToggleUnit) {
+                            onToggleUnit(unit.id);
+                          }
+                        }}
+                      />
+                    );
+                  });
+                })()}
               </g>
             </svg>
           )}
