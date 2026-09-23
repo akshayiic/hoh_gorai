@@ -293,7 +293,7 @@ const towerDefaultTransforms: Record<
   "Tower 3": {
     scale: 1.15,
     autoCenter: true,
-    shiftX: 20,
+    shiftX: -80,
   },
 };
 
