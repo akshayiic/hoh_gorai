@@ -65,8 +65,8 @@ const towerRotations: Record<TowerKey, number> = {
 
 const towerPlans: Record<TowerKey, { standard: string; refuge: string }> = {
   "Master Layout": {
-    standard: "/gallery/Tower A/master-layout.svg",
-    refuge: "/gallery/Tower A/master-layout.svg",
+    standard: "/gallery/Tower A/master-layout1.svg",
+    refuge: "/gallery/Tower A/master-layout1.svg",
   },
   "Tower 2": {
     standard: "/gallery/Tower B/tower-b.svg",
@@ -281,9 +281,9 @@ const towerDefaultTransforms: Record<
   { scale: number; shiftX?: number; shiftY?: number; autoCenter?: boolean }
 > = {
   "Master Layout": {
-    scale: 1,
+    scale: 1.5,
     shiftX: 0,
-    shiftY: 0,
+    shiftY: 220,
   },
   "Tower 2": {
     scale: 1,
