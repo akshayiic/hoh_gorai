@@ -281,9 +281,9 @@ const towerDefaultTransforms: Record<
   { scale: number; shiftX?: number; shiftY?: number; autoCenter?: boolean }
 > = {
   "Master Layout": {
-    scale: 1.5,
+    scale: 1.4,
     shiftX: 0,
-    shiftY: 220,
+    shiftY: 200,
   },
   "Tower 2": {
     scale: 1,
